@@ -37,6 +37,15 @@ class MainActivity : FlutterActivity() {
                         requestPermissions(arrayOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_PHONE_STATE), 11)
                         result.success(true)
                     }
+                    "hasPhonePermission" -> result.success(
+                        checkSelfPermission(Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED)
+                    "hasNotificationPermission" -> result.success(
+                        Build.VERSION.SDK_INT < 33 ||
+                            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
+                    "requestNotificationPermission" -> {
+                        if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 12)
+                        result.success(true)
+                    }
                     "checkCallForwarding" -> {
                         val code = call.argument<String>("code") ?: "*#21#"
                         if (!allowedUssd(code)) { result.error("BAD_CODE", "USSD code not allowed", null) }

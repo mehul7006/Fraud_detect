@@ -21,8 +21,9 @@ for f in android/app/build.gradle android/app/build.gradle.kts; do
   [ -f "$f" ] && sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/; s/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/' "$f"
 done
 
-# merge manifest entries once
-python3 - <<'PY'
+# merge manifest entries once (python3 on Linux/macOS, python on Windows Git Bash)
+PYBIN=$(command -v python3 || command -v python)
+"$PYBIN" - <<'PY'
 p = 'android/app/src/main/AndroidManifest.xml'
 m = open(p, encoding='utf-8').read()
 if 'AdNotificationListener' in m:
@@ -42,6 +43,18 @@ m = m.replace('</application>', svc + '    </application>', 1)
 m = m.replace('</activity>', share + '        </activity>', 1)
 open(p, 'w', encoding='utf-8').write(m)
 print('manifest merged')
+PY
+
+# Debug builds only: allow plain http so the emulator can reach a local backend at http://10.0.2.2:<port>.
+# Release builds are NOT touched and stay https-only (Android default for apps targeting API 28+).
+"$PYBIN" - <<'PY'
+p = 'android/app/src/debug/AndroidManifest.xml'
+m = open(p, encoding='utf-8').read()
+if 'usesCleartextTraffic' in m:
+    print('debug manifest already allows cleartext'); raise SystemExit
+m = m.replace('</manifest>', '    <application android:usesCleartextTraffic="true"/>\n</manifest>', 1)
+open(p, 'w', encoding='utf-8').write(m)
+print('debug manifest: cleartext allowed (debug only)')
 PY
 
 flutter pub get

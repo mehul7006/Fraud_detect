@@ -24,7 +24,10 @@ class _ThreatsScreenState extends State<ThreatsScreen> {
             if (!s.hasData) return const Center(child: CircularProgressIndicator());
             if (s.data!.isEmpty) return const Center(child: Text('No threats found. You are safe.'));
             return RefreshIndicator(
-              onRefresh: () async => setState(() => _f = _api.threats()),
+              onRefresh: () {
+                setState(() { _f = _api.threats(); });   // block body: setState must not return a Future
+                return _f;                               // keeps the pull-to-refresh spinner until loaded
+              },
               child: ListView(children: [
                 for (final t in s.data!)
                   ListTile(
@@ -33,7 +36,7 @@ class _ThreatsScreenState extends State<ThreatsScreen> {
                     subtitle: Text('${t['detail'] ?? ''}\n${t['createdAt']}'),
                     isThreeLine: true,
                     trailing: t['status'] == 'OPEN'
-                        ? TextButton(onPressed: () async { await _api.resolve(t['id']); setState(() => _f = _api.threats()); }, child: const Text('Resolve'))
+                        ? TextButton(onPressed: () async { await _api.resolve(t['id']); if (!mounted) return; setState(() { _f = _api.threats(); }); }, child: const Text('Resolve'))
                         : const Icon(Icons.check, color: Colors.green),
                   ),
               ]),

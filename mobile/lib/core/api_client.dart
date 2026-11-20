@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'carrier_classifier.dart';
 
 /// Android emulator -> host machine is 10.0.2.2. Change for real device / production (must be https).
 const String kBaseUrl = String.fromEnvironment('API_BASE', defaultValue: 'http://10.0.2.2:8080/api/v1');
@@ -105,6 +106,16 @@ class ApiClient {
   }
 
   Future<void> resolve(int id) => _post('/threats/$id/resolve', {});
+
+  /// Carrier answer patterns (backend 3.2). Pass the last [version] to get null back when nothing changed (HTTP 304).
+  Future<CarrierConfig?> carrierConfig({String? version}) async {
+    final headers = _headers(true);
+    if (version != null) headers['If-None-Match'] = '"$version"';
+    final res = await _http.get(Uri.parse('$_base/config/carriers'), headers: headers).timeout(_timeout);
+    if (res.statusCode == 304) return null;
+    final d = _decode(res);
+    return CarrierConfig.fromJson(Map<String, dynamic>.from(d as Map));
+  }
 
   // ---- http helpers ----
   Map<String, String> _headers(bool auth) => {

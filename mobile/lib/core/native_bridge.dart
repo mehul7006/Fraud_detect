@@ -12,6 +12,11 @@ class NativeBridge {
   static Future<bool> hasAllFilesAccess() async => (await _ch.invokeMethod<bool>('hasAllFilesAccess')) ?? false;
   static Future<void> openAllFilesAccessSettings() => _ch.invokeMethod('openAllFilesAccessSettings');
   static Future<void> requestPhonePermission() => _ch.invokeMethod('requestPhonePermission');
+  static Future<bool> hasPhonePermission() async => (await _ch.invokeMethod<bool>('hasPhonePermission')) ?? false;
+
+  /// Android 13+ blocks all notifications until the user allows them. Without this every alert is silent.
+  static Future<bool> hasNotificationPermission() async => (await _ch.invokeMethod<bool>('hasNotificationPermission')) ?? false;
+  static Future<void> requestNotificationPermission() => _ch.invokeMethod('requestNotificationPermission');
 
   /// Returns carrier text, or NO_PERMISSION / UNSUPPORTED / ERROR:n
   static Future<String> ussd(String code) async => (await _ch.invokeMethod<String>('checkCallForwarding', {'code': code})) ?? 'ERROR';
