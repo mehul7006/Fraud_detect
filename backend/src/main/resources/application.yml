@@ -1,0 +1,20 @@
+# Common settings. Environment specifics live in application-dev.yml / application-prod.yml.
+spring:
+  profiles:
+    default: dev
+  jpa:
+    hibernate.ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+logging:
+  pattern:
+    level: "%5p [%X{requestId}]"
+server:
+  port: ${PORT:8080}
+  error:
+    include-stacktrace: never
+    include-message: never
+fraudshield:
+  jwt:
+    ttl-minutes: 43200

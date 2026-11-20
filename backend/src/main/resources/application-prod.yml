@@ -1,0 +1,24 @@
+# Production. NO defaults for secrets: the app will not start unless these environment variables are set.
+#   DB_URL        jdbc:postgresql://<host>:5432/<db>?sslmode=require
+#   DB_USER, DB_PASSWORD
+#   JWT_SECRET    random string, at least 32 characters (e.g. `openssl rand -base64 48`)
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+fraudshield:
+  jwt:
+    secret: ${JWT_SECRET}
+logging:
+  level:
+    root: INFO
+    com.fraudshield: INFO
+server:
+  forward-headers-strategy: framework   # correct client IP/https behind a reverse proxy
+  shutdown: graceful
+springdoc:
+  api-docs:
+    enabled: false      # do not publish the API contract/Swagger UI in production
+  swagger-ui:
+    enabled: false

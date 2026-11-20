@@ -1,0 +1,30 @@
+<!-- Merge into android/app/src/main/AndroidManifest.xml -->
+
+<!-- Put these OUTSIDE <application> -->
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+<uses-permission android:name="android.permission.CALL_PHONE"/>
+<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>   <!-- Play declaration needed -->
+<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/> <!-- Play declaration needed -->
+
+<!-- Put this INSIDE <application> -->
+<service
+    android:name=".AdNotificationListener"
+    android:exported="true"
+    android:label="FraudShield link & ad monitor"
+    android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+    <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService"/>
+    </intent-filter>
+</service>
+
+<!-- Share-target so user can share a suspicious link to FraudShield (add inside the MainActivity <activity>) -->
+<intent-filter>
+    <action android:name="android.intent.action.SEND"/>
+    <category android:name="android.intent.category.DEFAULT"/>
+    <data android:mimeType="text/plain"/>
+</intent-filter>
+
+<!-- app/build.gradle: add  implementation "androidx.core:core-ktx:1.13.1"  and set minSdkVersion 26 -->

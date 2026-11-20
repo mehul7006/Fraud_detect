@@ -1,0 +1,7 @@
+# Keep LF everywhere so shell scripts and CI work on Linux regardless of the developer OS
+* text=auto eol=lf
+*.bat text eol=crlf
+*.jar binary
+*.apk binary
+*.png binary
+*.jpg binary
