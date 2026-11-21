@@ -81,7 +81,11 @@ class MainActivity : FlutterActivity() {
                     "auditApps" -> result.success(AppAuditor.audit(this))
                     "takeSharedText" -> { val t = sharedText; sharedText = null; result.success(t) }
                     "takePendingEvents" -> result.success(AdNotificationListener.takePending(this))
-                    "scanNewFiles" -> result.success(FileScanner.scanNew(this))
+                    "scanNewFiles" -> Thread {
+                        // hashing big files must not block the UI thread (5.4.3)
+                        val r = try { FileScanner.scanNew(this) } catch (e: Exception) { null }
+                        runOnUiThread { if (r != null) result.success(r) else result.error("SCAN_FAILED", "file scan failed", null) }
+                    }.start()
                     "deleteFile" -> result.success(FileScanner.delete(call.argument<String>("path") ?: ""))
                     "uninstallApp" -> {
                         val pkg = call.argument<String>("package") ?: ""

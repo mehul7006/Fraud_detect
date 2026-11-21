@@ -7,7 +7,7 @@ import com.fraudshield.repo.Repositories.BlocklistRepository;
 import org.springframework.stereotype.Service;
 import java.util.*;
 
-/** Metadata-only file scan: the file itself never leaves the phone, only hash + name + first bytes. */
+/** Metadata-only file scan: the file itself never leaves the phone, only hash + name + first bytes + content flag names. */
 @Service
 public class FileScanService {
     private static final Set<String> EXEC_EXT = Set.of("apk", "xapk", "apks", "exe", "scr", "bat", "cmd", "js",
@@ -18,7 +18,14 @@ public class FileScanService {
 
     private final BlocklistRepository blocklist;
 
-    public FileScanService(BlocklistRepository blocklist) { this.blocklist = blocklist; }
+    private final FileReputationClient reputation;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public FileScanService(BlocklistRepository blocklist, FileReputationClient reputation) {
+        this.blocklist = blocklist; this.reputation = reputation;
+    }
+
+    public FileScanService(BlocklistRepository blocklist) { this(blocklist, sha -> Optional.empty()); }
 
     public FileScanResponse scan(FileScanRequest r) {
         if (blocklist.findByKindAndValue("SHA256", r.sha256().toLowerCase(Locale.ROOT)).isPresent()) {
@@ -26,6 +33,13 @@ public class FileScanService {
         }
         List<String> reasons = new ArrayList<>();
         int score = 0;
+        // 5.1: ask VirusTotal about the HASH only. Failure/limit/off = no change to the score.
+        var vt = reputation.lookup(r.sha256().toLowerCase(Locale.ROOT));
+        if (vt.isPresent() && vt.get().malicious() > 0) {
+            int n = vt.get().malicious();
+            score += n >= 3 ? 70 : 30;
+            reasons.add("Flagged by " + n + " of " + vt.get().total() + " antivirus engines");
+        }
         String name = r.fileName().toLowerCase(Locale.ROOT);
         String[] parts = name.split("\\.");
         String ext = parts.length > 1 ? parts[parts.length - 1] : "";
@@ -50,6 +64,14 @@ public class FileScanService {
         }
         if (isElfOrMz) { score += 30; reasons.add("Native executable header"); }
         if (ext.equals("pdf") && r.sizeBytes() < 2_000) { score += 15; reasons.add("Tiny PDF (likely link/launcher stub)"); }
+
+        // 5.2: content flags sent by the app (names only, never content)
+        Set<String> flags = new HashSet<>();
+        if (r.flags() != null) r.flags().forEach(f -> flags.add(f == null ? "" : f.toUpperCase(Locale.ROOT)));
+        if (flags.contains("PDF_LAUNCH")) { score += 70; reasons.add("PDF can launch a program"); }
+        if (flags.contains("PDF_JS")) { score += 35; reasons.add("PDF contains JavaScript"); }
+        if (flags.contains("PDF_OPENACTION")) { score += 15; reasons.add("PDF runs an action when opened"); }
+        if (flags.contains("OFFICE_MACRO") && !MACRO_EXT.contains(ext)) { score += 45; reasons.add("Office document contains macros"); }
 
         String src = r.sourceApp() == null ? "" : r.sourceApp().toLowerCase(Locale.ROOT);
         if (EXEC_EXT.contains(ext) && (src.contains("whatsapp") || src.contains("telegram") || src.contains("sms"))) {

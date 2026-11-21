@@ -67,6 +67,17 @@ public class ThreatService {
         return threats.findFirstByUserIdAndTypeAndStatusOrderByCreatedAtDesc(userId, type, "OPEN");
     }
 
+    public com.fraudshield.dto.Dtos.ThreatSummary summary(Long userId) {
+        var byType = new java.util.LinkedHashMap<String, Long>();
+        for (ThreatType t : ThreatType.values()) byType.put(t.name(), 0L);
+        threats.countByType(userId).forEach(r -> byType.put(((ThreatType) r[0]).name(), (Long) r[1]));
+        var bySev = new java.util.LinkedHashMap<String, Long>();
+        for (Severity v : Severity.values()) bySev.put(v.name(), 0L);
+        threats.countBySeverity(userId).forEach(r -> bySev.put(((Severity) r[0]).name(), (Long) r[1]));
+        return new com.fraudshield.dto.Dtos.ThreatSummary(threats.countByUserId(userId),
+                threats.countByUserIdAndStatus(userId, "OPEN"), byType, bySev);
+    }
+
     public List<ThreatDto> list(Long userId, String status) {
         var rows = status == null ? threats.findByUserIdOrderByCreatedAtDesc(userId)
                 : threats.findByUserIdAndStatusOrderByCreatedAtDesc(userId, status);

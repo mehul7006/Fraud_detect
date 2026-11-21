@@ -52,7 +52,7 @@ class ProtectionEngine {
   void start() {
     runFast();
     runSlow();
-    _fast = Timer.periodic(const Duration(seconds: 20), (_) => runFast());
+    _fast = Timer.periodic(const Duration(seconds: 15), (_) => runFast()); // 15 s + 3 s settle keeps a new file under the 20 s goal (5.4)
     _slow = Timer.periodic(const Duration(hours: 1), (_) => runSlow());
   }
 
@@ -195,8 +195,18 @@ class ProtectionEngine {
     await NativeBridge.showAlert('Suspicious file received', '${f['fileName']}\n$reasons', id: path.hashCode);
     alerts.add(Alert(verdict == 'MALICIOUS' ? 'MALICIOUS FILE' : 'Suspicious file', '${f['fileName']}\n\n$reasons',
         verdict == 'MALICIOUS' ? 'CRITICAL' : 'MEDIUM', [
-      AlertAction('Delete file', () async {
-        await NativeBridge.deleteFile(path);
+      AlertAction('Delete file', () async => _confirmDelete(path, f['fileName'] as String)),
+    ]));
+  }
+
+  /// 5.7: deleting is a second, explicit step. The native side still refuses anything outside the scan folders.
+  void _confirmDelete(String path, String name) {
+    alerts.add(Alert('Delete "$name"?', 'This removes the file from your phone. It cannot be undone.', 'HIGH', [
+      AlertAction('Yes, delete it', () async {
+        final ok = await NativeBridge.deleteFile(path);
+        alerts.add(ok
+            ? Alert('File deleted', '"$name" was removed.', 'INFO', [])
+            : Alert('Could not delete the file', 'FraudShield only deletes files in Downloads, WhatsApp and Telegram folders.', 'INFO', []));
       }),
     ]));
   }

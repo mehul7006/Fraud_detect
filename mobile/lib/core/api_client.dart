@@ -91,7 +91,13 @@ class ApiClient {
         'sizeBytes': f['sizeBytes'],
         'sourceApp': f['sourceApp'],
         'headerHex': f['headerHex'],
+        // flag NAMES only (PDF_JS, PDF_LAUNCH, PDF_OPENACTION, OFFICE_MACRO) - never file content
+        'flags': _flagNames(f['flags']),
       });
+
+  static const _knownFlags = {'PDF_JS', 'PDF_LAUNCH', 'PDF_OPENACTION', 'OFFICE_MACRO'};
+  static List<String> _flagNames(Object? raw) =>
+      raw is List ? raw.whereType<String>().where(_knownFlags.contains).take(10).toList() : <String>[];
 
   Future<Map<String, dynamic>> scanApps(List<Map<String, dynamic>> apps) => _post('/scan/apps', {'apps': apps});
 

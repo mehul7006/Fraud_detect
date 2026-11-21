@@ -20,7 +20,13 @@ public final class Dtos {
     public record ScanResponse(Verdict verdict, int score, List<String> reasons) {}
 
     public record FileScanRequest(@NotBlank @Size(min = 64, max = 64) String sha256, @NotBlank String fileName,
-                                  long sizeBytes, String mimeType, String sourceApp, String headerHex) {}
+                                  long sizeBytes, String mimeType, String sourceApp, String headerHex,
+                                  @Size(max = 10) List<String> flags) {
+        /** Older clients send no content flags. */
+        public FileScanRequest(String sha256, String fileName, long sizeBytes, String mimeType, String sourceApp, String headerHex) {
+            this(sha256, fileName, sizeBytes, mimeType, sourceApp, headerHex, null);
+        }
+    }
     public record FileScanResponse(Verdict verdict, int score, List<String> reasons, String action) {}
 
     public record AppInfo(@NotBlank String packageName, String label, int notifPerHour,
@@ -45,6 +51,9 @@ public final class Dtos {
     public record FeedbackEntry(Long id, String host, String kind, String note, String status, String resolution,
                                 java.time.Instant createdAt) {}
     public record CloseFeedbackRequest(@NotBlank @Pattern(regexp = "ADD_TO_BLOCKLIST|ALLOW|DISMISS") String resolution) {}
+
+    /** 5.3: counts for the dashboard. byType/bySeverity contain every key, zero when there are no rows. */
+    public record ThreatSummary(long total, long open, java.util.Map<String, Long> byType, java.util.Map<String, Long> bySeverity) {}
 
     /** Mobile reports on-device findings (call forwarding, OTP, etc.) so they appear in history. */
     public record ReportRequest(@NotBlank String type, @NotBlank String severity,

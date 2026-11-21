@@ -25,6 +25,9 @@ public class ThreatController {
         return threats.list(uid, status);
     }
 
+    @GetMapping("/threats/summary")
+    public com.fraudshield.dto.Dtos.ThreatSummary summary(@AuthenticationPrincipal Long uid) { return threats.summary(uid); }
+
     /**
      * On-device findings (call forwarding, unexpected OTP, WhatsApp/Telegram takeover) reported by the app.
      * 201 = new threat created. 200 = an identical OPEN threat already existed (returned, nothing added).

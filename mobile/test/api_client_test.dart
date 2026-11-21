@@ -131,7 +131,21 @@ void main() {
         'sha256': 'a' * 64, 'fileName': 'secret.pdf', 'sizeBytes': 10, 'sourceApp': 'downloads', 'headerHex': '25504446'
       });
       expect(body!.containsKey('path'), false, reason: 'local path must not leave the phone');
-      expect(body!.keys.toSet(), {'sha256', 'fileName', 'sizeBytes', 'sourceApp', 'headerHex'});
+      expect(body!.keys.toSet(), {'sha256', 'fileName', 'sizeBytes', 'sourceApp', 'headerHex', 'flags'});
+      expect(body!['flags'], isEmpty);
+    });
+
+    test('scanFile sends only known flag names, at most 10 (5.6)', () async {
+      Map<String, dynamic>? body;
+      final api = _client((r) async {
+        body = jsonDecode(r.body) as Map<String, dynamic>;
+        return _json(200, {'verdict': 'SAFE', 'score': 0, 'reasons': [], 'action': 'NONE'});
+      });
+      await api.scanFile({
+        'sha256': 'a' * 64, 'fileName': 'x.pdf', 'sizeBytes': 10, 'sourceApp': 'downloads', 'headerHex': '25504446',
+        'flags': ['PDF_JS', 'PDF_LAUNCH', 'secret text from the file', 42, 'OFFICE_MACRO'],
+      });
+      expect(body!['flags'], ['PDF_JS', 'PDF_LAUNCH', 'OFFICE_MACRO']);
     });
 
     test('threats with status adds the query', () async {

@@ -125,14 +125,14 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 ## Phase 5 – File protection (Weeks 7–8)
 | ID | Track | Deliverable | Files | Done when | Status |
 |---|---|---|---|---|---|
-| 5.1 | BE | VirusTotal hash lookup (hash only, never file) | `FileScanService` | EICAR hash detected by VT | ⬜ |
-| 5.2 | BE | Extra heuristics: PDF with `/JavaScript` `/Launch`, Office macro flag (needs larger `headerHex`/flags from app) | DTO + `FileScanService` | Test PDFs score correctly | ⬜ |
-| 5.3 | BE | File threat stats endpoint (counts by type) | `GET /threats/summary` | Dashboard numbers match | ⬜ |
-| 5.4 | FE | Folder scanner (Downloads, WhatsApp, WhatsApp Business, Telegram) + SHA-256 | `FileScanner.kt` | New file in Downloads reported within 20 s | 🟡 |
-| 5.5 | FE | First-run baseline (don't flag existing library) | `FileScanner.kt` | Existing files ignored, new file flagged | 🟡 |
-| 5.6 | FE | PDF/Office flag extraction (scan first 64 KB for `/JS`, `/Launch`, `vbaProject`) | `FileScanner.kt` | Test files produce flags | ⬜ |
-| 5.7 | FE | Delete flow with confirmation; restricted to scan roots | `FileScanner.delete`, popup action | File gone; deleting `/system` path refused | 🟡 |
-| 5.8 | FE | All-files-access permission UX + Android 11–14 testing | `MainActivity.kt` | Granted/denied flows both OK | 🟡 |
+| 5.1 | BE | VirusTotal hash lookup (hash only, never file) | `FileScanService` | EICAR hash detected by VT | 🟡 (`VirusTotalClient`: hash only in the URL path, key in header, 4/min limit, 24 h cache, errors never cached, off unless `VT_ENABLED=true` + `VT_API_KEY`; 7 stub-server tests. Live EICAR check needs your VirusTotal key) |
+| 5.2 | BE | Extra heuristics: PDF with `/JavaScript` `/Launch`, Office macro flag (needs larger `headerHex`/flags from app) | DTO + `FileScanService` | Test PDFs score correctly | ✅ (flags PDF_JS +35, PDF_LAUNCH +70, PDF_OPENACTION +15, OFFICE_MACRO +45; clean PDF <30, Launch >=70; 5 unit tests + `Phase5IT.fileWithPdfLaunchFlagIsMalicious`) |
+| 5.3 | BE | File threat stats endpoint (counts by type) | `GET /threats/summary` | Dashboard numbers match | ✅ (`GET /threats/summary`; `Phase5IT.threatSummaryCounts`; live: summary total 8 / open 8 / files 8 equals GET /threats) |
+| 5.4 | FE | Folder scanner (Downloads, WhatsApp, WhatsApp Business, Telegram) + SHA-256 | `FileScanner.kt` | New file in Downloads reported within 20 s | ✅ (on emulator: new PDFs in Downloads reported in 16 s, 11 s, 13 s; fast loop now 15 s + 3 s settle; hashing moved off the UI thread; sha256/EICAR Kotlin test. WhatsApp/Telegram paths updated from documented layouts, not tested - apps not installed) |
+| 5.5 | FE | First-run baseline (don't flag existing library) | `FileScanner.kt` | Existing files ignored, new file flagged | ✅ (`BaselineStore`: 55 existing files on first run -> none flagged, next new file flagged; cap raised 5,000 -> 50,000 and stored in a file; 7 Kotlin tests) |
+| 5.6 | FE | PDF/Office flag extraction (scan first 64 KB for `/JS`, `/Launch`, `vbaProject`) | `FileScanner.kt` | Test files produce flags | ✅ (`ContentFlagger` reads max 64 KB, sends flag names only; 12 Kotlin tests incl. docm/vbaProject, OLE VBA, 64 KB limit; Dart test: only known flag names leave the phone) |
+| 5.7 | FE | Delete flow with confirmation; restricted to scan roots | `FileScanner.delete`, popup action | File gone; deleting `/system` path refused | ✅ (on emulator: "Delete file" only asks, "Yes, delete it" removes the file; rules: sibling `Download-evil`, root itself, `..` and symlinks refused - Kotlin tests) |
+| 5.8 | FE | All-files-access permission UX + Android 11–14 testing | `MainActivity.kt` | Granted/denied flows both OK | 🟡 (on Android 13 emulator: switch OFF -> card + tile OFF, no scanning; switch ON -> tile ON, file saved meanwhile is caught. Android 11, 12 and 14 not tested yet) |
 
 ---
 

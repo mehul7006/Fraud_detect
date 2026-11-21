@@ -25,6 +25,12 @@ public final class Repositories {
     public interface ThreatEventRepository extends JpaRepository<ThreatEvent, Long> {
         List<ThreatEvent> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, String status);
         List<ThreatEvent> findByUserIdOrderByCreatedAtDesc(Long userId);
+        @org.springframework.data.jpa.repository.Query("select t.type, count(t) from ThreatEvent t where t.userId = :uid group by t.type")
+        List<Object[]> countByType(@org.springframework.data.repository.query.Param("uid") Long uid);
+        @org.springframework.data.jpa.repository.Query("select t.severity, count(t) from ThreatEvent t where t.userId = :uid group by t.severity")
+        List<Object[]> countBySeverity(@org.springframework.data.repository.query.Param("uid") Long uid);
+        long countByUserIdAndStatus(Long userId, String status);
+        long countByUserId(Long userId);
         boolean existsByUserIdAndTypeAndStatus(Long userId, com.fraudshield.domain.Enums.ThreatType type, String status);
         Optional<ThreatEvent> findFirstByUserIdAndTypeAndStatusOrderByCreatedAtDesc(Long userId, com.fraudshield.domain.Enums.ThreatType type, String status);
     }
