@@ -37,6 +37,15 @@ public final class Dtos {
     public record CarrierRule(String country, String carrier, String kind, String regex, int priority) {}
     public record CarrierConfigResponse(String version, List<CarrierRule> rules) {}
 
+    public record BlocklistRequest(@NotBlank String kind, @NotBlank @Size(max = 255) String value, @Size(max = 200) String reason) {}
+    public record BlocklistEntry(Long id, String kind, String value, String reason) {}
+    public record FeedbackRequest(@NotBlank @Size(max = 2048) String url,
+                                  @NotBlank @Pattern(regexp = "FALSE_POSITIVE|FALSE_NEGATIVE") String kind,
+                                  @Size(max = 300) String note) {}
+    public record FeedbackEntry(Long id, String host, String kind, String note, String status, String resolution,
+                                java.time.Instant createdAt) {}
+    public record CloseFeedbackRequest(@NotBlank @Pattern(regexp = "ADD_TO_BLOCKLIST|ALLOW|DISMISS") String resolution) {}
+
     /** Mobile reports on-device findings (call forwarding, OTP, etc.) so they appear in history. */
     public record ReportRequest(@NotBlank String type, @NotBlank String severity,
                                 @NotBlank String title, String detail, String sourceApp) {}

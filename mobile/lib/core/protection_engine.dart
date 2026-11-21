@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'api_client.dart';
 import 'carrier_classifier.dart';
 import 'native_bridge.dart';
+import 'settings_store.dart';
+import 'url_extractor.dart';
 
 /// A threat the UI must show as a blocking popup.
 class Alert {
@@ -34,7 +36,18 @@ class ProtectionEngine {
   /// Kept on the phone only; it may contain a forwarding number, so it is never sent anywhere.
   final unrecognisedAnswer = ValueNotifier<String?>(null);
 
-  ProtectionEngine({ApiClient? api}) : api = api ?? ApiClient.instance;
+  final SettingsStore settings;
+
+  /// Link scan bookkeeping (4.7): same link is not scanned twice within 10 minutes, at most 3 scans at once.
+  static const dedupeWindow = Duration(minutes: 10);
+  static const maxParallelScans = 3;
+  final _recentLinks = <String, DateTime>{};
+  int _running = 0;
+  final _waiting = <Completer<void>>[];
+
+  ProtectionEngine({ApiClient? api, SettingsStore? settings})
+      : api = api ?? ApiClient.instance,
+        settings = settings ?? SettingsStore();
 
   void start() {
     runFast();
@@ -53,16 +66,25 @@ class ProtectionEngine {
   // ---------------- fast loop: links, OTP/new device events, files ----------------
   Future<void> runFast() async {
     try {
-      for (final e in await NativeBridge.takePendingEvents()) {
-        switch (e['kind']) {
-          case 'LINK':
-            await _handleLink(e['url']!, e['pkg']);
-          case 'LOGIN_CODE':
-            await _handleLoginCode(e['app']!);
-          case 'NEW_DEVICE':
-            await _handleNewDevice(e['app']!);
+      await flushOfflineQueue();
+      final shared = await NativeBridge.takeSharedText();
+      if (shared != null && shared.trim().isNotEmpty) await scanShared(shared);
+      final events = await NativeBridge.takePendingEvents();
+      // links are scanned in parallel (max 3); one failing event must not drop the others
+      await Future.wait(events.map((e) async {
+        try {
+          switch (e['kind']) {
+            case 'LINK':
+              await handleLink(e['url']!, e['pkg']);
+            case 'LOGIN_CODE':
+              await _handleLoginCode(e['app']!);
+            case 'NEW_DEVICE':
+              await _handleNewDevice(e['app']!);
+          }
+        } catch (err) {
+          debugPrint('event ${e['kind']} failed: $err');
         }
-      }
+      }));
       if (await NativeBridge.hasAllFilesAccess()) {
         for (final f in await NativeBridge.scanNewFiles()) {
           await _handleFile(f);
@@ -73,15 +95,95 @@ class ProtectionEngine {
     }
   }
 
-  Future<void> _handleLink(String url, String? pkg) async {
-    final r = await api.scanUrl(url, pkg);
+  Future<void> _slot() async {
+    if (_running >= maxParallelScans) {
+      final c = Completer<void>();
+      _waiting.add(c);
+      await c.future;
+    } else {
+      _running++;
+    }
+  }
+
+  void _release() {
+    if (_waiting.isNotEmpty) {
+      _waiting.removeAt(0).complete(); // hand the slot to the next waiter
+    } else {
+      _running--;
+    }
+  }
+
+  /// True when [host] equals a trusted domain or is a sub-domain of one.
+  static bool isTrusted(String host, Iterable<String> trusted) => trusted.any((d) => host == d || host.endsWith('.$d'));
+
+  /// Scans one link taken from a notification. Honours per-app toggles and the trusted list (4.9),
+  /// skips repeats (4.7) and parks the link in the offline queue when the server cannot be reached (4.10).
+  Future<void> handleLink(String url, String? pkg, {bool fromQueue = false}) async {
+    final host = UrlExtractor.hostOf(url);
+    if ((pkg != null && (await settings.disabledPackages()).contains(pkg)) ||
+        (host != null && isTrusted(host, await settings.trustedDomains()))) {
+      if (fromQueue) await settings.removeQueued(url); // user turned it off meanwhile
+      return;
+    }
+    final now = DateTime.now();
+    _recentLinks.removeWhere((_, t) => now.difference(t) > dedupeWindow);
+    if (!fromQueue && _recentLinks.containsKey(url)) return;
+    _recentLinks[url] = now;
+
+    Map<String, dynamic> r;
+    await _slot();
+    try {
+      r = await api.scanUrl(url, pkg);
+    } on ApiException catch (e) {
+      _recentLinks.remove(url);
+      if (e.status == 401 || e.status >= 500) await settings.enqueueLink(url, pkg); // retry later
+      return;
+    } catch (_) {
+      _recentLinks.remove(url);
+      await settings.enqueueLink(url, pkg); // offline / timeout
+      return;
+    } finally {
+      _release();
+    }
+    if (fromQueue) await settings.removeQueued(url);
+    await _showVerdict(url, r);
+  }
+
+  Future<void> _showVerdict(String url, Map<String, dynamic> r, {bool showSafe = false}) async {
     final verdict = r['verdict'] as String;
-    if (verdict == 'SAFE') return;
     final reasons = (r['reasons'] as List).join(', ');
+    if (verdict == 'SAFE') {
+      if (showSafe) alerts.add(Alert('No known danger found', '$url\n\nStill be careful with links you did not expect.', 'INFO', []));
+      return;
+    }
     final bad = verdict == 'MALICIOUS';
     await NativeBridge.showAlert(bad ? 'Dangerous link!' : 'Suspicious link', '$url\n$reasons', id: url.hashCode);
     alerts.add(Alert(bad ? 'DANGEROUS LINK - do not open' : 'Suspicious link', '$url\n\n$reasons',
         bad ? 'CRITICAL' : 'MEDIUM', []));
+  }
+
+  /// Links that were captured while offline are scanned once the server answers again (4.10).
+  Future<void> flushOfflineQueue() async {
+    for (final e in await settings.queuedLinks()) {
+      final before = (await settings.queuedLinks()).length;
+      await handleLink(e['url']!, e['pkg'], fromQueue: true);
+      if ((await settings.queuedLinks()).length >= before) return; // still failing: stop, try next round
+    }
+  }
+
+  /// Share -> FraudShield (4.8): scans every link in the shared text and always shows an answer.
+  /// Returns how many links were checked (0 = no link in the text).
+  Future<int> scanShared(String text) async {
+    final urls = UrlExtractor.extract(text);
+    for (final u in urls.take(5)) {
+      try {
+        await _showVerdict(u, await api.scanUrl(u, 'share'), showSafe: true);
+      } catch (_) {
+        alerts.add(Alert('Could not check the link', '$u\n\nNo connection to FraudShield. Try again in a moment.', 'INFO', []));
+      }
+    }
+    if (urls.isEmpty) alerts.add(Alert('No link found', 'The text you shared does not contain a web link.', 'INFO', []));
+    return urls.length;
   }
 
   Future<void> _handleFile(Map<String, dynamic> f) async {

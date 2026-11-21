@@ -7,7 +7,6 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.regex.Pattern
 
 /**
  * Runs in background once the user grants Notification Access.
@@ -19,6 +18,8 @@ class AdNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val pkg = sbn.packageName
         if (pkg == packageName) return
+        // noise: ongoing (music, downloads, navigation) and group summaries repeat the same text
+        if (sbn.isOngoing || (sbn.notification.flags and android.app.Notification.FLAG_GROUP_SUMMARY) != 0) return
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         val now = System.currentTimeMillis()
 
@@ -33,8 +34,8 @@ class AdNotificationListener : NotificationListenerService() {
             extras.getCharSequence("android.bigText")).joinToString(" ")
 
         // 2. URLs in any notification (WhatsApp, Telegram, SMS, mail...)
-        val urls = URL_RE.matcher(text).let { m -> generateSequence { if (m.find()) m.group() else null }.toList() }
-        urls.distinct().take(5).forEach { addEvent(prefs, JSONObject().put("kind", "LINK").put("pkg", pkg).put("url", it)) }
+        UrlExtractor.extract(text).take(5).filter { firstSeenRecently(it, now) }
+            .forEach { addEvent(prefs, JSONObject().put("kind", "LINK").put("pkg", pkg).put("url", it)) }
 
         // 3. login-code notifications for WhatsApp/Telegram -> possible takeover attempt
         val low = text.lowercase()
@@ -63,7 +64,19 @@ class AdNotificationListener : NotificationListenerService() {
         const val PREFS = "fraudshield_events"
         private const val EVENTS = "pending"
         private const val HOUR = 3_600_000L
-        private val URL_RE: Pattern = Pattern.compile("(https?://[^\\s]+|www\\.[^\\s]+|\\b[a-z0-9-]+\\.(?:com|in|xyz|top|click|me|ly|co|info|net|org|apk)/[^\\s]*)", Pattern.CASE_INSENSITIVE)
+        private const val DEDUPE_MS = 300_000L // same link within 5 minutes is queued once
+        private val seen = object : LinkedHashMap<String, Long>(64, 0.75f, false) {
+            override fun removeEldestEntry(e: MutableMap.MutableEntry<String, Long>) = size > 200
+        }
+
+        @Synchronized
+        fun firstSeenRecently(url: String, now: Long): Boolean {
+            val k = url.lowercase()
+            val last = seen[k]
+            if (last != null && now - last < DEDUPE_MS) return false
+            seen[k] = now
+            return true
+        }
 
         fun notifPerHour(ctx: Context, pkg: String): Int {
             val now = System.currentTimeMillis()

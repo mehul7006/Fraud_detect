@@ -15,7 +15,12 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(nullable = false)
+    private String role = "USER";
+
     protected User() {}
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
     public User(String email, String passwordHash) { this.email = email; this.passwordHash = passwordHash; }
 
     public Long getId() { return id; }

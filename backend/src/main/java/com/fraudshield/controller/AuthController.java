@@ -28,7 +28,7 @@ public class AuthController {
         String email = r.email().toLowerCase();
         if (users.findByEmail(email).isPresent()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used");
         User u = users.save(new User(email, encoder.encode(r.password())));
-        return new TokenResponse(jwt.create(u.getId()));
+        return new TokenResponse(jwt.create(u.getId(), u.getRole()));
     }
 
     @PostMapping("/login")
@@ -36,6 +36,6 @@ public class AuthController {
         User u = users.findByEmail(r.email().toLowerCase())
                 .filter(x -> encoder.matches(r.password(), x.getPasswordHash()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
-        return new TokenResponse(jwt.create(u.getId()));
+        return new TokenResponse(jwt.create(u.getId(), u.getRole()));
     }
 }

@@ -56,6 +56,8 @@ jobs:
         run: flutter analyze
       - name: Unit tests
         run: flutter test
+      - name: Kotlin unit tests (URL extractor, 4.6)
+        run: cd android && ./gradlew testDebugUnitTest
       - name: Build debug APK (compiles the Kotlin code)
         run: flutter build apk --debug
       - name: Upload APK

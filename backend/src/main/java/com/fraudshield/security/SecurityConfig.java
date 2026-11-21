@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                 .requestMatchers("/actuator/health", "/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .exceptionHandling(e -> e
                 .authenticationEntryPoint((req, res, ex) -> com.fraudshield.error.ErrorBody.write(
@@ -48,8 +49,12 @@ public class SecurityConfig {
                     if (h != null && h.startsWith("Bearer ")) {
                         Long uid = jwt.parse(h.substring(7));
                         if (uid != null) {
+                            String role = jwt.parseRole(h.substring(7));
+                            var authorities = "ADMIN".equals(role)
+                                ? List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))
+                                : List.<org.springframework.security.core.authority.SimpleGrantedAuthority>of();
                             SecurityContextHolder.getContext().setAuthentication(
-                                new UsernamePasswordAuthenticationToken(uid, null, List.of()));
+                                new UsernamePasswordAuthenticationToken(uid, null, authorities));
                         }
                     }
                     chain.doFilter(req, res);

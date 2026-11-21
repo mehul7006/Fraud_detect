@@ -15,6 +15,24 @@ import io.flutter.plugin.common.MethodChannel
 /** Bridge: Flutter <-> native protection features. Channel name must match lib/core/native_bridge.dart */
 class MainActivity : FlutterActivity() {
     private val channel = "com.fraudshield.app/native"
+    private var sharedText: String? = null
+
+    // 4.8: a link shared from the browser (Share -> FraudShield) arrives as ACTION_SEND text/plain
+    private fun captureShare(i: Intent?) {
+        if (i?.action == Intent.ACTION_SEND && i.type == "text/plain") {
+            sharedText = i.getStringExtra(Intent.EXTRA_TEXT)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        captureShare(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        captureShare(intent)
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -61,6 +79,7 @@ class MainActivity : FlutterActivity() {
                         }
                     }
                     "auditApps" -> result.success(AppAuditor.audit(this))
+                    "takeSharedText" -> { val t = sharedText; sharedText = null; result.success(t) }
                     "takePendingEvents" -> result.success(AdNotificationListener.takePending(this))
                     "scanNewFiles" -> result.success(FileScanner.scanNew(this))
                     "deleteFile" -> result.success(FileScanner.delete(call.argument<String>("path") ?: ""))

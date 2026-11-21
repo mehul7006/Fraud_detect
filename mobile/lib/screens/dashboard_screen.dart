@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../core/native_bridge.dart';
 import '../core/protection_engine.dart';
+import 'settings_screen.dart';
 import 'sms_audit_screen.dart';
 import 'sms_forwarding_screen.dart';
 import 'takeover_wizard_screen.dart';
@@ -74,7 +75,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       barrierDismissible: !critical,
       builder: (c) => AlertDialog(
         backgroundColor: critical ? Colors.red.shade50 : null,
-        icon: Icon(critical ? Icons.gpp_bad : Icons.warning_amber, color: critical ? Colors.red : Colors.orange, size: 40),
+        icon: a.severity == 'INFO'
+            ? const Icon(Icons.info_outline, color: Colors.blueGrey, size: 40)
+            : Icon(critical ? Icons.gpp_bad : Icons.warning_amber, color: critical ? Colors.red : Colors.orange, size: 40),
         title: Text(a.title),
         content: SingleChildScrollView(child: Text(a.body)),
         actions: [
@@ -98,6 +101,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('FraudShield'), actions: [
           IconButton(icon: const Icon(Icons.history), tooltip: 'Threat history', onPressed: () => _open(ThreatsScreen(api: widget.api))),
+          IconButton(icon: const Icon(Icons.tune), tooltip: 'Link settings', onPressed: () => _open(SettingsScreen(engine: engine))),
           IconButton(icon: const Icon(Icons.logout), tooltip: 'Log out', onPressed: () async { await (widget.api ?? ApiClient.instance).logout(); widget.onLogout(); }),
         ]),
         body: ValueListenableBuilder<Map<String, String>>(

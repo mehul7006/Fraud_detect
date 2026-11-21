@@ -33,6 +33,9 @@ class NativeBridge {
     return l.map((e) => Map<String, String>.from(e as Map)).toList();
   }
 
+  /// Text the user shared into FraudShield from another app (Share -> FraudShield), or null. Read once.
+  static Future<String?> takeSharedText() async => await _ch.invokeMethod<String>('takeSharedText');
+
   static Future<List<Map<String, dynamic>>> scanNewFiles() async {
     final l = await _ch.invokeMethod<List<dynamic>>('scanNewFiles') ?? [];
     return l.map((e) => Map<String, dynamic>.from(e as Map)).toList();

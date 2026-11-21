@@ -38,4 +38,10 @@ public final class Repositories {
     public interface BlocklistRepository extends JpaRepository<Blocklist, Long> {
         Optional<Blocklist> findByKindAndValue(String kind, String value);
     }
+
+    @Repository
+    public interface UrlFeedbackRepository extends JpaRepository<UrlFeedback, Long> {
+        boolean existsByUserIdAndHostAndStatus(Long userId, String host, String status);
+        List<UrlFeedback> findByStatusOrderByCreatedAtAsc(String status);
+    }
 }

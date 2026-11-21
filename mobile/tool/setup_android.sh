@@ -16,6 +16,27 @@ rm -rf android/app/src/main/kotlin/com/fraudshield/fraudshield
 mkdir -p "$PKG_DIR"
 cp android-native/kotlin/*.kt "$PKG_DIR/"
 
+# unit tests for pure-Kotlin code (4.6): copy tests and add JUnit
+mkdir -p android/app/src/test/kotlin/com/fraudshield/app
+cp android-native/test/*.kt android/app/src/test/kotlin/com/fraudshield/app/ 2>/dev/null || true
+for f in android/app/build.gradle.kts android/app/build.gradle; do
+  if [ -f "$f" ] && ! grep -q "junit:junit" "$f"; then
+    if [[ "$f" == *.kts ]]; then printf '
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+}
+' >> "$f"
+    else printf '
+dependencies {
+    testImplementation "junit:junit:4.13.2"
+}
+' >> "$f"; fi
+  fi
+done
+
+# Windows with the project and the pub cache on different drives breaks Kotlin incremental caches
+grep -q 'kotlin.incremental' android/gradle.properties || echo 'kotlin.incremental=false' >> android/gradle.properties
+
 # minSdk 26 (USSD API) - works for both groovy and kotlin gradle files
 for f in android/app/build.gradle android/app/build.gradle.kts; do
   [ -f "$f" ] && sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/; s/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/' "$f"

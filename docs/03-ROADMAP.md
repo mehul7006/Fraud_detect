@@ -101,7 +101,7 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 | 3.4 | FE | Parse response → ACTIVE/OFF/UNKNOWN | `protection_engine.dart` `looksForwarded` | Unit test on ≥10 real carrier texts (Jio, Airtel, Vi, BSNL) | 🟡 (classifier + server rules + 16 synthetic samples pass. Still needs >=10 REAL carrier captures; the tile now shows unreadable carrier wording so they can be collected) |
 | 3.5 | FE | One-tap disable `##002#` + re-check | `CallForwardChecker.kt`, engine | After disable, tile turns OFF | ✅ (logic tested incl. re-check; whether a carrier honours ##002# needs a real SIM) |
 | 3.6 | FE | Fallback: open dialer with code when USSD API unsupported | `MainActivity.kt` `dialCode` | Works on Android 8–14 devices without permission | ✅ (tests; on device: "Check manually" opens the dialer with *#21#) |
-| 3.7 | FE | SMS-stealer audit: list apps with SMS permission + notification listener | `AppAuditor.kt` | Test app with READ_SMS appears in list | 🟡 (screen verified on device: lists the 14 system apps that read SMS. A user-installed READ_SMS test app is built but not yet installed: emulator went offline, C: is full) |
+| 3.7 | FE | SMS-stealer audit: list apps with SMS permission + notification listener | `AppAuditor.kt` | Test app with READ_SMS appears in list | ✅ (on emulator: installed a test app declaring READ_SMS; the audit screen lists it under "Installed by you (1)" as "SMS Test App - Reads SMS" with an Uninstall button, plus the 14 system apps) |
 | 3.8 | FE | SMS forwarding guidance screen (carrier steps) | `dashboard_screen.dart` | Dialog content reviewed by non-technical user | ✅ (tests; on device: three checks shown, button opens the audit) |
 
 ---
@@ -109,16 +109,16 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 ## Phase 4 – Link protection (Weeks 5–7)
 | ID | Track | Deliverable | Files | Done when | Status |
 |---|---|---|---|---|---|
-| 4.1 | BE | Google Safe Browsing integration (hash-prefix/URL lookup) behind interface | `UrlScanService.externalReputation` | Known test URL from Google returns +score | ⬜ |
-| 4.2 | BE | Result cache (host → verdict, 24h) to cut cost/latency | Caffeine cache | Second scan of same host <5 ms | ⬜ |
-| 4.3 | BE | Blocklist admin API + CSV import (ADMIN role) | `BlocklistController` | Added domain is MALICIOUS next scan | ⬜ |
-| 4.4 | BE | False-positive report endpoint + review queue | `POST /scan/url/feedback` | Report stored and visible to admin | ⬜ |
+| 4.1 | BE | Google Safe Browsing integration (hash-prefix/URL lookup) behind interface | `UrlScanService.externalReputation` | Known test URL from Google returns +score | 🟡 (provider, config, 5 stub-server tests pass; needs a real `SAFE_BROWSING_KEY` run against Google's test URL) |
+| 4.2 | BE | Result cache (host → verdict, 24h) to cut cost/latency | Caffeine cache | Second scan of same host <5 ms | ✅ (Caffeine, key = URL without query, failures never cached; 2 cache tests, cached lookup 0 ms) |
+| 4.3 | BE | Blocklist admin API + CSV import (ADMIN role) | `BlocklistController` | Added domain is MALICIOUS next scan | ✅ (V3 migration, role in JWT, `/admin/**` ADMIN-only, CSV import, `ADMIN_EMAIL` bootstrap; `AdminFeedbackIT`) |
+| 4.4 | BE | False-positive report endpoint + review queue | `POST /scan/url/feedback` | Report stored and visible to admin | ✅ (host-only storage, duplicate → 409, admin queue + close with ADD_TO_BLOCKLIST; `AdminFeedbackIT`) |
 | 4.5 | FE | Notification listener captures notifications from all apps | `AdNotificationListener.kt` | Test notification with URL stored in pending list | ✅ (on device: listener stored link events from posted notifications) |
-| 4.6 | FE | URL extraction regex (http, www, bare domains, .apk) with unit test | `AdNotificationListener.kt` | 20 sample strings extract correctly | 🟡 (no test yet) |
+| 4.6 | FE | URL extraction regex (http, www, bare domains, .apk) with unit test | `AdNotificationListener.kt` | 20 sample strings extract correctly | ✅ (`UrlExtractor.kt` + 20 JUnit cases: `20 tests completed, 0 failed`; Dart port with the same 20 samples; CI step added) |
 | 4.7 | FE | Scan queue → backend → verdict → popup/notification | `protection_engine.dart` `_handleLink` | WhatsApp phishing text triggers popup in ≤20 s | ✅ (on device: phishing link -> in-app popup + system alert in ~16 s. Used a shell-posted notification, not real WhatsApp) |
-| 4.8 | FE | Share-to-FraudShield (receive text intent in Flutter and scan) | `MainActivity.kt` + Dart handler | Share a link from browser → verdict shown | ⬜ (manifest ready, handler missing) |
-| 4.9 | FE | Per-app monitoring toggles + "trust this domain" list | settings screen | Disabled app's links ignored | ⬜ |
-| 4.10 | FE | Offline queue: links captured offline scanned when online | Dart/SQLite | Airplane-mode test passes | ⬜ |
+| 4.8 | FE | Share-to-FraudShield (receive text intent in Flutter and scan) | `MainActivity.kt` + Dart handler | Share a link from browser → verdict shown | ✅ (Share → FraudShield on emulator: shared `example-phish.test` link → backend recorded MALICIOUS_LINK → "DANGEROUS LINK" popup; 3 engine tests) |
+| 4.9 | FE | Per-app monitoring toggles + "trust this domain" list | settings screen | Disabled app's links ignored | ✅ (settings screen: per-app switches + trusted domains, saved on phone; 4 engine tests. Not yet clicked through on a device) |
+| 4.10 | FE | Offline queue: links captured offline scanned when online | Dart/SQLite | Airplane-mode test passes | 🟡 (offline queue in SharedPreferences, max 100, flushed each loop; 3 tests pass. Airplane-mode run on device not done) |
 
 ---
 

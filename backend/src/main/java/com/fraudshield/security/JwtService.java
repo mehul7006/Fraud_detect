@@ -19,10 +19,22 @@ public class JwtService {
         this.ttlMillis = ttlMinutes * 60_000;
     }
 
-    public String create(Long userId) {
+    public String create(Long userId) { return create(userId, "USER"); }
+
+    public String create(Long userId, String role) {
         Date now = new Date();
-        return Jwts.builder().subject(String.valueOf(userId)).issuedAt(now)
+        return Jwts.builder().subject(String.valueOf(userId)).claim("role", role).issuedAt(now)
                 .expiration(new Date(now.getTime() + ttlMillis)).signWith(key).compact();
+    }
+
+    /** @return role claim ("USER" when missing) or null when token invalid/expired */
+    public String parseRole(String token) {
+        try {
+            Object r = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().get("role");
+            return r == null ? "USER" : r.toString();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** @return userId or null when token invalid/expired */

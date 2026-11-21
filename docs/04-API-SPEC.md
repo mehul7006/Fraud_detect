@@ -7,6 +7,13 @@
 | POST | /devices | `{deviceId,model,osVersion,simHash,rooted,playProtectOn,remoteAppsInstalled[]}` | `{deviceId,cloneRiskScore,reasons[]}` |
 | POST | /devices/heartbeat | same as above | same |
 | POST | /scan/url | `{url,sourceApp}` | `{verdict,score,reasons[]}` |
+| POST | /scan/url/feedback | `{url,kind:FALSE_POSITIVE\|FALSE_NEGATIVE,note?}` (host only is stored) | 204 (409 duplicate) |
+| GET | /admin/blocklist | – (ADMIN) | list of `{id,kind,value,reason}` |
+| POST | /admin/blocklist | `{kind:DOMAIN\|SHA256,value,reason?}` (ADMIN) | 201 (409 duplicate) |
+| DELETE | /admin/blocklist/{id} | – (ADMIN) | 204 |
+| POST | /admin/blocklist/import | multipart CSV `kind,value,reason`, max 5000 rows (ADMIN) | `{added,skipped,errors[]}` |
+| GET | /admin/feedback?status=OPEN | – (ADMIN) | list of reports |
+| POST | /admin/feedback/{id}/close | `{resolution:ADD_TO_BLOCKLIST\|ALLOW\|DISMISS}` (ADMIN) | closed report |
 | POST | /scan/file | `{sha256,fileName,sizeBytes,mimeType,sourceApp,headerHex}` | `{verdict,score,reasons[],action}` |
 | POST | /scan/apps | `{apps:[{packageName,label,notifPerHour,hasOverlayPermission,hasSmsPermission,hasAccessibility,isSystem}]}` | `{results:[{packageName,adAbuseScore,verdict,reasons[]}]}` |
 | GET | /threats?status=OPEN | – | list of ThreatEvent |
@@ -19,7 +26,6 @@ Verdict: `SAFE`, `SUSPICIOUS`, `MALICIOUS`. Score 0–100.
 | Method | Path | Body | Response | Phase |
 |---|---|---|---|---|
 | POST | /scan/url | `{url,sourceApp}` | adds `reasonCodes[]`, `impersonatedBrand`, `officialUrl`, `mlScore`, `explanation{en,hi}` | 10.9, 11 |
-| POST | /scan/url/feedback | `{url,kind:FALSE_POSITIVE|FALSE_NEGATIVE,note?}` | 204 | 11.8 |
 | POST | /scan/domain | `{domain}` (no path/query) | `{verdict,score,reasonCodes[]}` | 12.6 |
 | GET | /config/blocklist?since=v | – | `{version,added[],removed[],signature}` (hashed domains) | 12.5 |
 | GET | /config/domains?since=v | – | domain categories (ads/analytics/tracker/malware) | 13.6 |

@@ -12,6 +12,8 @@ public class Blocklist {
     private String reason;
 
     protected Blocklist() {}
+    public Blocklist(String kind, String value, String reason) { this.kind = kind; this.value = value; this.reason = reason; }
+    public Long getId() { return id; }
     public String getKind() { return kind; }
     public String getValue() { return value; }
     public String getReason() { return reason; }

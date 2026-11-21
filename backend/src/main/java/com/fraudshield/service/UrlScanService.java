@@ -26,7 +26,14 @@ public class UrlScanService {
 
     private final BlocklistRepository blocklist;
 
-    public UrlScanService(BlocklistRepository blocklist) { this.blocklist = blocklist; }
+    private final ReputationProvider reputation;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public UrlScanService(BlocklistRepository blocklist, ReputationProvider reputation) {
+        this.blocklist = blocklist; this.reputation = reputation;
+    }
+
+    public UrlScanService(BlocklistRepository blocklist) { this(blocklist, new NoopReputationProvider()); }
 
     public ScanResponse scan(String rawUrl) {
         List<String> reasons = new ArrayList<>();
@@ -74,7 +81,8 @@ public class UrlScanService {
         }
         if (uri.getUserInfo() != null) { score += 30; reasons.add("Credentials (@) trick in URL"); }
 
-        score += externalReputation(host);
+        int ext = externalReputation(rawUrl);
+        if (ext > 0) { score += ext; reasons.add("Listed by Google Safe Browsing"); }
         score = Math.min(100, score);
         return new ScanResponse(Verdict.fromScore(score), score, reasons);
     }
@@ -84,6 +92,9 @@ public class UrlScanService {
         return p.length <= 2 ? host : p[p.length - 2] + "." + p[p.length - 1];
     }
 
-    /** Hook for Safe Browsing / VirusTotal. Return extra score 0-100. */
-    protected int externalReputation(String host) { return 0; }
+    /** Asks the reputation provider about the full URL. A provider failure counts as 0: the scan still works. */
+    protected int externalReputation(String url) {
+        Integer s = reputation.score(url);
+        return s == null ? 0 : s;
+    }
 }

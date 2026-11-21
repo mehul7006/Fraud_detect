@@ -18,3 +18,6 @@ server:
 fraudshield:
   jwt:
     ttl-minutes: 43200
+  safebrowsing:
+    api-key: ${SAFE_BROWSING_KEY:}
+  admin-email: ${ADMIN_EMAIL:}

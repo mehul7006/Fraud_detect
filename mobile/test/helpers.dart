@@ -18,6 +18,7 @@ class FakeNative {
   bool notifAccess = false, filesAccess = false, phone = false, notifPermission = true;
   List<Map<String, dynamic>> apps = [];
   List<Map<String, String>> pendingEvents = [];
+  String? sharedText;
   List<Map<String, dynamic>> newFiles = [];
   Map<String, dynamic> deviceInfo = {
     'deviceId': 'dev1', 'model': 'Test', 'osVersion': 'Android 13', 'simHash': 's', 'fingerprint': 'f',
@@ -51,6 +52,10 @@ class FakeNative {
           return notifPermission;
         case 'getDeviceInfo':
           return deviceInfo;
+        case 'takeSharedText':
+          final t = sharedText;
+          sharedText = null;
+          return t;
         case 'takePendingEvents':
           final e = pendingEvents;
           pendingEvents = [];
