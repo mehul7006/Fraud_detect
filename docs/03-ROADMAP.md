@@ -109,7 +109,7 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 ## Phase 4 – Link protection (Weeks 5–7)
 | ID | Track | Deliverable | Files | Done when | Status |
 |---|---|---|---|---|---|
-| 4.1 | BE | Google Safe Browsing integration (hash-prefix/URL lookup) behind interface | `UrlScanService.externalReputation` | Known test URL from Google returns +score | 🟡 (provider, config, 5 stub-server tests pass; needs a real `SAFE_BROWSING_KEY` run against Google's test URL) |
+| 4.1 | BE | Google Safe Browsing integration (hash-prefix/URL lookup) behind interface | `UrlScanService.externalReputation` | Known test URL from Google returns +score | ✅ (live: Google's test pages testsafebrowsing.appspot.com/s/malware.html and /phishing.html return MALICIOUS with reason "Listed by Google Safe Browsing"; wikipedia stays SAFE; key kept only in the git-ignored `.env`) |
 | 4.2 | BE | Result cache (host → verdict, 24h) to cut cost/latency | Caffeine cache | Second scan of same host <5 ms | ✅ (Caffeine, key = URL without query, failures never cached; 2 cache tests, cached lookup 0 ms) |
 | 4.3 | BE | Blocklist admin API + CSV import (ADMIN role) | `BlocklistController` | Added domain is MALICIOUS next scan | ✅ (V3 migration, role in JWT, `/admin/**` ADMIN-only, CSV import, `ADMIN_EMAIL` bootstrap; `AdminFeedbackIT`) |
 | 4.4 | BE | False-positive report endpoint + review queue | `POST /scan/url/feedback` | Report stored and visible to admin | ✅ (host-only storage, duplicate → 409, admin queue + close with ADD_TO_BLOCKLIST; `AdminFeedbackIT`) |
