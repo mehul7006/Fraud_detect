@@ -61,7 +61,7 @@ jobs:
         working-directory: mobile/android
         run: |
           set +e
-          bash ./gradlew testDebugUnitTest --console=plain > ../gradle-test.log 2>&1
+          bash ./gradlew :app:testDebugUnitTest --console=plain > ../gradle-test.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             # surface the end of the log as a public annotation so a failure can be diagnosed
