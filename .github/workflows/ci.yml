@@ -58,7 +58,17 @@ jobs:
       - name: Unit tests
         run: flutter test
       - name: Kotlin unit tests (URL extractor, 4.6)
-        run: cd android && ./gradlew testDebugUnitTest
+        working-directory: mobile/android
+        run: |
+          set +e
+          bash ./gradlew testDebugUnitTest --console=plain > ../gradle-test.log 2>&1
+          code=$?
+          if [ $code -ne 0 ]; then
+            # surface the end of the log as a public annotation so a failure can be diagnosed
+            msg=$(grep -vE '^[[:space:]]*$' ../gradle-test.log | tail -25 | head -c 3500 | tr -d '\r' | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Kotlin tests failed::$msg"
+          fi
+          exit $code
       - name: Build debug APK (compiles the Kotlin code)
         run: flutter build apk --debug
       - name: Upload APK
