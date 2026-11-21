@@ -1,3 +1,4 @@
+// ignore_for_file: prefer_interpolation_to_compose_strings  (regex is assembled from named parts on purpose)
 /// Dart port of android-native/kotlin/UrlExtractor.kt (used for text shared into the app, 4.8).
 /// Both are tested with the same 20 samples.
 class UrlExtractor {
