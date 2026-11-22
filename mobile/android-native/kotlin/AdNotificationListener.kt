@@ -23,11 +23,11 @@ class AdNotificationListener : NotificationListenerService() {
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         val now = System.currentTimeMillis()
 
-        // 1. count notifications in the last hour
-        val key = "n_$pkg"
-        val kept = (prefs.getString(key, "") ?: "").split(",").mapNotNull { it.toLongOrNull() }
-            .filter { now - it < HOUR } + now
-        prefs.edit().putString(key, kept.joinToString(",")).apply()
+        // 1. count notifications in the last hour (timestamps only, capped per package - 6.4)
+        synchronized(LOCK) {
+            val key = "n_$pkg"
+            prefs.edit().putString(key, NotifCounter.add(prefs.getString(key, null), now)).apply()
+        }
 
         val extras = sbn.notification.extras
         val text = listOfNotNull(extras.getCharSequence("android.title"), extras.getCharSequence("android.text"),
@@ -63,7 +63,6 @@ class AdNotificationListener : NotificationListenerService() {
     companion object {
         const val PREFS = "fraudshield_events"
         private const val EVENTS = "pending"
-        private const val HOUR = 3_600_000L
         private const val DEDUPE_MS = 300_000L // same link within 5 minutes is queued once
         private val seen = object : LinkedHashMap<String, Long>(64, 0.75f, false) {
             override fun removeEldestEntry(e: MutableMap.MutableEntry<String, Long>) = size > 200
@@ -78,11 +77,10 @@ class AdNotificationListener : NotificationListenerService() {
             return true
         }
 
-        fun notifPerHour(ctx: Context, pkg: String): Int {
-            val now = System.currentTimeMillis()
-            return (ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("n_$pkg", "") ?: "")
-                .split(",").mapNotNull { it.toLongOrNull() }.count { now - it < HOUR }
-        }
+        private val LOCK = Any()
+
+        fun notifPerHour(ctx: Context, pkg: String): Int =
+            NotifCounter.count(ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("n_$pkg", null), System.currentTimeMillis())
 
         /** Returns pending events as list of maps and clears them. */
         @Synchronized

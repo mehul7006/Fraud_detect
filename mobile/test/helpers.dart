@@ -15,7 +15,8 @@ ApiClient apiWith(MockClientHandler h, {TokenStore? store}) =>
 class FakeNative {
   static const channel = MethodChannel('com.fraudshield.app/native');
 
-  bool notifAccess = false, filesAccess = false, phone = false, notifPermission = true;
+  bool notifAccess = false, filesAccess = false, phone = false, notifPermission = true, usageAccess = true;
+  Set<String> installed = {};
   List<Map<String, dynamic>> apps = [];
   List<Map<String, String>> pendingEvents = [];
   String? sharedText;
@@ -62,6 +63,10 @@ class FakeNative {
           return e;
         case 'scanNewFiles':
           return newFiles;
+        case 'hasUsageAccess':
+          return usageAccess;
+        case 'isInstalled':
+          return installed.contains((call.arguments as Map)['package']);
         case 'auditApps':
           return apps;
         case 'checkCallForwarding':

@@ -42,26 +42,29 @@ for f in android/app/build.gradle android/app/build.gradle.kts; do
   [ -f "$f" ] && sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/; s/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/' "$f"
 done
 
-# merge manifest entries once (python3 on Linux/macOS, python on Windows Git Bash)
+# merge manifest entries (idempotent: each permission / component is added only if missing, so re-running
+# the script on an existing android/ folder also picks up permissions added in later phases)
 PYBIN=$(command -v python3 || command -v python)
 "$PYBIN" - <<'PY'
 p = 'android/app/src/main/AndroidManifest.xml'
 m = open(p, encoding='utf-8').read()
-if 'AdNotificationListener' in m:
-    print('manifest already merged'); raise SystemExit
-perms = ''.join(f'    <uses-permission android:name="android.permission.{x}"/>\n' for x in
-    ['INTERNET', 'POST_NOTIFICATIONS', 'USE_FULL_SCREEN_INTENT', 'CALL_PHONE', 'READ_PHONE_STATE',
-     'QUERY_ALL_PACKAGES', 'MANAGE_EXTERNAL_STORAGE'])
-svc = ('        <service android:name=".AdNotificationListener" android:exported="true" '
-       'android:label="FraudShield link and ad monitor" '
-       'android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">\n'
-       '            <intent-filter><action android:name="android.service.notification.NotificationListenerService"/></intent-filter>\n'
-       '        </service>\n')
-share = ('            <intent-filter><action android:name="android.intent.action.SEND"/>'
-         '<category android:name="android.intent.category.DEFAULT"/><data android:mimeType="text/plain"/></intent-filter>\n')
-m = m.replace('<application', perms + '    <application', 1)
-m = m.replace('</application>', svc + '    </application>', 1)
-m = m.replace('</activity>', share + '        </activity>', 1)
+perms = ['INTERNET', 'POST_NOTIFICATIONS', 'USE_FULL_SCREEN_INTENT', 'CALL_PHONE', 'READ_PHONE_STATE',
+         'QUERY_ALL_PACKAGES', 'MANAGE_EXTERNAL_STORAGE', 'PACKAGE_USAGE_STATS', 'REQUEST_DELETE_PACKAGES']
+add = ''.join(f'    <uses-permission android:name="android.permission.{x}"/>\n' for x in perms
+              if f'android.permission.{x}"' not in m)
+if add:
+    m = m.replace('<application', add + '    <application', 1)
+if 'AdNotificationListener' not in m:
+    svc = ('        <service android:name=".AdNotificationListener" android:exported="true" '
+           'android:label="FraudShield link and ad monitor" '
+           'android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">\n'
+           '            <intent-filter><action android:name="android.service.notification.NotificationListenerService"/></intent-filter>\n'
+           '        </service>\n')
+    m = m.replace('</application>', svc + '    </application>', 1)
+if 'android.intent.action.SEND' not in m:
+    share = ('            <intent-filter><action android:name="android.intent.action.SEND"/>'
+             '<category android:name="android.intent.category.DEFAULT"/><data android:mimeType="text/plain"/></intent-filter>\n')
+    m = m.replace('</activity>', share + '        </activity>', 1)
 open(p, 'w', encoding='utf-8').write(m)
 print('manifest merged')
 PY

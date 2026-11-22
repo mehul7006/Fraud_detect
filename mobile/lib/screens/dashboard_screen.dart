@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../core/native_bridge.dart';
 import '../core/protection_engine.dart';
+import 'risky_apps_screen.dart';
 import 'settings_screen.dart';
 import 'sms_audit_screen.dart';
 import 'sms_forwarding_screen.dart';
@@ -22,7 +23,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   late final ProtectionEngine engine = widget.engine ?? ProtectionEngine();
   StreamSubscription<Alert>? _sub;
-  bool _notifAccess = false, _filesAccess = false, _phoneAccess = false, _notifPermission = true;
+  bool _notifAccess = false, _filesAccess = false, _phoneAccess = false, _notifPermission = true, _usageAccess = true;
   bool _dialogOpen = false;
   final _queue = <Alert>[];
 
@@ -47,7 +48,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState s) {
     if (s == AppLifecycleState.resumed) {
       _refreshPerms();
-      if (widget.autoStart) engine.runFast();
+      if (widget.autoStart) {
+        engine.runFast();
+        engine.onResume();
+      }
     }
   }
 
@@ -56,7 +60,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     final f = await NativeBridge.hasAllFilesAccess();
     final p = await NativeBridge.hasPhonePermission();
     final np = await NativeBridge.hasNotificationPermission();
-    if (mounted) setState(() { _notifAccess = n; _filesAccess = f; _phoneAccess = p; _notifPermission = np; });
+    final u = await NativeBridge.hasUsageAccess();
+    if (mounted) setState(() { _notifAccess = n; _filesAccess = f; _phoneAccess = p; _notifPermission = np; _usageAccess = u; });
   }
 
   // ---- blocking popup, one at a time ----
@@ -121,7 +126,19 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             const SizedBox(height: 8),
             _forwardingTile(st['forwarding']),
             _tile(Icons.phonelink_lock, 'Clone / remote access', st['clone'], onTap: engine.checkDevice),
-            _tile(Icons.ads_click, 'Risky / ad-spam apps', st['apps'], onTap: engine.checkApps),
+            if (!_usageAccess)
+              _permCard('Find apps that open by themselves (optional)',
+                  'Allow Usage Access so FraudShield can notice apps that pop up without you tapping them. Only a count per app is kept; nothing leaves your phone except that count.',
+                  'Allow', () => NativeBridge.openUsageAccessSettings()),
+            Card(
+              child: ListTile(
+                leading: Icon(Icons.ads_click, color: (st['apps'] ?? '').contains('risky') ? Colors.red : Colors.green),
+                title: const Text('Risky / ad-spam apps'),
+                subtitle: Text(st['apps'] ?? 'checking...'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _open(RiskyAppsScreen(engine: engine)),
+              ),
+            ),
             _tile(Icons.link, 'Link protection', _notifAccess ? 'ON' : 'OFF'),
             _tile(Icons.insert_drive_file, 'File protection', _filesAccess ? 'ON' : 'OFF'),
             const Divider(height: 32),

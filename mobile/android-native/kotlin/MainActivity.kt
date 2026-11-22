@@ -78,7 +78,20 @@ class MainActivity : FlutterActivity() {
                             result.success(true)
                         }
                     }
-                    "auditApps" -> result.success(AppAuditor.audit(this))
+                    "auditApps" -> Thread {
+                        // reading packages + usage events can take a second; keep the UI thread free
+                        val r = try { AppAuditor.audit(this) } catch (e: Exception) { null }
+                        runOnUiThread { if (r != null) result.success(r) else result.error("AUDIT_FAILED", "app audit failed", null) }
+                    }.start()
+                    "hasUsageAccess" -> result.success(UsageAuditor.hasUsageAccess(this))
+                    "openUsageAccessSettings" -> { UsageAuditor.openUsageAccessSettings(this); result.success(true) }
+                    "usageAudit" -> Thread {
+                        val r = try { UsageAuditor.selfLaunches(this) } catch (e: Exception) { emptyMap<String, Int>() }
+                        runOnUiThread { result.success(r) }
+                    }.start()
+                    "isInstalled" -> result.success(try {
+                        packageManager.getPackageInfo(call.argument<String>("package") ?: "", 0); true
+                    } catch (e: Exception) { false })
                     "takeSharedText" -> { val t = sharedText; sharedText = null; result.success(t) }
                     "takePendingEvents" -> result.success(AdNotificationListener.takePending(this))
                     "scanNewFiles" -> Thread {

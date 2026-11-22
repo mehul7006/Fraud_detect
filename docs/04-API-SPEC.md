@@ -15,7 +15,9 @@
 | GET | /admin/feedback?status=OPEN | – (ADMIN) | list of reports |
 | POST | /admin/feedback/{id}/close | `{resolution:ADD_TO_BLOCKLIST\|ALLOW\|DISMISS}` (ADMIN) | closed report |
 | POST | /scan/file | `{sha256,fileName,sizeBytes,mimeType,sourceApp,headerHex,flags?}` - flags: max 10 of `PDF_JS`, `PDF_LAUNCH`, `PDF_OPENACTION`, `OFFICE_MACRO` (names only, never content) | `{verdict,score,reasons[],action}` |
-| POST | /scan/apps | `{apps:[{packageName,label,notifPerHour,hasOverlayPermission,hasSmsPermission,hasAccessibility,isSystem}]}` | `{results:[{packageName,adAbuseScore,verdict,reasons[]}]}` |
+| POST | /scan/apps | `{apps:[{packageName,label,notifPerHour,hasOverlayPermission,hasSmsPermission,hasAccessibility,hasNotificationListener,hasFullScreenIntent,selfLaunchCount?,isSystem}],deviceId?}` | `{results:[{packageName,adAbuseScore,verdict,reasons[],newSinceLastScan}]}` (newSinceLastScan only with deviceId) |
+| GET | /admin/apps?verdict=GOOD\|BAD | – (ADMIN) | list of `{packageName,label,verdict,source}` |
+| POST | /admin/apps | `{packageName,label?,verdict:GOOD\|BAD}` (ADMIN) | the saved entry |
 | GET | /threats?status=OPEN | – | list of ThreatEvent |
 | GET | /threats/summary | – | `{total,open,byType{TYPE:n},bySeverity{SEV:n}}` (every key present, 0 when none) |
 | POST | /threats/{id}/resolve | – | 204 |

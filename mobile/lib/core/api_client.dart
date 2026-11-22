@@ -99,7 +99,8 @@ class ApiClient {
   static List<String> _flagNames(Object? raw) =>
       raw is List ? raw.whereType<String>().where(_knownFlags.contains).take(10).toList() : <String>[];
 
-  Future<Map<String, dynamic>> scanApps(List<Map<String, dynamic>> apps) => _post('/scan/apps', {'apps': apps});
+  Future<Map<String, dynamic>> scanApps(List<Map<String, dynamic>> apps, {String? deviceId}) =>
+      _post('/scan/apps', {'apps': apps, if (deviceId != null) 'deviceId': deviceId});
 
   Future<Map<String, dynamic>> heartbeat(Map<String, dynamic> device) => _post('/devices/heartbeat', device);
 

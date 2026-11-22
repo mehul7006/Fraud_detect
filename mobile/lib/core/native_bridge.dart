@@ -42,6 +42,11 @@ class NativeBridge {
   }
 
   static Future<bool> deleteFile(String path) async => (await _ch.invokeMethod<bool>('deleteFile', {'path': path})) ?? false;
+  /// 6.6 Usage Access (opt-in) lets FraudShield count apps that open themselves.
+  static Future<bool> hasUsageAccess() async => (await _ch.invokeMethod<bool>('hasUsageAccess')) ?? false;
+  static Future<void> openUsageAccessSettings() => _ch.invokeMethod('openUsageAccessSettings');
+  static Future<bool> isInstalled(String pkg) async => (await _ch.invokeMethod<bool>('isInstalled', {'package': pkg})) ?? false;
+
   static Future<void> uninstallApp(String pkg) => _ch.invokeMethod('uninstallApp', {'package': pkg});
   static Future<bool> openApp(String pkg) async => (await _ch.invokeMethod<bool>('openApp', {'package': pkg})) ?? false;
   static Future<void> showAlert(String title, String body, {int id = 1}) =>

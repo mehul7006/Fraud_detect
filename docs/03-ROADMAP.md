@@ -139,14 +139,14 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 ## Phase 6 – Ad-abuse detection (Weeks 8–9)
 | ID | Track | Deliverable | Files | Done when | Status |
 |---|---|---|---|---|---|
-| 6.1 | BE | Tune scoring weights from beta data; config via `application.yml` | `AdAbuseService` | Precision ≥90% on 30 labelled apps | ⬜ |
-| 6.2 | BE | App reputation table (package → known good/bad), seeded with top 500 apps | `app_reputation` + migration | Known-good apps never flagged | ⬜ |
-| 6.3 | BE | Per-device app history (detect new risky app installed) | `device_apps` | "New app since last scan" in response | ⬜ |
-| 6.4 | FE | Notification counting per package per hour | `AdNotificationListener.kt` | Spam test app reaches ≥20/h | 🟡 |
-| 6.5 | FE | Overlay / full-screen-intent / accessibility / listener permission audit | `AppAuditor.kt` | Flags test app with SYSTEM_ALERT_WINDOW | 🟡 |
-| 6.6 | FE | UsageStats: apps launched without user action / background starts (needs Usage Access) | new `UsageAuditor.kt` | Detects app that opens itself | ⬜ |
-| 6.7 | FE | Uninstall flow + "Ignore this app" | `MainActivity.kt` `uninstallApp` | System uninstall dialog appears | 🟡 |
-| 6.8 | FE | Risky apps screen (list with reasons) | new screen | All flagged apps visible with reasons | ⬜ |
+| 6.1 | BE | Tune scoring weights from beta data; config via `application.yml` | `AdAbuseService` | Precision ≥90% on 30 labelled apps | 🟡 (weights in `AdAbuseProperties` / application.yml; `AdAbuseAccuracyTest`: precision 100%, recall 10/15 -> 12/15 after tuning. Gate met on 30 SYNTHETIC profiles - re-run with real labelled beta data) |
+| 6.2 | BE | App reputation table (package → known good/bad), seeded with top 500 apps | `app_reputation` + migration | Known-good apps never flagged | 🟡 (`app_reputation` table + admin `POST/GET /admin/apps`; GOOD never flagged (live: WhatsApp at 30 notif/h -> SAFE 0), BAD always flagged; `Phase6IT`. Seed is a hand-curated starter list of 42 apps, not yet the top 500) |
+| 6.3 | BE | Per-device app history (detect new risky app installed) | `device_apps` | "New app since last scan" in response | ✅ (`device_apps`; live curl: 1st scan nothing new, 2nd scan adware `newSinceLastScan:true`; threat recorded once, not every hour; `Phase6IT` 2 tests) |
+| 6.4 | FE | Notification counting per package per hour | `AdNotificationListener.kt` | Spam test app reaches ≥20/h | ✅ (`NotifCounter`: 1 h window, cap 100/package, counters of uninstalled apps removed; 6 Kotlin tests; on emulator 22 test notifications -> 22 counted in the last hour) |
+| 6.5 | FE | Overlay / full-screen-intent / accessibility / listener permission audit | `AppAuditor.kt` | Flags test app with SYSTEM_ALERT_WINDOW | ✅ (overlay = app-op really allowed, accessibility / listener = switched ON. On emulator: test app requesting SYSTEM_ALERT_WINDOW scored 25 (not counted); after allowing it in Settings -> 50 with "Can draw over other apps") |
+| 6.6 | FE | UsageStats: apps launched without user action / background starts (needs Usage Access) | new `UsageAuditor.kt` | Detects app that opens itself | ✅ (`UsageAuditor` + `SelfLaunchRule` (7 Kotlin tests), Usage Access card (opt-in), counts only leave the phone. On emulator: test app pushed in front of Settings 3x with no tap -> "Opened itself 3 times in 24 h", score 95 MALICIOUS. Found and fixed: Settings registers a fallback HOME and was wrongly treated as a launcher) |
+| 6.7 | FE | Uninstall flow + "Ignore this app" | `MainActivity.kt` `uninstallApp` | System uninstall dialog appears | ✅ (on emulator: Uninstall opens the system "Do you want to uninstall this app?" dialog; Cancel -> app re-checked and still listed; Ignore hides it until its score rises; `REQUEST_DELETE_PACKAGES` added; 3 Dart tests) |
+| 6.8 | FE | Risky apps screen (list with reasons) | new screen | All flagged apps visible with reasons | ✅ (`risky_apps_screen.dart`: sorted by score, reason chips, NEW badge, pull-to-refresh, empty/loading/error states, Uninstall + Ignore; 5 widget tests; on emulator shows the test app with all its reasons) |
 
 ---
 

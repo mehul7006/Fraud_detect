@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'api_client.dart';
 import 'carrier_classifier.dart';
+import 'ignored_apps.dart';
 import 'native_bridge.dart';
 import 'settings_store.dart';
 import 'url_extractor.dart';
@@ -21,6 +22,15 @@ class AlertAction {
   AlertAction(this.label, this.run);
 }
 
+/// One flagged app as shown on the risky-apps screen (6.8).
+class RiskyApp {
+  final String packageName, label, verdict;
+  final int score;
+  final List<String> reasons;
+  final bool isNew;
+  const RiskyApp(this.packageName, this.label, this.score, this.verdict, this.reasons, {this.isNew = false});
+}
+
 /// Orchestrates all checks. Runs while the app process is alive; the Kotlin listener keeps collecting
 /// events in the background, so nothing is lost when the app is closed.
 class ProtectionEngine {
@@ -37,6 +47,13 @@ class ProtectionEngine {
   final unrecognisedAnswer = ValueNotifier<String?>(null);
 
   final SettingsStore settings;
+  final IgnoredApps ignored;
+
+  /// Last app check result: every SUSPICIOUS / MALICIOUS app not ignored, highest score first (6.8).
+  final riskyApps = ValueNotifier<List<RiskyApp>>([]);
+  String? _deviceId;
+  bool _recheckAppsOnResume = false;
+  final _alertedApps = <String>{};
 
   /// Link scan bookkeeping (4.7): same link is not scanned twice within 10 minutes, at most 3 scans at once.
   static const dedupeWindow = Duration(minutes: 10);
@@ -45,9 +62,34 @@ class ProtectionEngine {
   int _running = 0;
   final _waiting = <Completer<void>>[];
 
-  ProtectionEngine({ApiClient? api, SettingsStore? settings})
+  ProtectionEngine({ApiClient? api, SettingsStore? settings, IgnoredApps? ignored})
       : api = api ?? ApiClient.instance,
-        settings = settings ?? SettingsStore();
+        settings = settings ?? SettingsStore(),
+        ignored = ignored ?? IgnoredApps();
+
+  /// Called when the app comes back to the front, e.g. after the system uninstall dialog (6.7).
+  Future<void> onResume() async {
+    if (_recheckAppsOnResume) {
+      _recheckAppsOnResume = false;
+      await checkApps();
+    }
+  }
+
+  Future<void> uninstall(String pkg) async {
+    _recheckAppsOnResume = true;
+    await NativeBridge.uninstallApp(pkg);
+  }
+
+  Future<void> ignoreApp(RiskyApp a) async {
+    await ignored.ignore(a.packageName, a.score);
+    riskyApps.value = riskyApps.value.where((x) => x.packageName != a.packageName).toList();
+    _set('apps', _appsStatus(riskyApps.value));
+  }
+
+  static String _appsStatus(List<RiskyApp> l) {
+    final bad = l.where((x) => x.verdict == 'MALICIOUS').length;
+    return bad == 0 ? 'OK' : '$bad risky';
+  }
 
   void start() {
     runFast();
@@ -242,6 +284,7 @@ class ProtectionEngine {
   Future<void> checkDevice() async {
     try {
       final info = await NativeBridge.deviceInfo();
+      _deviceId = info['deviceId'] as String?;
       final r = await api.heartbeat(info);
       final score = r['cloneRiskScore'] as int;
       _set('clone', score >= 50 ? 'RISK $score' : 'OK');
@@ -345,15 +388,28 @@ class ProtectionEngine {
               a['hasOverlayPermission'] == true ||
               a['hasSmsPermission'] == true ||
               a['hasAccessibility'] == true ||
-              a['hasNotificationListener'] == true)).take(300).toList();
-      final r = await api.scanApps(risky);
+              a['hasNotificationListener'] == true ||
+              ((a['selfLaunchCount'] as int?) ?? 0) > 0)).take(300).toList();
+      _deviceId ??= (await NativeBridge.deviceInfo())['deviceId'] as String?;
+      final r = await api.scanApps(risky, deviceId: _deviceId);
       final labels = {for (final a in apps) a['packageName'] as String: a['label'] as String};
-      final bad = (r['results'] as List).where((x) => x['verdict'] == 'MALICIOUS').toList();
-      _set('apps', bad.isEmpty ? 'OK' : '${bad.length} risky');
-      for (final x in bad) {
-        final pkg = x['packageName'] as String;
-        alerts.add(Alert('Risky app: ${labels[pkg] ?? pkg}', (x['reasons'] as List).join('\n'), 'HIGH', [
-          AlertAction('Uninstall', () => NativeBridge.uninstallApp(pkg)),
+      final ignoredNow = await ignored.all();
+      final list = <RiskyApp>[
+        for (final x in (r['results'] as List).cast<Map>())
+          if (x['verdict'] != 'SAFE' && !IgnoredApps.hides(ignoredNow, x['packageName'] as String, x['adAbuseScore'] as int))
+            RiskyApp(x['packageName'] as String, labels[x['packageName']] ?? x['packageName'] as String,
+                x['adAbuseScore'] as int, x['verdict'] as String, (x['reasons'] as List).cast<String>(),
+                isNew: x['newSinceLastScan'] == true),
+      ]..sort((a, b) => b.score.compareTo(a.score));
+      riskyApps.value = list;
+      _set('apps', _appsStatus(list));
+      // one popup per app (new install or first time seen this session), not every hour
+      for (final a in list.where((x) => x.verdict == 'MALICIOUS')) {
+        if (!a.isNew && _alertedApps.contains(a.packageName)) continue;
+        _alertedApps.add(a.packageName);
+        alerts.add(Alert('${a.isNew ? 'New risky app' : 'Risky app'}: ${a.label}', a.reasons.join('\n'), 'HIGH', [
+          AlertAction('Uninstall', () => uninstall(a.packageName)),
+          AlertAction('Ignore this app', () => ignoreApp(a)),
         ]));
       }
     } catch (e) {
