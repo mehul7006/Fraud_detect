@@ -46,6 +46,17 @@ public final class Repositories {
     }
 
     @Repository
+    public interface AppReputationRepository extends JpaRepository<AppReputation, Long> {
+        Optional<AppReputation> findByPackageName(String packageName);
+        List<AppReputation> findByVerdictOrderByPackageName(String verdict);
+    }
+
+    @Repository
+    public interface DeviceAppRepository extends JpaRepository<DeviceApp, Long> {
+        List<DeviceApp> findByUserIdAndDeviceId(Long userId, String deviceId);
+    }
+
+    @Repository
     public interface UrlFeedbackRepository extends JpaRepository<UrlFeedback, Long> {
         boolean existsByUserIdAndHostAndStatus(Long userId, String host, String status);
         List<UrlFeedback> findByStatusOrderByCreatedAtAsc(String status);

@@ -23,4 +23,12 @@ fraudshield:
   virustotal:
     enabled: ${VT_ENABLED:false}
     api-key: ${VT_API_KEY:}
+  # 6.1 ad-abuse weights (defaults live in AdAbuseProperties; override any of them here)
+  adabuse:
+    notif-high: 20
+    notif-high-weight: 50
+    overlay-weight: 25
+    accessibility-weight: 30
+    sms-weight: 25
+    self-launch-high-weight: 45
   admin-email: ${ADMIN_EMAIL:}

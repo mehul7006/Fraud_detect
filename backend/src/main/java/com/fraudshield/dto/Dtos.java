@@ -32,9 +32,28 @@ public final class Dtos {
     public record AppInfo(@NotBlank String packageName, String label, int notifPerHour,
                           boolean hasOverlayPermission, boolean hasSmsPermission,
                           boolean hasAccessibility, boolean hasNotificationListener,
-                          boolean hasFullScreenIntent, boolean isSystem) {}
-    public record AppsScanRequest(@Valid @NotNull List<AppInfo> apps) {}
-    public record AppResult(String packageName, int adAbuseScore, Verdict verdict, List<String> reasons) {}
+                          boolean hasFullScreenIntent, boolean isSystem, int selfLaunchCount) {
+        /** Older clients (before 6.6) send no selfLaunchCount. */
+        public AppInfo(String packageName, String label, int notifPerHour, boolean hasOverlayPermission,
+                       boolean hasSmsPermission, boolean hasAccessibility, boolean hasNotificationListener,
+                       boolean hasFullScreenIntent, boolean isSystem) {
+            this(packageName, label, notifPerHour, hasOverlayPermission, hasSmsPermission, hasAccessibility,
+                 hasNotificationListener, hasFullScreenIntent, isSystem, 0);
+        }
+    }
+    /** deviceId (6.3) is optional: without it no "new since last scan" tracking happens. */
+    public record AppsScanRequest(@Valid @NotNull List<AppInfo> apps, @Size(max = 100) String deviceId) {
+        public AppsScanRequest(List<AppInfo> apps) { this(apps, null); }
+    }
+    public record AppResult(String packageName, int adAbuseScore, Verdict verdict, List<String> reasons,
+                            Boolean newSinceLastScan) {
+        public AppResult(String packageName, int adAbuseScore, Verdict verdict, List<String> reasons) {
+            this(packageName, adAbuseScore, verdict, reasons, null);
+        }
+    }
+    public record AppReputationRequest(@NotBlank @Size(max = 200) String packageName, @Size(max = 120) String label,
+                                       @NotBlank @Pattern(regexp = "GOOD|BAD") String verdict) {}
+    public record AppReputationEntry(String packageName, String label, String verdict, String source) {}
     public record AppsScanResponse(List<AppResult> results) {}
 
     public record ThreatDto(Long id, String type, String severity, String title, String detail,

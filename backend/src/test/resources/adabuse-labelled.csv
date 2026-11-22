@@ -1,0 +1,33 @@
+# Roadmap 6.1 labelled set. SYNTHETIC profiles (no beta data exists yet) modelled on common real-world patterns.
+# Replace/extend with real labelled beta data when available. label: ABUSIVE | BENIGN
+label,name,notifPerHour,overlay,sms,accessibility,listener,fullScreen,isSystem,selfLaunch
+BENIGN,busy group chat (not on known-good list),25,false,false,false,false,true,false,0
+BENIGN,very busy chat app,40,false,false,false,false,true,false,0
+BENIGN,bank app with OTP auto-read,2,false,true,false,false,false,false,0
+BENIGN,password manager autofill,1,true,false,true,false,false,false,0
+BENIGN,smartwatch companion,1,false,false,false,true,false,false,0
+BENIGN,caller ID app,5,true,false,false,false,true,false,0
+BENIGN,news app,9,false,false,false,false,false,false,0
+BENIGN,alarm clock,0,false,false,false,false,true,false,2
+BENIGN,third-party launcher,1,true,false,false,true,false,false,0
+BENIGN,ride hailing,6,false,false,false,false,true,false,0
+BENIGN,accessibility helper for low vision,0,false,false,true,false,false,false,0
+BENIGN,default SMS app,10,false,true,false,false,false,false,0
+BENIGN,casual game,4,false,false,false,false,false,false,0
+BENIGN,food delivery,8,false,false,false,false,true,false,0
+BENIGN,fitness tracker with music control,3,false,false,false,true,false,false,0
+ABUSIVE,adware wallpaper,30,true,false,false,false,false,false,0
+ABUSIVE,fake phone cleaner,12,true,false,false,false,true,false,0
+ABUSIVE,banking trojan,0,true,true,true,true,false,false,0
+ABUSIVE,SMS stealer,0,false,true,false,true,false,false,0
+ABUSIVE,full-screen ad spammer,10,false,false,false,false,true,false,6
+ABUSIVE,flashlight adware,0,true,false,false,false,false,false,4
+ABUSIVE,predatory loan app,9,true,true,false,false,false,false,0
+ABUSIVE,remote access trojan,0,true,false,true,false,true,false,0
+ABUSIVE,adware game,22,false,false,false,false,true,false,2
+ABUSIVE,click-fraud app,0,true,false,false,true,false,false,10
+ABUSIVE,pure notification spammer,45,false,false,false,false,false,false,0
+ABUSIVE,OTP stealer via accessibility,0,false,true,true,false,false,false,0
+ABUSIVE,fake KYC app,5,true,true,false,true,false,false,0
+ABUSIVE,aggressive adware,15,true,false,false,false,true,false,0
+ABUSIVE,spyware,0,false,true,true,true,false,false,1

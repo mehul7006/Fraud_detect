@@ -1,0 +1,48 @@
+# Known-good apps (roadmap 6.2). GOOD = never flagged by the ad-abuse score.
+# Source: hand-curated list of widely used apps in India, package names as published on Google Play (2026-11).
+# This is a STARTER list (not the full top-500). Expand from a licensed public source before launch and keep
+# every package name exact - a wrong name only means that app is scored normally, never that a bad app is trusted.
+# Admins can add/override entries (GOOD or BAD) with POST /api/v1/admin/apps.
+package_name,label
+com.whatsapp,WhatsApp
+com.whatsapp.w4b,WhatsApp Business
+org.telegram.messenger,Telegram
+com.instagram.android,Instagram
+com.facebook.katana,Facebook
+com.facebook.orca,Messenger
+com.snapchat.android,Snapchat
+com.twitter.android,X (Twitter)
+com.linkedin.android,LinkedIn
+com.google.android.youtube,YouTube
+com.google.android.gm,Gmail
+com.google.android.apps.maps,Google Maps
+com.android.chrome,Chrome
+com.google.android.apps.photos,Google Photos
+com.google.android.apps.docs,Google Drive
+com.google.android.apps.messaging,Google Messages
+com.google.android.dialer,Google Phone
+com.google.android.calendar,Google Calendar
+com.google.android.keep,Google Keep
+com.google.android.apps.nbu.paisa.user,Google Pay
+com.phonepe.app,PhonePe
+net.one97.paytm,Paytm
+in.org.npci.upiapp,BHIM
+com.dreamplug.androidapp,CRED
+com.mobikwik_new,MobiKwik
+in.amazon.mShop.android.shopping,Amazon Shopping
+com.flipkart.android,Flipkart
+com.myntra.android,Myntra
+com.application.zomato,Zomato
+in.swiggy.android,Swiggy
+com.olacabs.customer,Ola
+com.ubercab,Uber
+com.netflix.mediaclient,Netflix
+com.spotify.music,Spotify
+com.truecaller,Truecaller
+com.jio.myjio,MyJio
+com.myairtelapp,Airtel Thanks
+com.microsoft.teams,Microsoft Teams
+us.zoom.videomeetings,Zoom
+com.sbi.lotusintouch,YONO SBI
+com.csam.icici.bank.imobile,ICICI iMobile
+com.snapwork.hdfc,HDFC Bank MobileBanking

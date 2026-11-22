@@ -9,6 +9,7 @@ import com.fraudshield.service.FileScanService;
 import com.fraudshield.service.ThreatService;
 import com.fraudshield.service.UrlScanService;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,9 +20,11 @@ public class ScanController {
     private final FileScanService files;
     private final AdAbuseService ads;
     private final ThreatService threats;
+    private final com.fraudshield.service.DeviceAppService deviceApps;
 
-    public ScanController(UrlScanService urls, FileScanService files, AdAbuseService ads, ThreatService threats) {
-        this.urls = urls; this.files = files; this.ads = ads; this.threats = threats;
+    public ScanController(UrlScanService urls, FileScanService files, AdAbuseService ads, ThreatService threats,
+                          com.fraudshield.service.DeviceAppService deviceApps) {
+        this.urls = urls; this.files = files; this.ads = ads; this.threats = threats; this.deviceApps = deviceApps;
     }
 
     @PostMapping("/url")
@@ -49,9 +52,17 @@ public class ScanController {
     @PostMapping("/apps")
     public AppsScanResponse apps(@AuthenticationPrincipal Long uid, @Valid @RequestBody AppsScanRequest r) {
         var results = ads.scanAll(r.apps());
-        results.stream().filter(x -> x.verdict() == Verdict.MALICIOUS).forEach(x ->
-                threats.record(uid, ThreatType.AD_ABUSE, Severity.HIGH,
-                        "App spamming ads / suspicious: " + x.packageName(), String.join(", ", x.reasons()), x.packageName()));
+        List<AppResult> toRecord;
+        if (r.deviceId() != null && !r.deviceId().isBlank()) {
+            // 6.3: remember the device's apps; record a threat only when an app BECOMES malicious (not every hour)
+            var outcome = deviceApps.track(uid, r.deviceId(), results);
+            results = outcome.results();
+            toRecord = outcome.newlyMalicious();
+        } else {
+            toRecord = results.stream().filter(x -> x.verdict() == Verdict.MALICIOUS).toList(); // old clients
+        }
+        toRecord.forEach(x -> threats.record(uid, ThreatType.AD_ABUSE, Severity.HIGH,
+                "App spamming ads / suspicious: " + x.packageName(), String.join(", ", x.reasons()), x.packageName()));
         return new AppsScanResponse(results);
     }
 

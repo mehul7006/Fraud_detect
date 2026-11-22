@@ -22,9 +22,29 @@ import java.util.List;
 public class AdminController {
     private final BlocklistService blocklist;
     private final UrlFeedbackRepository feedback;
+    private final com.fraudshield.repo.Repositories.AppReputationRepository apps;
 
-    public AdminController(BlocklistService blocklist, UrlFeedbackRepository feedback) {
-        this.blocklist = blocklist; this.feedback = feedback;
+    public AdminController(BlocklistService blocklist, UrlFeedbackRepository feedback,
+                           com.fraudshield.repo.Repositories.AppReputationRepository apps) {
+        this.blocklist = blocklist; this.feedback = feedback; this.apps = apps;
+    }
+
+    /** 6.2: list known GOOD or BAD apps. */
+    @GetMapping("/apps")
+    public List<AppReputationEntry> apps(@RequestParam(defaultValue = "BAD") String verdict) {
+        return apps.findByVerdictOrderByPackageName(verdict.toUpperCase()).stream()
+                .map(a -> new AppReputationEntry(a.getPackageName(), a.getLabel(), a.getVerdict(), a.getSource())).toList();
+    }
+
+    /** 6.2: add or change an app's reputation (BAD = always flagged, GOOD = never flagged). */
+    @PostMapping("/apps")
+    @Transactional
+    public AppReputationEntry setApp(@Valid @RequestBody AppReputationRequest r) {
+        String pkg = r.packageName().trim();
+        var a = apps.findByPackageName(pkg).orElseGet(() -> new com.fraudshield.domain.AppReputation(pkg, r.label(), r.verdict(), "admin"));
+        a.update(r.label(), r.verdict(), "admin");
+        apps.save(a);
+        return new AppReputationEntry(a.getPackageName(), a.getLabel(), a.getVerdict(), a.getSource());
     }
 
     @GetMapping("/blocklist")
