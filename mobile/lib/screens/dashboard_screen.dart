@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/api_client.dart';
 import '../core/native_bridge.dart';
 import '../core/protection_engine.dart';
+import '../l10n/l10n.dart';
 import 'risky_apps_screen.dart';
 import 'settings_screen.dart';
 import 'sms_audit_screen.dart';
@@ -90,8 +93,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             FilledButton(onPressed: () async { Navigator.pop(c); await act.run(); }, child: Text(act.label)),
           if (a.title.toLowerCase().contains('whatsapp') || a.title.toLowerCase().contains('telegram'))
             TextButton(onPressed: () { Navigator.pop(c); _openWizard(a.title.toLowerCase().contains('telegram') ? 'telegram' : 'whatsapp'); },
-                child: const Text('Secure account')),
-          TextButton(onPressed: () => Navigator.pop(c), child: Text(critical ? 'I understand' : 'Ignore')),
+                child: Text(context.l10n.secureAccount)),
+          TextButton(onPressed: () => Navigator.pop(c), child: Text(critical ? context.l10n.iUnderstand : context.l10n.ignore)),
         ],
       ),
     );
@@ -103,55 +106,82 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   void _open(Widget w) => Navigator.push(context, MaterialPageRoute(builder: (_) => w));
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('FraudShield'), actions: [
-          IconButton(icon: const Icon(Icons.history), tooltip: 'Threat history', onPressed: () => _open(ThreatsScreen(api: widget.api))),
-          IconButton(icon: const Icon(Icons.tune), tooltip: 'Link settings', onPressed: () => _open(SettingsScreen(engine: engine))),
-          IconButton(icon: const Icon(Icons.logout), tooltip: 'Log out', onPressed: () async { await (widget.api ?? ApiClient.instance).logout(); widget.onLogout(); }),
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Scaffold(
+        appBar: AppBar(title: Text(l.appTitle), actions: [
+          IconButton(icon: const Icon(Icons.history), tooltip: l.threatHistory, onPressed: () => _open(ThreatsScreen(api: widget.api))),
+          IconButton(icon: const Icon(Icons.tune), tooltip: l.linkSettings, onPressed: () => _open(SettingsScreen(engine: engine))),
+          IconButton(icon: const Icon(Icons.logout), tooltip: l.logOut, onPressed: () async { await (widget.api ?? ApiClient.instance).logout(); await NativeBridge.clearBackgroundSession().catchError((_) {}); widget.onLogout(); }),
         ]),
         body: ValueListenableBuilder<Map<String, String>>(
           valueListenable: engine.status,
           builder: (c, st, _) => ListView(padding: const EdgeInsets.all(16), children: [
             if (!_notifPermission)
-              _permCard('Allow notifications', 'Android 13+ blocks all alerts until you allow notifications. Without it FraudShield cannot warn you.',
-                  'Allow', () => NativeBridge.requestNotificationPermission()),
+              _permCard(l.permNotifTitle, l.permNotifBody, l.allow, () => NativeBridge.requestNotificationPermission()),
             if (!_notifAccess)
-              _permCard('Enable link & ad monitoring', 'Grant Notification Access so FraudShield can scan links sent via WhatsApp, Telegram, SMS and count ad spam. Message text is never uploaded.',
-                  'Grant access', () => NativeBridge.openNotificationAccessSettings()),
+              _permCard(l.permLinkTitle, l.permLinkBody, l.grantAccess, () => NativeBridge.openNotificationAccessSettings()),
             if (!_filesAccess)
-              _permCard('Enable file protection', 'Grant All-files access to scan downloaded APK/PDF files. Only hash and file name are sent.',
-                  'Grant access', () => NativeBridge.openAllFilesAccessSettings()),
+              _permCard(l.permFilesTitle, l.permFilesBody, l.grantAccess, () => NativeBridge.openAllFilesAccessSettings()),
             if (!_phoneAccess)
-              _permCard('Phone permission', 'Needed to check call forwarding with your carrier.', 'Allow', () => NativeBridge.requestPhonePermission()),
+              _permCard(l.permPhoneTitle, l.permPhoneBody, l.allow, () => NativeBridge.requestPhonePermission()),
+            if (st.values.contains('ERROR'))
+              Card(
+                key: const Key('offline-banner'),
+                color: Colors.amber.shade50,
+                child: ListTile(
+                  leading: const Icon(Icons.cloud_off, color: Colors.orange),
+                  title: Text(l.offlineTitle),
+                  subtitle: Text(l.offlineBody),
+                ),
+              ),
             const SizedBox(height: 8),
             _forwardingTile(st['forwarding']),
-            _tile(Icons.phonelink_lock, 'Clone / remote access', st['clone'], onTap: engine.checkDevice),
+            _tile(Icons.phonelink_lock, l.cloneRemote, _cloneText(st['clone']), onTap: engine.checkDevice,
+                bad: (st['clone'] ?? '').startsWith('RISK')),
             if (!_usageAccess)
-              _permCard('Find apps that open by themselves (optional)',
-                  'Allow Usage Access so FraudShield can notice apps that pop up without you tapping them. Only a count per app is kept; nothing leaves your phone except that count.',
-                  'Allow', () => NativeBridge.openUsageAccessSettings()),
+              _permCard(l.permUsageTitle, l.permUsageBody, l.allow, () => NativeBridge.openUsageAccessSettings()),
             Card(
               child: ListTile(
                 leading: Icon(Icons.ads_click, color: (st['apps'] ?? '').contains('risky') ? Colors.red : Colors.green),
-                title: const Text('Risky / ad-spam apps'),
-                subtitle: Text(st['apps'] ?? 'checking...'),
+                title: Text(l.riskyApps),
+                subtitle: Text(_appsText(st['apps'])),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _open(RiskyAppsScreen(engine: engine)),
               ),
             ),
-            _tile(Icons.link, 'Link protection', _notifAccess ? 'ON' : 'OFF'),
-            _tile(Icons.insert_drive_file, 'File protection', _filesAccess ? 'ON' : 'OFF'),
+            _tile(Icons.link, l.linkProtection, _notifAccess ? l.statusOn : l.statusOff, bad: !_notifAccess),
+            _tile(Icons.insert_drive_file, l.fileProtection, _filesAccess ? l.statusOn : l.statusOff, bad: !_filesAccess),
             const Divider(height: 32),
-            Text('Account security', style: Theme.of(context).textTheme.titleMedium),
-            ListTile(leading: const Icon(Icons.chat), title: const Text('Secure WhatsApp'), subtitle: const Text('Log out all other devices'), onTap: () => _openWizard('whatsapp')),
-            ListTile(leading: const Icon(Icons.send), title: const Text('Secure Telegram'), subtitle: const Text('Terminate other sessions'), onTap: () => _openWizard('telegram')),
-            ListTile(leading: const Icon(Icons.sms_failed), title: const Text('SMS forwarding'), subtitle: const Text('Cannot be read by apps - see how to check'),
+            Text(l.accountSecurity, style: Theme.of(context).textTheme.titleMedium),
+            ListTile(leading: const Icon(Icons.chat), title: Text(l.secureWhatsApp), subtitle: Text(l.secureWhatsAppSub), onTap: () => _openWizard('whatsapp')),
+            ListTile(leading: const Icon(Icons.send), title: Text(l.secureTelegram), subtitle: Text(l.secureTelegramSub), onTap: () => _openWizard('telegram')),
+            ListTile(leading: const Icon(Icons.sms_failed), title: Text(l.smsForwarding), subtitle: Text(l.smsForwardingSub),
                 onTap: () => _open(const SmsForwardingScreen())),
-            ListTile(leading: const Icon(Icons.manage_search), title: const Text('Apps that can read my SMS'), subtitle: const Text('Find OTP-stealing apps'),
+            ListTile(leading: const Icon(Icons.manage_search), title: Text(l.smsReaders), subtitle: Text(l.smsReadersSub),
                 onTap: () => _open(const SmsAuditScreen())),
           ]),
         ),
       );
+  }
+
+  String _appsText(String? s) {
+    final l = context.l10n;
+    if (s == null) return l.checking;
+    if (s == 'ERROR') return l.couldntCheck;
+    if (s == 'OK') return l.statusOk;
+    final m = RegExp(r'^(\d+) risky$').firstMatch(s);
+    return m != null ? l.appsRisky(m.group(1)!) : s;
+  }
+
+  /// engine codes -> words in the user's language
+  String? _cloneText(String? s) {
+    if (s == null || s == 'ERROR') return s;
+    final l = context.l10n;
+    if (s == 'OK') return l.statusOk;
+    if (s.startsWith('RISK ')) return l.statusRisk(s.substring(5));
+    return s;
+  }
 
   Widget _permCard(String t, String d, String btn, VoidCallback onTap) => Card(
         color: Colors.amber.shade50,
@@ -168,36 +198,62 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   /// Call-forwarding tile. When the app cannot query the carrier (or cannot understand the answer) it offers
   /// to open the dialer with the check code so the user can look themselves (3.6).
   Widget _forwardingTile(String? s) {
-    final v = s ?? 'checking...';
+    final l = context.l10n;
+    final v = s ?? l.checking;
     final canFallback = v == 'UNKNOWN' || v == 'UNAVAILABLE';
     final subtitle = switch (v) {
-      'UNAVAILABLE' => "UNAVAILABLE - can't query your carrier from the app",
+      'UNAVAILABLE' => l.fwdUnavailable,
       'UNKNOWN' => _unknownText(),
+      'ACTIVE' => l.statusActive,
+      'OFF' => l.statusOff,
       _ => v,
     };
     return Card(
       child: ListTile(
         leading: Icon(Icons.phone_forwarded, color: v == 'ACTIVE' ? Colors.red : (canFallback ? Colors.orange : Colors.green)),
-        title: const Text('Call forwarding'),
-        subtitle: Text(subtitle),
+        title: Text(l.callForwarding),
+        // 8.12: the fallback button goes under the text (not in `trailing`) so large text / Hindi never squeezes it
+        subtitle: canFallback
+            ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(subtitle),
+                Align(alignment: Alignment.centerRight,
+                    child: TextButton(onPressed: engine.dialForwardingCheck, child: Text(l.checkManually))),
+              ])
+            : Text(subtitle),
         onTap: engine.checkCallForwarding,
-        trailing: canFallback
-            ? TextButton(onPressed: engine.dialForwardingCheck, child: const Text('Check manually'))
-            : const Icon(Icons.refresh),
+        onLongPress: _captureReplies,
+        trailing: canFallback ? null : const Icon(Icons.refresh),
+      ),
+    );
+  }
+
+  /// 3.4: long-press the call forwarding tile -> the four carrier replies (numbers masked) ready to copy.
+  Future<void> _captureReplies() async {
+    final rows = await engine.captureCarrierReplies();
+    final text = const JsonEncoder.withIndent('  ').convert(rows);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(context.l10n.carrierReplies),
+        content: SingleChildScrollView(child: SelectableText(context.l10n.carrierRepliesBody(text))),
+        actions: [
+          TextButton(onPressed: () { Clipboard.setData(ClipboardData(text: text)); Navigator.pop(c); }, child: Text(context.l10n.copy)),
+          TextButton(onPressed: () => Navigator.pop(c), child: Text(context.l10n.close)),
+        ],
       ),
     );
   }
 
   String _unknownText() {
     final said = engine.unrecognisedAnswer.value?.trim();
-    if (said == null || said.isEmpty) return 'UNKNOWN - carrier answer not understood';
+    if (said == null || said.isEmpty) return context.l10n.fwdUnknown;
     final shown = said.length > 140 ? '${said.substring(0, 140)}...' : said;
-    return 'UNKNOWN - carrier answer not understood\nCarrier said: "$shown"';
+    return context.l10n.fwdCarrierSaid(shown);
   }
 
-  Widget _tile(IconData i, String t, String? s, {VoidCallback? onTap}) {
-    final v = s ?? 'checking...';
-    final bad = v.startsWith('RISK') || v == 'ACTIVE' || v.contains('risky') || v == 'OFF' && t.contains('protection');
+  Widget _tile(IconData i, String t, String? s, {VoidCallback? onTap, bool bad = false}) {
+    final v = s == 'ERROR' ? context.l10n.couldntCheck : s ?? context.l10n.checking;
     return Card(
       child: ListTile(
         leading: Icon(i, color: bad ? Colors.red : Colors.green),

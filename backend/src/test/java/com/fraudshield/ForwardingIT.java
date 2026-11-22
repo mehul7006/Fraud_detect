@@ -175,31 +175,23 @@ class ForwardingIT {
     }
 
     /**
-     * Synthetic sample answers in common GSM wording. NOT captured from real carriers - FE 3.4 must add real
-     * Jio / Airtel / Vi / BSNL captures to this corpus (and to the Flutter test) before 3.4 can be closed.
+     * 3.4: the seed rules in the database (V2 + V5) must classify every row of the corpus shared with the app,
+     * mobile/test/fixtures/ussd_responses.json, exactly like the app's built-in rules do.
      */
     @Test
-    void seedRules_classifyTheSampleCorpus() {
+    void seedRules_classifyTheSharedCorpus() throws Exception {
         CarrierClassifier c = carrierConfig.classifier();
-        Map<String, State> corpus = new java.util.LinkedHashMap<>();
-        corpus.put("Voice call forwarding: Active. Forwarded to +919876543210", State.ACTIVE);
-        corpus.put("Forwarded to 9876543210", State.ACTIVE);
-        corpus.put("Call forward unconditional: registered and active, number +14155552671", State.ACTIVE);
-        corpus.put("Divert on busy: Active +447911123456", State.ACTIVE);
-        corpus.put("Forward when unreachable: Forwarded to 8000123456, delay 20s", State.ACTIVE);
-        corpus.put("Call forwarding is not active", State.INACTIVE);
-        corpus.put("Unconditional forwarding: Not forwarded", State.INACTIVE);
-        corpus.put("Not forwarded to 9876543210", State.INACTIVE);              // number present but NOT forwarded
-        corpus.put("The service was disabled", State.INACTIVE);
-        corpus.put("Service not provisioned", State.INACTIVE);
-        corpus.put("Forwarding is OFF", State.INACTIVE);
-        corpus.put("Call forwarding: Deactivated", State.INACTIVE);
-        corpus.put("Connection problem or invalid MMI code.", State.UNKNOWN);
-        corpus.put("Your request is being processed", State.UNKNOWN);
-        corpus.put("Please try again later", State.UNKNOWN);
-        corpus.put("", State.UNKNOWN);
-
-        corpus.forEach((text, expected) -> assertEquals(expected, c.classify(text), "text: \"" + text + "\""));
-        assertTrue(corpus.size() >= 12);
+        java.nio.file.Path f = java.nio.file.Path.of("..", "mobile", "test", "fixtures", "ussd_responses.json");
+        assertTrue(java.nio.file.Files.exists(f), "shared corpus not found at " + f.toAbsolutePath());
+        var rows = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(java.nio.file.Files.readString(f, java.nio.charset.StandardCharsets.UTF_8)).get("rows");
+        int n = 0;
+        for (var r : rows) {
+            String text = r.get("text").asText();
+            assertEquals(State.valueOf(r.get("expected").asText()), c.classify(text),
+                    "[" + r.get("source").asText() + "] text: \"" + text + "\"");
+            n++;
+        }
+        assertTrue(n >= 20, "corpus too small: " + n);
     }
 }

@@ -35,14 +35,18 @@ class CarrierClassifier {
   static const int maxText = 500; // carriers answer in a few lines; cap protects against regex abuse
   static const int maxRegex = 200;
 
-  /// Same as the backend seed migration (V2__phase3_forwarding.sql). Generic wording, NOT real carrier captures.
+  /// Same as the backend seed migrations (V2__phase3_forwarding.sql + V5__carrier_hindi.sql).
+  /// Generic wording, NOT real carrier captures.
   static const List<CarrierRule> builtInRules = [
     CarrierRule('INACTIVE', r'(?i)not\s+(forwarded|active|activated|registered|provisioned)', 10),
     CarrierRule('INACTIVE', r'(?i)\b(inactive|deactivated|disabled|cancelled|erased)\b', 11),
     CarrierRule('INACTIVE', r'(?i)(forwarding|diversion|divert)\s+(is\s+)?(off|not set)', 12),
+    CarrierRule('INACTIVE', r'(निष्क्रिय|बंद|सक्रिय\s*नहीं)', 13), // Hindi: inactive / off / not active
+    CarrierRule('INACTIVE', r'अग्रेषित\s*नहीं', 14), // Hindi Android: "अग्रेषित नहीं किया गया" = not forwarded (real Vi capture)
     CarrierRule('ACTIVE', r'(?i)forwarded\s+to\s+\+?\d[\d\s-]{6,}', 20),
     CarrierRule('ACTIVE', r'(?i)\b(forward(ing|ed)?|divert(ed)?)\b.*\b(active|enabled|registered)\b', 21),
-    CarrierRule('ACTIVE', r'\+?\d{10,15}', 30),
+    CarrierRule('ACTIVE', r'सक्रिय', 22), // Hindi: active (the "not active" forms are caught by 13 first)
+    CarrierRule('ACTIVE', r'\+?\d(?:[\s-]?\d){9,14}', 30), // 10-15 digit number, also "+91 98765 43210"
   ];
 
   final List<_Compiled> _rules;
@@ -82,8 +86,21 @@ class CarrierClassifier {
   CarrierState classify(String? response) {
     if (response == null || response.trim().isEmpty) return CarrierState.unknown;
     final text = response.length > maxText ? response.substring(0, maxText) : response;
+    // Android lists one line per service ("Voice: +91...", "Data: Not forwarded", ...). Judge each line on its own:
+    // ONE forwarded line means forwarding is ON, even if all other services say "Not forwarded".
+    var sawInactive = false;
+    for (final line in text.split('\n')) {
+      if (line.trim().isEmpty) continue;
+      final s = _line(line);
+      if (s == CarrierState.active) return CarrierState.active;
+      if (s == CarrierState.inactive) sawInactive = true;
+    }
+    return sawInactive ? CarrierState.inactive : CarrierState.unknown;
+  }
+
+  CarrierState _line(String line) {
     for (final c in _rules) {
-      if (c.pattern.hasMatch(text)) return c.state;
+      if (c.pattern.hasMatch(line)) return c.state;
     }
     return CarrierState.unknown;
   }

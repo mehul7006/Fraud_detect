@@ -1,0 +1,336 @@
+{
+  "@@locale": "en",
+  "appTitle": "FraudShield",
+  "threatHistory": "Threat history",
+  "linkSettings": "Link settings",
+  "logOut": "Log out",
+  "allow": "Allow",
+  "grantAccess": "Grant access",
+  "permNotifTitle": "Allow notifications",
+  "permNotifBody": "Android 13+ blocks all alerts until you allow notifications. Without it FraudShield cannot warn you.",
+  "permLinkTitle": "Enable link & ad monitoring",
+  "permLinkBody": "Grant Notification Access so FraudShield can scan links sent via WhatsApp, Telegram, SMS and count ad spam. Message text is never uploaded.",
+  "permFilesTitle": "Enable file protection",
+  "permFilesBody": "Allow storage access (\"All files access\" on Android 11 and newer) so FraudShield can scan downloaded APK/PDF files. Only hash and file name are sent.",
+  "permPhoneTitle": "Phone permission",
+  "permPhoneBody": "Needed to check call forwarding with your carrier.",
+  "permUsageTitle": "Find apps that open by themselves (optional)",
+  "permUsageBody": "Allow Usage Access so FraudShield can notice apps that pop up without you tapping them. Only a count per app is kept; nothing leaves your phone except that count.",
+  "offlineTitle": "Can't reach the FraudShield server",
+  "offlineBody": "Link and file checks are kept and retried automatically. Tap a tile to try again.",
+  "couldntCheck": "Couldn't check right now - tap to retry",
+  "checking": "checking...",
+  "callForwarding": "Call forwarding",
+  "cloneRemote": "Clone / remote access",
+  "riskyApps": "Risky / ad-spam apps",
+  "linkProtection": "Link protection",
+  "fileProtection": "File protection",
+  "statusOn": "ON",
+  "statusOff": "OFF",
+  "statusActive": "ACTIVE",
+  "statusOk": "OK",
+  "statusRisk": "RISK {score}",
+  "@statusRisk": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "fwdUnavailable": "UNAVAILABLE - can't query your carrier from the app",
+  "fwdUnknown": "UNKNOWN - carrier answer not understood",
+  "fwdCarrierSaid": "UNKNOWN - carrier answer not understood\nCarrier said: \"{text}\"",
+  "@fwdCarrierSaid": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "checkManually": "Check manually",
+  "carrierReplies": "Carrier replies",
+  "carrierRepliesBody": "Phone numbers are masked. Nothing was sent.\nCopy this and add your carrier name and whether forwarding was ON.\n\n{json}",
+  "@carrierRepliesBody": {
+    "placeholders": {
+      "json": {
+        "type": "String"
+      }
+    }
+  },
+  "copy": "Copy",
+  "close": "Close",
+  "accountSecurity": "Account security",
+  "secureWhatsApp": "Secure WhatsApp",
+  "secureWhatsAppSub": "Log out all other devices",
+  "secureTelegram": "Secure Telegram",
+  "secureTelegramSub": "Terminate other sessions",
+  "smsForwarding": "SMS forwarding",
+  "smsForwardingSub": "Cannot be read by apps - see how to check",
+  "smsReaders": "Apps that can read my SMS",
+  "smsReadersSub": "Find OTP-stealing apps",
+  "secureAccount": "Secure account",
+  "iUnderstand": "I understand",
+  "ignore": "Ignore",
+  "email": "Email",
+  "passwordHint": "Password (min 8)",
+  "login": "Login",
+  "createAccount": "Create account",
+  "haveAccount": "Have an account? Login",
+  "newHere": "New here? Register",
+  "signingIn": "Signing in",
+  "wrongPassword": "Wrong email or password",
+  "emailTaken": "Email already registered",
+  "errOffline": "No internet connection. FraudShield keeps watching; checks that need the server will retry automatically.",
+  "errTooMany": "Too many attempts. Please wait a minute and try again.",
+  "errSession": "Your session has ended. Please log in again.",
+  "errServer": "FraudShield server problem. Please try again in a few minutes.",
+  "errGeneric": "Something went wrong. Please try again.",
+  "tryAgain": "Try again",
+  "noThreats": "No threats found. You are safe.",
+  "resolve": "Resolve",
+  "language": "Language",
+  "languageSystem": "Phone default",
+  "languageEnglish": "English",
+  "languageHindi": "हिन्दी (Hindi)",
+  "wizTitle": "Secure {app}",
+  "@wizTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "wizWarning": "Apps cannot log out other devices for you - only you can do it inside the app. Follow these steps now.",
+  "wizOpenNow": "Open {app} now",
+  "@wizOpenNow": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "wizNotInstalled": "App not installed",
+  "waStep1": "Open WhatsApp > tap the 3 dots > Linked devices.",
+  "waStep2": "Tap every device you do not recognise > Log out. (Or: Log out from all devices.)",
+  "waStep3": "Settings > Account > Two-step verification > Turn on and set a PIN + recovery email.",
+  "waStep4": "Settings > Account > Passkeys / Email address: add an email so only you can recover the account.",
+  "waStep5": "Never share the 6-digit code received by SMS. WhatsApp support never asks for it.",
+  "waStep6": "If you are locked out: Uninstall > reinstall > register your number again. This logs the attacker out.",
+  "tgStep1": "Open Telegram > Settings > Devices.",
+  "tgStep2": "Tap \"Terminate all other sessions\".",
+  "tgStep3": "Settings > Privacy and Security > Two-Step Verification > set a password + recovery email.",
+  "tgStep4": "Settings > Privacy and Security > Active Websites: disconnect unknown ones.",
+  "tgStep5": "Settings > Privacy and Security > Passcode Lock: enable.",
+  "tgStep6": "Never share Telegram login codes.",
+  "smsFwdTitle": "Check SMS forwarding",
+  "smsFwdIntro": "Apps cannot see whether your carrier forwards your SMS. Follow these three checks.",
+  "smsFwd1Title": "Remove apps that can read your SMS",
+  "smsFwd1Body": "Scam \"SMS forwarder\" apps copy your OTPs to another phone.",
+  "smsFwd1Button": "Show apps that read my SMS",
+  "smsFwd2Title": "Ask your carrier",
+  "smsFwd2Body": "Call customer care from your own number and ask: \"Is SMS forwarding or SMS redirect active on my number?\" Ask them to switch it off and to tell you if the SIM was duplicated or replaced.",
+  "smsFwd3Title": "Watch for a SIM swap",
+  "smsFwd3Body": "If your phone suddenly shows \"No service\" for no reason, call the carrier at once from another phone. A swapped SIM receives all your SMS and calls.",
+  "smsAuditTitle": "Apps that can read your SMS",
+  "smsAuditError": "Could not read installed apps",
+  "smsAuditIntro": "If you do not recognise an app below, uninstall it. An unknown app that can read SMS can forward your OTPs.",
+  "smsAuditUser": "Installed by you ({count})",
+  "@smsAuditUser": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "smsAuditNoneUser": "No user-installed app can read your SMS",
+  "smsAuditSystem": "System apps - usually safe ({count})",
+  "@smsAuditSystem": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "readsSms": "Reads SMS",
+  "readsNotifications": "Reads notifications",
+  "uninstall": "Uninstall",
+  "riskyTitle": "Risky apps",
+  "riskyFailedTitle": "Could not check your apps",
+  "riskyFailedBody": "Check your internet connection and pull down to try again.",
+  "riskyCheckingTitle": "Checking your apps...",
+  "riskyCheckingBody": "This takes a few seconds.",
+  "riskyNoneTitle": "No risky apps found",
+  "riskyNoneBody": "Pull down to check again.",
+  "riskyShareTitle": "Help improve risky-app detection",
+  "riskyShareBody": "When you Uninstall or Ignore a flagged app, send its risk signals (notification count, permissions it can use) and your choice. No messages, no contacts, no list of your other apps.",
+  "newBadge": "NEW",
+  "trustedSites": "Trusted websites",
+  "trustedSitesBody": "Links to these sites (and their sub-domains) are never scanned or flagged.",
+  "domain": "Domain",
+  "domainInvalid": "Enter a domain like example.com",
+  "trustDomain": "Trust this domain",
+  "removeDomain": "Remove {domain}",
+  "@removeDomain": {
+    "placeholders": {
+      "domain": {
+        "type": "String"
+      }
+    }
+  },
+  "appsToWatch": "Apps to watch",
+  "appsToWatchBody": "Turn an app off and links shown in its notifications are ignored.",
+  "noAppsFound": "No apps found.",
+  "alertNoDanger": "No known danger found",
+  "alertNoDangerBody": "{url}\n\nStill be careful with links you did not expect.",
+  "@alertNoDangerBody": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "notifDangerous": "Dangerous link!",
+  "alertSuspiciousLink": "Suspicious link",
+  "alertDangerous": "DANGEROUS LINK - do not open",
+  "alertCheckFailed": "Could not check the link",
+  "alertCheckFailedBody": "{url}\n\nNo connection to FraudShield. Try again in a moment.",
+  "@alertCheckFailedBody": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNoLink": "No link found",
+  "alertNoLinkBody": "The text you shared does not contain a web link.",
+  "notifSuspiciousFile": "Suspicious file received",
+  "alertMaliciousFile": "MALICIOUS FILE",
+  "alertSuspiciousFile": "Suspicious file",
+  "actionDeleteFile": "Delete file",
+  "alertDeleteQ": "Delete \"{name}\"?",
+  "@alertDeleteQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alertDeleteQBody": "This removes the file from your phone. It cannot be undone.",
+  "actionYesDelete": "Yes, delete it",
+  "alertDeleted": "File deleted",
+  "alertDeletedBody": "\"{name}\" was removed.",
+  "@alertDeletedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alertDeleteFailed": "Could not delete the file",
+  "alertDeleteFailedBody": "FraudShield only deletes files in Downloads, WhatsApp and Telegram folders.",
+  "alertLoginCode": "{app} login code received",
+  "@alertLoginCode": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "alertLoginCodeBody": "A {app} login code just arrived. If YOU did not just log in, someone is trying to take over your account. NEVER share this code.",
+  "@alertLoginCodeBody": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "actionNotMe": "I did NOT request it",
+  "notifNewDevice": "{app}: new device activity",
+  "@notifNewDevice": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "notifNewDeviceBody": "Open FraudShield to secure your account",
+  "alertNewDevice": "{app} may be accessed from another device",
+  "@alertNewDevice": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNewDeviceBody": "A new-device or linked-device notice appeared. Log out all other devices now.",
+  "alertClone": "Possible clone / remote access",
+  "notifFwdOn": "Call forwarding is ON",
+  "notifFwdOnBody": "Forwarding {condition} is active. Scammers use this to steal OTP calls.",
+  "@notifFwdOnBody": {
+    "placeholders": {
+      "condition": {
+        "type": "String"
+      }
+    }
+  },
+  "alertFwdOnBody": "Forwarding {condition} is active.\n\nCarrier says:\n{carrier}\n\nScammers use this to steal OTP calls.",
+  "@alertFwdOnBody": {
+    "placeholders": {
+      "condition": {
+        "type": "String"
+      },
+      "carrier": {
+        "type": "String"
+      }
+    }
+  },
+  "actionFwdOff": "Turn OFF forwarding",
+  "fwdIconNote": "(Android also shows its call forwarding icon.)",
+  "fwdAll": "all calls",
+  "fwdBusy": "when busy",
+  "fwdNoAnswer": "when not answered",
+  "fwdUnreachable": "when unreachable",
+  "alertRiskyApp": "Risky app: {label}",
+  "@alertRiskyApp": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNewRiskyApp": "New risky app: {label}",
+  "@alertNewRiskyApp": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "actionIgnoreApp": "Ignore this app",
+  "appsRisky": "{count} risky",
+  "@appsRisky": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "consentTitle": "Before you start",
+  "consentIntro": "FraudShield checks your phone for scams. Here is exactly what it does with your data.",
+  "consentChecks": "What is checked with our server",
+  "consentChecksBody": "Web links in your notifications, the fingerprint (not the content) of new downloaded files, apps that show a risky sign, and a scrambled ID of your phone and SIM to detect cloning and SIM swap.",
+  "consentNever": "What never leaves your phone",
+  "consentNeverBody": "The text of your messages and notifications, your contacts, photos, file contents, call log, location and the list of all your apps.",
+  "consentShared": "Who else sees data",
+  "consentSharedBody": "Links are checked with Google Safe Browsing and file fingerprints with VirusTotal. No ads, no analytics, no selling of data.",
+  "consentDelete": "You stay in control",
+  "consentDeleteBody": "Each permission is asked separately and can be turned off. Settings > Delete my account removes all your data at once.",
+  "privacyPolicy": "Privacy policy",
+  "readPrivacyPolicy": "Read the full privacy policy",
+  "agreeContinue": "Agree and continue",
+  "deleteAccount": "Delete my account",
+  "deleteAccountBody": "Removes your account and all data linked to it (threat history, devices, app checks) from our server. This cannot be undone.",
+  "deleteAccountConfirm": "Delete everything",
+  "cancel": "Cancel",
+  "accountSection": "Account and privacy"
+}

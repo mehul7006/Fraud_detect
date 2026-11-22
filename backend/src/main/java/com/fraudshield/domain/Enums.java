@@ -9,6 +9,8 @@ public final class Enums {
     public enum Severity { LOW, MEDIUM, HIGH, CRITICAL }
     public enum ThreatType {
         MALICIOUS_LINK, MALICIOUS_FILE, AD_ABUSE, CALL_FORWARDING, SMS_FORWARDING,
-        CLONE_RISK, WHATSAPP_TAKEOVER, TELEGRAM_TAKEOVER, UNEXPECTED_OTP
+        CLONE_RISK, WHATSAPP_TAKEOVER, TELEGRAM_TAKEOVER, UNEXPECTED_OTP,
+        /** 7.2: correlated - a login code / linked-device notice AND a new device or SIM change within minutes. */
+        ACCOUNT_TAKEOVER
     }
 }

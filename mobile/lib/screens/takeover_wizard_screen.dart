@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/native_bridge.dart';
+import '../l10n/l10n.dart';
 
 /// WhatsApp/Telegram do not let other apps log out sessions. This wizard opens the app and walks the user
 /// through the exact steps. Be honest: we cannot do it automatically.
@@ -9,48 +10,34 @@ class TakeoverWizardScreen extends StatelessWidget {
 
   bool get _wa => app == 'whatsapp';
 
-  List<String> get _steps => _wa
-      ? [
-          'Open WhatsApp > tap the 3 dots > Linked devices.',
-          'Tap every device you do not recognise > Log out. (Or: Log out from all devices.)',
-          'Settings > Account > Two-step verification > Turn on and set a PIN + recovery email.',
-          'Settings > Account > Passkeys / Email address: add an email so only you can recover the account.',
-          'Never share the 6-digit code received by SMS. WhatsApp support never asks for it.',
-          'If you are locked out: Uninstall > reinstall > register your number again. This logs the attacker out.',
-        ]
-      : [
-          'Open Telegram > Settings > Devices.',
-          'Tap "Terminate all other sessions".',
-          'Settings > Privacy and Security > Two-Step Verification > set a password + recovery email.',
-          'Settings > Privacy and Security > Active Websites: disconnect unknown ones.',
-          'Settings > Privacy and Security > Passcode Lock: enable.',
-          'Never share Telegram login codes.',
-        ];
+  List<String> _steps(AppLocalizations l) => _wa
+      ? [l.waStep1, l.waStep2, l.waStep3, l.waStep4, l.waStep5, l.waStep6]
+      : [l.tgStep1, l.tgStep2, l.tgStep3, l.tgStep4, l.tgStep5, l.tgStep6];
 
   @override
   Widget build(BuildContext context) {
     final pkg = _wa ? 'com.whatsapp' : 'org.telegram.messenger';
+    final l = context.l10n;
+    final name = _wa ? 'WhatsApp' : 'Telegram';
+    final steps = _steps(l);
     return Scaffold(
-      appBar: AppBar(title: Text('Secure ${_wa ? 'WhatsApp' : 'Telegram'}')),
+      appBar: AppBar(title: Text(l.wizTitle(name))),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        const Card(
-          color: Color(0xFFFFF3CD),
-          child: Padding(
-            padding: EdgeInsets.all(12),
-            child: Text('Apps cannot log out other devices for you - only you can do it inside the app. Follow these steps now.'),
-          ),
+        Card(
+          color: const Color(0xFFFFF3CD),
+          child: Padding(padding: const EdgeInsets.all(12), child: Text(l.wizWarning)),
         ),
         const SizedBox(height: 12),
-        for (var i = 0; i < _steps.length; i++)
-          ListTile(leading: CircleAvatar(child: Text('${i + 1}')), title: Text(_steps[i])),
+        for (var i = 0; i < steps.length; i++)
+          ListTile(leading: CircleAvatar(child: Text('${i + 1}')), title: Text(steps[i])),
         const SizedBox(height: 12),
         FilledButton.icon(
           icon: const Icon(Icons.open_in_new),
-          label: Text('Open ${_wa ? 'WhatsApp' : 'Telegram'} now'),
+          label: Text(l.wizOpenNow(name)),
           onPressed: () async {
             final ok = await NativeBridge.openApp(pkg);
             if (!ok && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('App not installed')));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.wizNotInstalled)));
             }
           },
         ),

@@ -29,6 +29,10 @@ class MainActivity : FlutterActivity() {
         captureShare(intent)
     }
 
+    // 7.11: while FraudShield is on screen the Flutter side handles links (in-app alert); otherwise the listener does
+    override fun onResume() { super.onResume(); BackgroundSession.appInForeground = true }
+    override fun onPause() { BackgroundSession.appInForeground = false; super.onPause() }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         captureShare(intent)
@@ -44,13 +48,8 @@ class MainActivity : FlutterActivity() {
                     "openNotificationAccessSettings" -> {
                         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)); result.success(true)
                     }
-                    "hasAllFilesAccess" -> result.success(
-                        if (Build.VERSION.SDK_INT >= 30) Environment.isExternalStorageManager() else true)
-                    "openAllFilesAccessSettings" -> {
-                        if (Build.VERSION.SDK_INT >= 30) startActivity(
-                            Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:$packageName")))
-                        result.success(true)
-                    }
+                    "hasAllFilesAccess" -> result.success(hasStorageAccess())
+                    "openAllFilesAccessSettings" -> { requestStorageAccess(); result.success(true) }
                     "requestPhonePermission" -> {
                         requestPermissions(arrayOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_PHONE_STATE), 11)
                         result.success(true)
@@ -69,7 +68,8 @@ class MainActivity : FlutterActivity() {
                         if (!allowedUssd(code)) { result.error("BAD_CODE", "USSD code not allowed", null) }
                         else CallForwardChecker.run(this, code) { result.success(it) }
                     }
-                    "disableCallForwarding" -> CallForwardChecker.run(this, "##002#") { result.success(it) }
+                    "forwardingIndicator" -> CallForwardIndicator.read(this) { result.success(it) }
+                    "disableCallForwarding" ->CallForwardChecker.run(this, "##002#") { result.success(it) }
                     "dialCode" -> {
                         val code = call.argument<String>("code") ?: ""
                         if (!allowedUssd(code)) { result.error("BAD_CODE", "USSD code not allowed", null) }
@@ -92,7 +92,14 @@ class MainActivity : FlutterActivity() {
                     "isInstalled" -> result.success(try {
                         packageManager.getPackageInfo(call.argument<String>("package") ?: "", 0); true
                     } catch (e: Exception) { false })
-                    "takeSharedText" -> { val t = sharedText; sharedText = null; result.success(t) }
+                    "setBackgroundSession" -> {
+                        BackgroundSession.save(this, call.argument<String>("apiBase") ?: "", call.argument<String>("token"),
+                            call.argument<String>("refresh"),
+                            call.argument<List<String>>("disabled") ?: emptyList(), call.argument<List<String>>("trusted") ?: emptyList())
+                        result.success(true)
+                    }
+                    "clearBackgroundSession" -> { BackgroundSession.clear(this); result.success(true) }
+                    "takeSharedText" ->{ val t = sharedText; sharedText = null; result.success(t) }
                     "takePendingEvents" -> result.success(AdNotificationListener.takePending(this))
                     "scanNewFiles" -> Thread {
                         // hashing big files must not block the UI thread (5.4.3)
@@ -104,6 +111,12 @@ class MainActivity : FlutterActivity() {
                         val pkg = call.argument<String>("package") ?: ""
                         startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:$pkg")))
                         result.success(true)
+                    }
+                    "openUrl" -> {
+                        val u = call.argument<String>("url") ?: ""
+                        if (!u.startsWith("https://")) result.success(false) // never open other schemes from Dart
+                        else try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u))); result.success(true) }
+                        catch (e: Exception) { result.success(false) }
                     }
                     "openApp" -> {
                         val pkg = call.argument<String>("package") ?: ""
@@ -122,6 +135,40 @@ class MainActivity : FlutterActivity() {
             }
         }
     }
+
+    // 5.8: storage permission per Android version, see StorageAccess
+    @Suppress("DEPRECATION")
+    private val legacyStorage = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
+    private fun hasStorageAccess(): Boolean = StorageAccess.hasAccess(
+        Build.VERSION.SDK_INT,
+        Build.VERSION.SDK_INT >= StorageAccess.ALL_FILES_SDK && Environment.isExternalStorageManager(),
+        checkSelfPermission(legacyStorage[0]) == PackageManager.PERMISSION_GRANTED,
+        checkSelfPermission(legacyStorage[1]) == PackageManager.PERMISSION_GRANTED)
+
+    private var storageAskedAt = 0L
+
+    private fun requestStorageAccess() {
+        when (StorageAccess.request(Build.VERSION.SDK_INT)) {
+            StorageAccess.Request.ALL_FILES_SETTINGS -> startActivity(
+                Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:$packageName")))
+            StorageAccess.Request.RUNTIME_PROMPT -> {
+                storageAskedAt = android.os.SystemClock.elapsedRealtime()
+                requestPermissions(legacyStorage, STORAGE_REQUEST)
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != STORAGE_REQUEST) return
+        val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+        val elapsed = android.os.SystemClock.elapsedRealtime() - storageAskedAt
+        if (StorageAccess.openAppSettingsInstead(granted, elapsed)) startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+    }
+
+    private companion object { const val STORAGE_REQUEST = 13 }
 
     /** Only MMI codes for querying/disabling forwarding. Prevents the bridge from dialing arbitrary USSD. */
     private fun allowedUssd(code: String) = code in setOf("*#21#", "*#67#", "*#61#", "*#62#", "*#002#", "##002#")

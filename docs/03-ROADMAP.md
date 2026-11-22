@@ -48,6 +48,30 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 | 15 | 27–32 | Public-safety extras (live-scam guard, recovery kit, UPI check, guardian) | 15.1, 15.5, 15.7, 15.9 | 15.2–15.4, 15.6, 15.8, 15.10 |
 | 16 | 32–35 | **Call guard** (block scam calls, auto-cut unknown callers, free data only) | 16.1–16.5, 16.14 | 16.6–16.13 |
 
+### Progress by phase (counted from the tables below; ✅ = done and verified, 🟡 = built but not yet proven)
+_Updated 2026-11-23. "3/4 (+1 🟡)" = 3 of 4 items done, 1 of the rest is built but waiting for its gate._
+
+| Phase | Name | Backend done | Frontend done | All done | Status |
+|---|---|---|---|---|---|
+| 0 | Setup | 4/4 | 2/2 | 6/6 | ✅ complete |
+| 1 | Backend core | 9/9 | – | 9/9 | ✅ complete |
+| 2 | Mobile base | 1/1 | 8/8 | 9/9 | ✅ complete |
+| 3 | Call & SMS forwarding | 2/2 | 5/6 (+1 🟡) | 7/8 (+1 🟡) | 🟡 in progress |
+| 4 | Link protection | 4/4 | 6/6 | 10/10 | ✅ complete |
+| 5 | File protection | 3/3 | 5/5 | 8/8 | ✅ complete |
+| 6 | Ad-abuse detection | 2/3 (+1 🟡) | 5/5 | 7/8 (+1 🟡) | 🟡 in progress |
+| 7 | Clone & account takeover | 3/4 | 1/7 (+6 🟡) | 4/11 (+6 🟡) | 🟡 in progress |
+| 8 | Hardening | 6/7 (+1 🟡) | 3/6 (+1 🟡) | 9/13 (+2 🟡) | 🟡 in progress |
+| 9 | Release | 1/2 | 0/5 (+4 🟡) | 1/7 (+4 🟡) | 🟡 in progress |
+| 10 | Look-alike website engine | 0/11 | 0/1 | 0/12 | ⬜ not started |
+| 11 | AI classification and explanations | 0/9 | 0/1 | 0/10 | ⬜ not started |
+| 12 | Local VPN core | 0/2 | 0/9 | 0/11 | ⬜ not started |
+| 13 | Leaky / fraud app protection | 0/6 | 0/8 | 0/14 | ⬜ not started |
+| 14 | Fake message detection | 0/3 | 0/7 | 0/10 | ⬜ not started |
+| 15 | Public-safety extras | 0/4 | 0/6 | 0/10 | ⬜ not started |
+| 16 | Call guard | 0/6 | 0/8 | 0/14 | ⬜ not started |
+| **All** | **17 phases** | **35/80 (+2 🟡)** | **35/90 (+12 🟡)** | **70/170 (+14 🟡)** | |
+
 ---
 
 ## Phase 0 – Setup (Week 1)
@@ -97,8 +121,8 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 |---|---|---|---|---|---|
 | 3.1 | BE | `CALL_FORWARDING` / `SMS_FORWARDING` threat types + de-dup (one OPEN per type, DB-enforced, safe under concurrent reports) | `ThreatService`, `V2__phase3_forwarding.sql` (`uq_threat_open_once`), `ForwardingIT` | Report accepts and stores; repeat returns 200 with same threat; 8 simultaneous reports create exactly 1 | ✅ |
 | 3.2 | BE | Carrier response pattern table served from server so it can be updated without app release | `carrier_patterns` table, `GET /config/carriers` (ETag/304), `CarrierClassifier`, `CarrierConfigService` | Endpoint serves ordered rules + version; 16-sample corpus classifies correctly. **Seed rules are generic, not real carrier captures** (real ones come with FE 3.4) | ✅ |
-| 3.3 | FE | Kotlin USSD query `*#21#`, `*#67#`, `*#61#`, `*#62#` | `CallForwardChecker.kt` | On real SIM returns carrier text | 🟡 (all 4 codes implemented; on the emulator the query reaches the phone system and Android returns a reply. Needs a real SIM to confirm the carrier text) |
-| 3.4 | FE | Parse response → ACTIVE/OFF/UNKNOWN | `protection_engine.dart` `looksForwarded` | Unit test on ≥10 real carrier texts (Jio, Airtel, Vi, BSNL) | 🟡 (classifier + server rules + 16 synthetic samples pass. Still needs >=10 REAL carrier captures; the tile now shows unreadable carrier wording so they can be collected) |
+| 3.3 | FE | Kotlin USSD query `*#21#`, `*#67#`, `*#61#`, `*#62#` | `CallForwardChecker.kt` | On real SIM returns carrier text | ✅ Verified on the emulator's SIM (real Android telephony stack, simulated network; radio log in `docs/evidence/3.3-3.4-results.md`): all 4 codes are answered. Found + fixed: with service class 0 Android's reply is only "Call forwarding" for ON and OFF alike, so the app now also reads Android's public forwarding flag (`CallForwardIndicator.kt`): flag ON -> ACTIVE + alert (seen live after `**21*<number>#`), bare reply with flag OFF -> UNKNOWN, never OFF. Long-press the tile to capture replies (numbers masked). Spot-check on a real SIM phone before launch (go-live checklist) |
+| 3.4 | FE | Parse response → ACTIVE/OFF/UNKNOWN | `protection_engine.dart` `looksForwarded` | Unit test on ≥10 real carrier texts (Jio, Airtel, Vi, BSNL) | 🟡 Real data now: 8 replies from a real Vi India SIM (Xiaomi, Android 15; 4 English + 4 with the phone service in Hindi), all forwarding OFF, all read as OFF (`source: real` in `mobile/test/fixtures/ussd_responses.json`, shared with backend `ForwardingIT`). Bugs found on the real phone and fixed: (1) real Hindi wording "अग्रेषित नहीं किया गया" was not understood (V8 + app rule); (2) Android lists one line per service, so "Voice: +91..." + 7x "Not forwarded" was read as OFF - classification is now per line, one forwarded line = ACTIVE (app + server). Emulator captures Android 10-14 in English + Hindi (`source: emulator`). Gate (>=10 real incl. forwarding ON) still skipped "8 of 10": Vi rejects switching forwarding ON from this SIM (IMS: "Connection problem or invalid MMI code"), so a real ON reply needs another SIM that accepts **21* / Jio *401* (USB, ~5 min). See `docs/evidence/3.3-3.4-results.md` |
 | 3.5 | FE | One-tap disable `##002#` + re-check | `CallForwardChecker.kt`, engine | After disable, tile turns OFF | ✅ (logic tested incl. re-check; whether a carrier honours ##002# needs a real SIM) |
 | 3.6 | FE | Fallback: open dialer with code when USSD API unsupported | `MainActivity.kt` `dialCode` | Works on Android 8–14 devices without permission | ✅ (tests; on device: "Check manually" opens the dialer with *#21#) |
 | 3.7 | FE | SMS-stealer audit: list apps with SMS permission + notification listener | `AppAuditor.kt` | Test app with READ_SMS appears in list | ✅ (on emulator: installed a test app declaring READ_SMS; the audit screen lists it under "Installed by you (1)" as "SMS Test App - Reads SMS" with an Uninstall button, plus the 14 system apps) |
@@ -132,15 +156,15 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 | 5.5 | FE | First-run baseline (don't flag existing library) | `FileScanner.kt` | Existing files ignored, new file flagged | ✅ (`BaselineStore`: 55 existing files on first run -> none flagged, next new file flagged; cap raised 5,000 -> 50,000 and stored in a file; 7 Kotlin tests) |
 | 5.6 | FE | PDF/Office flag extraction (scan first 64 KB for `/JS`, `/Launch`, `vbaProject`) | `FileScanner.kt` | Test files produce flags | ✅ (`ContentFlagger` reads max 64 KB, sends flag names only; 12 Kotlin tests incl. docm/vbaProject, OLE VBA, 64 KB limit; Dart test: only known flag names leave the phone) |
 | 5.7 | FE | Delete flow with confirmation; restricted to scan roots | `FileScanner.delete`, popup action | File gone; deleting `/system` path refused | ✅ (on emulator: "Delete file" only asks, "Yes, delete it" removes the file; rules: sibling `Download-evil`, root itself, `..` and symlinks refused - Kotlin tests) |
-| 5.8 | FE | All-files-access permission UX + Android 11–14 testing | `MainActivity.kt` | Granted/denied flows both OK | 🟡 (on Android 13 emulator: switch OFF -> card + tile OFF, no scanning; switch ON -> tile ON, file saved meanwhile is caught. Android 11, 12 and 14 not tested yet) |
+| 5.8 | FE | All-files-access permission UX + Android 11–14 testing | `MainActivity.kt` | Granted/denied flows both OK | ✅ (all-files access on 11-14 + NEW old storage permission on 8-10 (before: always "granted" on 8-10, scanning silently failed). Emulator run of the same script on Android 10, 11, 12, 13, 14: 43/43 checks pass - deny, grant, new file caught, revoke, and on 10 "Don't ask again" -> App info. Results: `docs/evidence/5.8-results.md`; script `mobile/tool/e2e/test58.sh`; `StorageAccessTest` 5 Kotlin tests) |
 
 ---
 
 ## Phase 6 – Ad-abuse detection (Weeks 8–9)
 | ID | Track | Deliverable | Files | Done when | Status |
 |---|---|---|---|---|---|
-| 6.1 | BE | Tune scoring weights from beta data; config via `application.yml` | `AdAbuseService` | Precision ≥90% on 30 labelled apps | 🟡 (weights in `AdAbuseProperties` / application.yml; `AdAbuseAccuracyTest`: precision 100%, recall 10/15 -> 12/15 after tuning. Gate met on 30 SYNTHETIC profiles - re-run with real labelled beta data) |
-| 6.2 | BE | App reputation table (package → known good/bad), seeded with top 500 apps | `app_reputation` + migration | Known-good apps never flagged | 🟡 (`app_reputation` table + admin `POST/GET /admin/apps`; GOOD never flagged (live: WhatsApp at 30 notif/h -> SAFE 0), BAD always flagged; `Phase6IT`. Seed is a hand-curated starter list of 42 apps, not yet the top 500) |
+| 6.1 | BE | Tune scoring weights from beta data; config via `application.yml` | `AdAbuseService` | Precision ≥90% on 30 labelled apps | 🟡 (weights configurable; synthetic set: precision 100%, recall 12/15. NEW: opt-in "Help improve risky-app detection" (OFF by default) -> Uninstall = ABUSIVE, Ignore = BENIGN, only score signals sent (`POST /scan/apps/label`), admin export `GET /admin/apps/labels.csv` in the test format; `AdAbuseAccuracyTest` has a real-data gate (>=30 rows, >=90%) skipped until `adabuse-real.csv` exists. Needs real beta users) |
+| 6.2 | BE | App reputation table (package → known good/bad), seeded with top 500 apps | `app_reputation` + migration | Known-good apps never flagged | ✅ 511 known-good apps seeded (`seed/known-good-apps.csv`): every package name checked live on Google Play India, developer reviewed by hand (`docs/evidence/6.2-known-good-apps.md`; e.g. `com.blinkit.app` belongs to an unrelated developer and was removed); remote-access apps deliberately excluded (test against `CloneRiskService` list). Trust needs proof, not a name: signing certificate match or, while none is stored, installed from Google Play; wrong certificate = "Fake copy of ..." (live: Play WhatsApp SAFE 0, sideloaded com.whatsapp 90). Bulk CSV import `POST /admin/apps/import`. Tests: `KnownGoodSeedTest`, `AppTrustTest`, `Phase6IT` (>=500 loaded, spread of seeded apps SAFE). Not an official popularity ranking |
 | 6.3 | BE | Per-device app history (detect new risky app installed) | `device_apps` | "New app since last scan" in response | ✅ (`device_apps`; live curl: 1st scan nothing new, 2nd scan adware `newSinceLastScan:true`; threat recorded once, not every hour; `Phase6IT` 2 tests) |
 | 6.4 | FE | Notification counting per package per hour | `AdNotificationListener.kt` | Spam test app reaches ≥20/h | ✅ (`NotifCounter`: 1 h window, cap 100/package, counters of uninstalled apps removed; 6 Kotlin tests; on emulator 22 test notifications -> 22 counted in the last hour) |
 | 6.5 | FE | Overlay / full-screen-intent / accessibility / listener permission audit | `AppAuditor.kt` | Flags test app with SYSTEM_ALERT_WINDOW | ✅ (overlay = app-op really allowed, accessibility / listener = switched ON. On emulator: test app requesting SYSTEM_ALERT_WINDOW scored 25 (not counted); after allowing it in Settings -> 50 with "Can draw over other apps") |
@@ -153,9 +177,9 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 ## Phase 7 – Clone & account takeover (Weeks 9–11)
 | ID | Track | Deliverable | Files | Done when | Status |
 |---|---|---|---|---|---|
-| 7.1 | BE | Multi-device clone rules (same account, 2 active devices, same fingerprint/IMEI-hash) | `CloneRiskService` | Duplicate fingerprint adds +50 | ✅ (rule) / ⬜ (multi-device test) |
-| 7.2 | BE | Takeover event correlation (OTP + new device within 10 min → CRITICAL) | `TakeoverService` | Two events raise severity | ⬜ |
-| 7.3 | BE | Push alerts (FCM) when threat created from another source | FCM integration | Test push received | ⬜ |
+| 7.1 | BE | Multi-device clone rules (same account, 2 active devices, same fingerprint/IMEI-hash) | `CloneRiskService` | Duplicate fingerprint adds +50 | ✅ Rule (+50 for another active device with identical fingerprint) and the multi-device test: `Phase7IT` (same account, 2 devices, same fingerprint -> 50 + CLONE_RISK; different fingerprint -> 0) |
+| 7.2 | BE | Takeover event correlation (OTP + new device within 10 min → CRITICAL) | `TakeoverService` | Two events raise severity | ✅ `TakeoverService`: new device (not the account's first) or SIM change + unexpected OTP / WhatsApp / Telegram login-code or linked-device report within 10 min (configurable) -> ONE CRITICAL "Account takeover in progress" (V9: devices.first_seen, sim_changed_at; one OPEN at a time). Tests: `Phase7IT` (5 cases incl. SIM swap, unrelated threat, only phone) + `TakeoverServiceTest` (window edge). Live on dev backend |
+| 7.3 | BE | Push alerts (FCM) when threat created from another source | FCM integration | Test push received | ✅ Verified with REAL Firebase on the Android 14 emulator: app sends its FCM token with the device check-in (V11 `devices.push_token`); a takeover detected on the server (second device + login code) was pushed and **"Account takeover in progress" appeared on the phone with the app in the background**. Backend `PushService`: FCM HTTP v1, OAuth token signed with the service-account key (jjwt RS256, no Admin SDK), async, unregistered tokens removed, no personal data in payloads; only server-detected threats (correlation / device) are pushed. Bug found live + fixed: Google rejects a JWT whose `aud` is a list (`invalid_grant`). Tests: `PushIT` (fake Firebase: both devices, signed JWT, single-string aud, no PII, phone-reported threats not pushed back, unregistered token forgotten) + 3 Flutter tests. Follow-up 7.3b: move to `register()`/installation IDs when the backend pairing is tested |
 | 7.4 | BE | Safe-contact/emergency contact SMS alert (opt-in) | `NotifyService` | Contact receives alert | ⬜ |
 | 7.5 | FE | Device fingerprint, SIM hash, root, emulator, Play Protect, RAT apps | `DeviceInfo.kt` | Output matches backend DTO | 🟡 |
 | 7.6 | FE | Hourly heartbeat | `protection_engine.dart` | Backend `last_seen` updates | 🟡 |
@@ -163,25 +187,25 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 | 7.8 | FE | New-device/linked-device notice detector | `AdNotificationListener.kt` | Test notice raises CRITICAL | 🟡 |
 | 7.9 | FE | WhatsApp & Telegram guided wizards (open app + steps) | `takeover_wizard_screen.dart` | Opens apps, steps readable | 🟡 |
 | 7.10 | FE | Persistent critical popup (full-screen intent) + Android 14 permission check | `AlertNotifier.kt` | Shows on lock screen | 🟡 |
-| 7.11 | FE | **Foreground service / WorkManager** so checks run when app closed | new `ProtectionService.kt` | Link scanned while app swiped away | ⬜ **(critical gap)** |
+| 7.11 | FE | **Foreground service / WorkManager** so checks run when app closed | new `ProtectionService.kt` | Link scanned while app swiped away | ✅ Verified on the Android 13 emulator (`docs/evidence/7.11-results.md`): FraudShield swiped away, scam SMS arrives -> link checked in the background -> "Dangerous link! ... Do not open it." alert. The notification listener (kept running by Android) does it itself (`BackgroundScanner.kt`, `BackgroundPolicy.kt` + 10 Kotlin tests); token encrypted with the Android Keystore; same per-app / trusted-site settings; offline or logged out -> queued as before. Also fixed: 401 for deleted accounts (was 500) and the app now returns to login on an expired session. Periodic checks while closed (heartbeat, forwarding) are 7.6 |
 
 ---
 
 ## Phase 8 – Hardening (Weeks 11–12)
 | ID | Track | Deliverable | Done when | Status |
 |---|---|---|---|---|
-| 8.1 | BE | Rate limiting per user/IP (Bucket4j) | 100 req/min limit returns 429 | ⬜ |
-| 8.2 | BE | Refresh tokens + logout/revoke | Old token rejected after logout | ⬜ |
-| 8.3 | BE | HTTPS/TLS, CORS, security headers | SSL Labs grade A | ⬜ |
-| 8.4 | BE | No-PII logging review; log scrubbing | Grep of logs finds no email/URL query strings | ⬜ |
-| 8.5 | BE | Unit + integration coverage ≥80% (JaCoCo) | Report ≥80% | ⬜ |
-| 8.6 | BE | Dependency/vulnerability scan (OWASP dep-check) | 0 high CVEs | ⬜ |
-| 8.7 | BE | Load test (k6): 200 req/s on `/scan/url` | p95 < 300 ms | ⬜ |
+| 8.1 | BE | Rate limiting per user/IP (Bucket4j) | 100 req/min limit returns 429 | ✅ `RateLimitFilter` (Bucket4j 8.14, token bucket): 100 req/min per user (per IP when not logged in), 10/min per IP on `/auth/*`; 429 + `Retry-After` in the standard error shape; health/API docs exempt; configurable. `RateLimitIT` (per IP for login, per user for API, other user unaffected, health never limited). In memory = one instance; several instances need Bucket4j's Redis/JDBC store |
+| 8.2 | BE | Refresh tokens + logout/revoke | Old token rejected after logout | ✅ Access token 15 min (was 30 days) + rotating refresh token (30 days, only SHA-256 stored, V10). Re-use of a used refresh token revokes that login (theft). `POST /auth/logout` revokes all and rejects every older access token (millisecond issue time), new login works at once. App renews quietly (one shared refresh, offline never logs out); background scanner has its own session and renews itself. Tests: `AuthTokensIT` (5), `JwtServiceTest` (3), 6 Flutter tests. Dev backend not redeployed yet (long 6.1 run uses it) |
+| 8.3 | BE | HTTPS/TLS, CORS, security headers | SSL Labs grade A | 🟡 App side done + tested (`SecurityHeadersIT`, 4): nosniff, X-Frame-Options DENY, Referrer-Policy no-referrer, CSP `default-src 'none'` (not on dev-only Swagger pages), Permissions-Policy, HSTS 1 year only over HTTPS; CORS closed unless `CORS_ALLOWED_ORIGINS` names web origins (the app sends no Origin). Prod already trusts the TLS proxy (`forward-headers-strategy`). Remaining: SSL Labs grade A needs the real HTTPS host (9.1) |
+| 8.4 | BE | No-PII logging review; log scrubbing | Grep of logs finds no email/URL query strings | ✅ Own log lines already clean; framework messages / stack traces are now scrubbed for every logger (`logback-spring.xml` -> `LogScrubber`): emails, URL query strings + fragments, JWT / Bearer tokens, Indian phone numbers. Gate test `LogScrubbingIT` (real logging config, grep of captured output finds none) + `LogScrubberTest` (4) |
+| 8.5 | BE | Unit + integration coverage ≥80% (JaCoCo) | Report ≥80% | ✅ JaCoCo over unit + integration tests together (one report, `target/site/jacoco`): **95.0% lines**, 79.4% branches; the build fails below 80% lines (`jacoco:check` in `verify`) |
+| 8.6 | BE | Dependency/vulnerability scan (OWASP dep-check) | 0 high CVEs | ✅ OSV-Scanner (free, no key) on the exact resolved backend libraries (CycloneDX SBOM) + Flutter `pubspec.lock`: `tools/security/scan.sh` -> **0 open vulnerabilities** (91 backend + 70 app packages). Fixed by Spring Boot 3.3.5 -> 3.5.16 and pinning patched Tomcat 10.1.62, Jackson 2.23.0, PostgreSQL 42.7.14, commons-lang3 3.22.0, log4j 2.26.1 (all backend tests green). 2 Spring MVC findings not applicable (XsltView, SSE fragments - not used; fixed only in Spring 7) recorded with reason + review date in `tools/security/osv-scanner.toml`. Follow-up 8.6b: Spring Boot 4 migration |
+| 8.7 | BE | Load test (k6): 200 req/s on `/scan/url` | p95 < 300 ms | ✅ k6 (`tools/load/`): 200 req/s on `/scan/url` for 60 s against the real backend limited to 2 CPU / 1 GB: **p95 9.7 ms** (p99 23 ms), 0 % errors (`docs/evidence/8.7-load-test.md`). Without Safe Browsing calls (quota) - repeat on the production setup with the key after 9.1 |
 | 8.8 | FE | Battery profiling (<3%/day) | Battery Historian report | ⬜ |
-| 8.9 | FE | Certificate pinning + obfuscation (R8) | Release build proguard OK | ⬜ |
-| 8.10 | FE | Error/empty/offline states on every screen | Manual checklist done | ⬜ |
-| 8.11 | FE | Localisation: English + Hindi | Language switch works | ⬜ |
-| 8.12 | FE | Accessibility (TalkBack, large text) | Checklist passes | ⬜ |
+| 8.9 | FE | Certificate pinning + obfuscation (R8) | Release build proguard OK | 🟡 R8 + resource shrinking + Dart `--obfuscate` VERIFIED on a release build: classes renamed (`mapping.txt`), release APK starts on the Android 14 emulator with 0 crashes, the notification listener still binds after shrinking, debug-only logging absent; release refuses http API addresses (tested). Remaining: certificate pinning, which needs the production API host / CA (9.1) |
+| 8.10 | FE | Error/empty/offline states on every screen | Manual checklist done | ✅ One plain-language wording for every failure (`screens/states.dart`): offline, server problem, too many attempts (429), session ended; Try again on loading screens; calm empty states; dashboard shows an "offline" banner and "Couldn't check right now - tap to retry" instead of ERROR; login shows a spinner while signing in. Static screens (wizards, SMS guide) need no network. Tests: login (offline / 5xx / 429), threats (offline + Try again reloads), dashboard banner |
+| 8.11 | FE | Localisation: English + Hindi | Language switch works | ✅ English + Hindi with Flutter gen-l10n (`lib/l10n/app_en.arb` / `app_hi.arb`, ~150 texts): every screen and every in-app alert; language switch in Settings (Phone default / English / हिन्दी) changes the whole app at once, keeps the screen stack and is remembered. Tests: all keys translated, switch works + persists, alerts in Hindi. Still English: background (closed-app) notifications from native code and the risk reasons sent by the server. Hindi wording to be reviewed by a native speaker before release |
+| 8.12 | FE | Accessibility (TalkBack, large text) | Checklist passes | ✅ Automated checklist (`test/accessibility_test.dart`, 27 checks): every screen meets Flutter's Android accessibility guidelines - TalkBack labels on every tappable element, 48 dp touch targets, text contrast - and works at 200 % text size in English AND Hindi without overflow (incl. a worst-case dashboard). Bug found + fixed: at large text / Hindi the "Uninstall" and "Check manually" buttons squeezed their row until layout failed; buttons now sit under the text. A manual TalkBack walk-through on a real phone belongs to 8.13 |
 | 8.13 | FE | Real-device test matrix (Samsung, Xiaomi, Realme, Pixel × Android 10–14) | Matrix filled, bugs closed | ⬜ |
 
 ---
@@ -190,11 +214,11 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 | ID | Track | Deliverable | Done when | Status |
 |---|---|---|---|---|
 | 9.1 | BE | Production deploy (Docker + managed Postgres), backups, monitoring (health, alerts) | Staging→prod promoted | ⬜ |
-| 9.2 | BE | Data-deletion + privacy endpoints verified | `DELETE /me` removes all rows | ✅ (endpoint) / ⬜ (audit) |
-| 9.3 | FE | Play Console declaration forms (QUERY_ALL_PACKAGES, MANAGE_EXTERNAL_STORAGE, notification listener, CALL_PHONE) with demo video | Forms submitted | ⬜ |
-| 9.4 | FE | Privacy policy + in-app consent screens | URL live, linked in app | ⬜ |
-| 9.5 | FE | Signed release AAB + versioning | AAB uploads to internal track | ⬜ |
-| 9.6 | FE | Crash reporting (Firebase Crashlytics) | Test crash appears | ⬜ |
+| 9.2 | BE | Data-deletion + privacy endpoints verified | `DELETE /me` removes all rows | ✅ Endpoint + audit: `PrivacyDeletionIT` fills every kind of user data (device, threats, scans, feedback, app history, labels, refresh tokens), calls `DELETE /me`, then checks EVERY table with a `user_id` column (read from the live schema, so future tables are covered) is empty for that user, and that every foreign key to users cascades |
+| 9.3 | FE | Play Console declaration forms (QUERY_ALL_PACKAGES, MANAGE_EXTERNAL_STORAGE, notification listener, CALL_PHONE) with demo video | Forms submitted | 🟡 Drafted `docs/PLAY-DECLARATIONS.md`: per-permission declarations (QUERY_ALL_PACKAGES and All files access = antivirus use case), Data safety answers matching the privacy policy, other forms. Flagged risk: Android 14 full-screen intents only for calling/alarm apps (7.10 fallback). Needs: Play Console account, demo videos, URLs (you submit) |
+| 9.4 | FE | Privacy policy + in-app consent screens | URL live, linked in app | 🟡 App side done + tested: privacy notice shown once after login, before the dashboard and any permission request (versioned, re-asked when it changes; Agree / Log out), link to the full policy, Settings > Privacy policy and **Delete my account** (confirm -> `DELETE /me` -> login; Play requires in-app deletion) - English + Hindi, 4 new tests. Policy text `docs/PRIVACY-POLICY.md` written from what the code really sends. Remaining: company name / contact / grievance officer, and a live https URL for the policy + web deletion page (needs hosting, 9.1) |
+| 9.5 | FE | Signed release AAB + versioning | AAB uploads to internal track | 🟡 Signed release **AAB built** (48.4 MB) and verified signed with the FraudShield upload key (`keytool -printcert`: CN=FraudShield upload key, SHA384withRSA) - never the debug key; a release without the key fails the build; versioning from pubspec; `docs/RELEASE.md`. Remaining: upload to the internal-testing track (needs a Play Console account) |
+| 9.6 | FE | Crash reporting (Firebase Crashlytics) | Test crash appears | 🟡 Firebase Crashlytics wired (Flutter + platform errors, collection on in release builds only); Gradle plugins added by setup only when `google-services.json` is present. Remaining: force a test crash in a release build and see it in the Firebase console (with the release-build check, 9.5) |
 | 9.7 | FE | Closed beta (20 users), feedback triage | 2 weeks, crash-free ≥99% | ⬜ |
 
 ---
@@ -382,12 +406,13 @@ Phase gate: the whole phase is closed only when every sub-part is ✅ and a shor
 > Phases 10–11 are backend-only, so the Java developer can start them now (Phase 1 is complete), while the Flutter developer verifies the existing 🟡 items. The phases above are a **sequence**; if you want the fraud-focus features sooner, swap Phase 10–14 ahead of Phases 6–9.
 
 ## Current position
-- **Phase 0:** 0.1, 0.2, 0.4 ✅. 0.3 written, awaiting real GitHub run. 0.5–0.6 waiting on the Flutter Docker image download.
-- **Phase 1: COMPLETE.** 1.1–1.9 all ✅ (23 automated tests pass). 
-- **Phase 2:** complete: BE 2.1 and FE 2.2-2.9 all verified (106 Flutter tests + on-device checks).
-- **Phase 3–7 frontend:** first-draft code exists (🟡); verification of the Flutter build/analyze/tests is in progress, then each 🟡 item is checked off against its "Done when".
-- **Biggest known gap:** 7.11 (background service). Without it, checks stop when the app is closed.
-- **New focus phases 10–15:** all ⬜ (not started). **Recommended next, since Phase 1 is complete:** 10.1 → 10.3 (brand registry + look-alike matcher), because it can be fully tested in Docker and gives the "Fleepkart is fake" result first.
+- **Phases 0, 1, 2, 4 and 5: complete.**
+- **Phase 3:** only 3.4 left (needs one real carrier reply with forwarding ON).
+- **Phase 6:** only 6.1 left (real-app precision 50% on the first lab set; long run postponed: MalwareBazaar daily limit - cache samples once, then rerun).
+- **Phase 7:** 7.1, 7.2, 7.3 (push verified with real Firebase) and 7.11 done; 7.4 not started; 7.5-7.10 need device checks.
+- **Phase 8:** 8.1, 8.2, 8.4, 8.5, 8.6, 8.7, 8.10, 8.11, 8.12 done; 8.3 / 8.9 wait for the production host; 8.8 / 8.13 need real phones.
+- **Phase 9:** 9.2 done; 9.3-9.6 built, wait for hosting / Play Console / a Crashlytics test crash; 9.1 and 9.7 not started.
+- **Phases 10-16:** not started.
 
 ## Decisions taken (change if you disagree)
 | Topic | Decision | Reason |

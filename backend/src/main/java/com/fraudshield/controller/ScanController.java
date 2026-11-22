@@ -21,10 +21,24 @@ public class ScanController {
     private final AdAbuseService ads;
     private final ThreatService threats;
     private final com.fraudshield.service.DeviceAppService deviceApps;
+    private final com.fraudshield.repo.Repositories.AppLabelRepository labels;
 
     public ScanController(UrlScanService urls, FileScanService files, AdAbuseService ads, ThreatService threats,
-                          com.fraudshield.service.DeviceAppService deviceApps) {
+                          com.fraudshield.service.DeviceAppService deviceApps,
+                          com.fraudshield.repo.Repositories.AppLabelRepository labels) {
         this.urls = urls; this.files = files; this.ads = ads; this.threats = threats; this.deviceApps = deviceApps;
+        this.labels = labels;
+    }
+
+    /** 6.1: opt-in training label. One row per user and app; a later decision replaces the earlier one. */
+    @PostMapping("/apps/label")
+    @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
+    @org.springframework.transaction.annotation.Transactional
+    public void label(@AuthenticationPrincipal Long uid, @Valid @RequestBody AppLabelRequest r) {
+        String pkg = r.app().packageName().trim();
+        var l = labels.findByUserIdAndPackageName(uid, pkg).orElseGet(() -> new com.fraudshield.domain.AppLabel(uid, pkg));
+        l.set(r.label(), r.app(), r.scoreShown());
+        labels.save(l);
     }
 
     @PostMapping("/url")

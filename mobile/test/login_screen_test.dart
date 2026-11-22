@@ -54,16 +54,23 @@ void main() {
     expect(find.text('password size must be between 8 and 72'), findsOneWidget);
   });
 
-  testWidgets('2.3 server down shows "Cannot reach server"', (t) async {
+  testWidgets('2.3 / 8.10 server unreachable: plain "no internet" message', (t) async {
     await _pump(t, _api((r) async => throw const SocketException('no route')), () {});
     await _fillAndSubmit(t, 'Login');
-    expect(find.text('Cannot reach server'), findsOneWidget);
+    expect(find.textContaining('No internet connection'), findsOneWidget);
   });
 
-  testWidgets('2.3 unexpected status shows generic error code', (t) async {
+  testWidgets('2.3 / 8.10 server error (5xx): plain "server problem" message, no raw code', (t) async {
     await _pump(t, _api((r) async => _err(500, 'Unexpected server error')), () {});
     await _fillAndSubmit(t, 'Login');
-    expect(find.text('Error 500'), findsOneWidget);
+    expect(find.textContaining('server problem'), findsOneWidget);
+    expect(find.textContaining('500'), findsNothing);
+  });
+
+  testWidgets('8.1 / 8.10 too many login attempts (429): wait message', (t) async {
+    await _pump(t, _api((r) async => _err(429, 'Too many login attempts. Try again in 42 s')), () {});
+    await _fillAndSubmit(t, 'Login');
+    expect(find.textContaining('Too many attempts'), findsOneWidget);
   });
 
   testWidgets('2.3 error clears and button re-enables after a failed attempt', (t) async {

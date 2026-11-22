@@ -29,9 +29,19 @@ public class AdAbuseService {
         if (reputation != null) {
             var rep = reputation.findByPackageName(a.packageName());
             if (rep.isPresent()) {
-                return "BAD".equals(rep.get().getVerdict())
-                        ? new AppResult(a.packageName(), 100, Verdict.MALICIOUS, List.of("Known harmful app"))
-                        : new AppResult(a.packageName(), 0, Verdict.SAFE, List.of());
+                var r = rep.get();
+                if ("BAD".equals(r.getVerdict()))
+                    return new AppResult(a.packageName(), 100, Verdict.MALICIOUS, List.of("Known harmful app"));
+                // GOOD: only the genuine app is trusted (6.2); a look-alike using the same package name is not
+                switch (AppTrust.check(r.getCertSha256(), a.certSha256(), a.installer())) {
+                    case GENUINE -> { return new AppResult(a.packageName(), 0, Verdict.SAFE, List.of()); }
+                    case FAKE -> {
+                        String name = r.getLabel() != null ? r.getLabel() : a.packageName();
+                        return new AppResult(a.packageName(), 100, Verdict.MALICIOUS,
+                                List.of("Fake copy of " + name + ": not signed by the real developer"));
+                    }
+                    case UNVERIFIED -> { /* not proven genuine: score it like any other app */ }
+                }
             }
         }
         List<String> reasons = new ArrayList<>();

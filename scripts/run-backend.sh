@@ -15,5 +15,6 @@ docker run -d --name fs-db --network fsnet -e POSTGRES_DB=fraudshield -e POSTGRE
 sleep 6
 docker run -d --name fs-api --network fsnet -p 18080:8080 --env-file .env \
   -e DB_URL=jdbc:postgresql://fs-db:5432/fraudshield -v "$PWD/backend/target":/app -w /app \
+  -v "$PWD/_devtools/keys":/keys:ro \
   eclipse-temurin:21-jre java -jar fraudshield-backend-0.1.0.jar >/dev/null
 echo "backend starting on http://localhost:18080 (secrets loaded from .env)"

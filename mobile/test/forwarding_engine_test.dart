@@ -44,6 +44,20 @@ void main() {
 
   List<http.Request> reports() => requests.where((r) => r.method == 'POST' && r.url.path.endsWith('/threats')).toList();
 
+  group('3.4 capturing carrier replies for the fixture file', () {
+    test('asks all four codes even when the first is ACTIVE, masks numbers, sends nothing', () async {
+      final e = newEngine();
+      native.ussd = (code) => code == '*#21#' ? 'Forwarded to +91 98765 43210' : 'Call forwarding is not active';
+      final rows = await e.captureCarrierReplies();
+      expect(rows.map((r) => r['code']), ['*#21#', '*#67#', '*#61#', '*#62#']);
+      expect(rows.first['text'], 'Forwarded to +99 99999 99999');
+      expect(rows.first['classifiedAs'], 'ACTIVE');
+      expect(rows[1]['classifiedAs'], 'INACTIVE');
+      expect(requests.where((r) => r.body.contains('98765')), isEmpty, reason: 'raw carrier text never leaves the phone');
+      expect(reports(), isEmpty, reason: 'capturing is not a check: no alert, no report');
+    });
+  });
+
   group('3.3 querying the carrier', () {
     test('asks all four forwarding codes, in order, when nothing is forwarded -> OFF', () async {
       final e = newEngine();
@@ -123,6 +137,70 @@ void main() {
       native.ussd = (code) => code == '*#67#' ? 'Please try again later' : 'Call forwarding is not active';
       await e.checkCallForwarding();
       expect(e.status.value['forwarding'], 'UNKNOWN');
+    });
+  });
+
+  // Captured on the Android 13 emulator (real telephony stack, simulated network): with service class 0 Android
+  // answers only "Call forwarding\n" for forwarding ON and OFF alike. See docs/evidence/3.3-3.4-results.md.
+  group('3.3 bare "Call forwarding" reply + Android forwarding flag', () {
+    const bare = 'Call forwarding\n';
+
+    test('bare reply, flag ON -> ACTIVE, alert and report', () async {
+      final e = newEngine();
+      final alerts = <Alert>[];
+      e.alerts.stream.listen(alerts.add);
+      native.ussd = (_) => bare;
+      native.forwardingIndicator = true;
+      await e.checkCallForwarding();
+      await Future<void>.delayed(Duration.zero);
+      expect(e.status.value['forwarding'], 'ACTIVE');
+      expect(alerts.single.body, contains('all calls'));
+      expect(alerts.single.body, contains('call forwarding icon'));
+      expect(reports(), hasLength(1));
+    });
+
+    for (final flag in [false, null]) {
+      test('bare reply, flag $flag -> UNKNOWN, never OFF (the network may still forward)', () async {
+        final e = newEngine();
+        native.ussd = (_) => bare;
+        native.forwardingIndicator = flag;
+        await e.checkCallForwarding();
+        expect(e.status.value['forwarding'], 'UNKNOWN');
+        expect(reports(), isEmpty);
+      });
+    }
+
+    test('flag ON wins over "not active" texts (unconditional forwarding set by another app or the network)', () async {
+      final e = newEngine();
+      native.forwardingIndicator = true;
+      await e.checkCallForwarding();
+      expect(e.status.value['forwarding'], 'ACTIVE');
+    });
+
+    test('flag ON still reported when the carrier cannot be asked (no CALL_PHONE)', () async {
+      final e = newEngine();
+      native.ussd = (_) => 'NO_PERMISSION';
+      native.forwardingIndicator = true;
+      await e.checkCallForwarding();
+      expect(e.status.value['forwarding'], 'ACTIVE');
+    });
+
+    test('clear text still decides when the flag is OFF', () async {
+      final e = newEngine();
+      native.forwardingIndicator = false;
+      await e.checkCallForwarding();
+      expect(e.status.value['forwarding'], 'OFF');
+      native.ussd = (code) => code == '*#61#' ? 'Forwarded to 9876543210' : 'Call forwarding is not active';
+      await e.checkCallForwarding();
+      expect(e.status.value['forwarding'], 'ACTIVE', reason: 'conditional forwarding never sets the flag');
+    });
+
+    test('capture rows include the flag', () async {
+      final e = newEngine();
+      native.ussd = (_) => bare;
+      native.forwardingIndicator = true;
+      final rows = await e.captureCarrierReplies();
+      expect(rows.map((r) => r['androidForwardingIcon']).toSet(), {'true'});
     });
   });
 
@@ -245,6 +323,6 @@ void main() {
   test('looksForwarded (old API) agrees with the classifier', () {
     expect(ProtectionEngine.looksForwarded('Forwarded to +919876543210'), true);
     expect(ProtectionEngine.looksForwarded('Not forwarded to 9876543210'), false);
-    expect(CarrierClassifier.builtIn().ruleCount, 6);
+    expect(CarrierClassifier.builtIn().ruleCount, 9);
   });
 }

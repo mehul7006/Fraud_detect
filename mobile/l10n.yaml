@@ -1,0 +1,6 @@
+# 8.11: Flutter gen-l10n. Add a key to app_en.arb (template) AND app_hi.arb, then `flutter gen-l10n` (also runs on build).
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

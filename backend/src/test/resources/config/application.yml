@@ -1,0 +1,6 @@
+# Test-only overrides (merged on top of src/main/resources/application.yml).
+# Integration tests register many users from 127.0.0.1 within a minute: rate limits are tested in RateLimitIT instead.
+fraudshield:
+  ratelimit:
+    per-minute: 1000000
+    auth-per-minute: 1000000

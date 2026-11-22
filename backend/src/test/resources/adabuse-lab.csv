@@ -1,0 +1,42 @@
+# 6.1 REAL labelled apps, measured by FraudShield itself (debug audit) on a throwaway Android 14 emulator, 2026-11-22.
+# ABUSIVE = real adware samples from MalwareBazaar (tags adware/HiddenAds/Mobidash/clicker). BENIGN = real open-source apps from F-Droid.
+# Same protocol for both: installed with all runtime permissions, every declared special permission granted (overlay,
+# accessibility, notification access), opened + 30 random taps, then 20 min of screen off/on. Built by mobile/tool/adabuse/collect.sh.
+# Not beta-user data: append the export of GET /admin/apps/labels.csv when beta labels exist.
+label,name,notifPerHour,overlay,sms,accessibility,listener,fullScreen,isSystem,selfLaunch
+BENIGN,fdroid com.kunzisoft.keepass.libre,0,false,false,false,false,false,false,0
+BENIGN,fdroid org.kde.kdeconnect_tp,0,true,true,true,true,true,false,0
+BENIGN,fdroid nodomain.freeyourgadget.gadgetbridge,0,true,true,false,true,false,false,0
+BENIGN,fdroid org.schabi.newpipe,0,true,false,false,false,false,false,0
+BENIGN,fdroid org.videolan.vlc,0,true,false,false,false,false,false,0
+BENIGN,fdroid org.fossify.clock,0,true,false,false,false,true,false,0
+BENIGN,fdroid org.fossify.calendar,0,false,false,false,false,false,false,0
+BENIGN,fdroid ws.xsoh.etar,0,false,false,false,false,false,false,1
+BENIGN,fdroid org.fossify.messages,0,false,true,false,false,false,false,1
+BENIGN,fdroid org.fossify.phone,0,true,false,false,false,true,false,1
+BENIGN,fdroid com.fsck.k9,0,false,false,false,false,false,false,0
+BENIGN,fdroid eu.siacs.conversations,0,true,false,false,false,true,false,0
+BENIGN,fdroid im.vector.app,0,true,false,false,false,true,false,0
+BENIGN,fdroid org.briarproject.briar.android,0,false,false,false,false,false,false,0
+BENIGN,fdroid com.keylesspalace.tusky,0,false,false,false,false,false,false,0
+BENIGN,fdroid de.danoeh.antennapod,0,false,false,false,false,false,false,0
+BENIGN,fdroid org.mozilla.fennec_fdroid,0,false,false,false,false,false,false,0
+BENIGN,fdroid com.nextcloud.client,0,false,false,false,false,false,false,0
+BENIGN,fdroid at.bitfire.davdroid,0,false,false,false,false,false,false,0
+BENIGN,fdroid eu.faircode.netguard,0,false,false,false,false,false,false,0
+BENIGN,fdroid com.beemdevelopment.aegis,0,false,false,false,false,false,false,0
+BENIGN,fdroid net.gsantner.markor,0,false,false,false,false,false,false,0
+BENIGN,fdroid com.termux,0,true,false,false,false,false,false,0
+BENIGN,fdroid org.fossify.gallery,0,false,false,false,false,false,false,0
+BENIGN,fdroid org.fossify.filemanager,0,false,false,false,false,false,false,0
+BENIGN,fdroid org.fossify.notes,0,false,false,false,false,false,false,0
+BENIGN,fdroid com.github.libretube,1,false,false,false,false,false,false,0
+BENIGN,fdroid org.wikipedia,0,false,false,false,false,false,false,0
+BENIGN,fdroid net.osmand.plus,0,false,false,false,false,false,false,0
+ABUSIVE,mb com.free.powerline.batterydoctor 2a78ef24571a,0,true,true,false,false,false,false,0
+ABUSIVE,mb com.karabasstudio.nightdescent 3055fc207f21,0,false,false,false,false,false,false,0
+ABUSIVE,mb com.android.ggtoolkit_tw_xd 72811a82887e,0,false,false,false,false,false,false,0
+ABUSIVE,mb launchserfor.apps defe2a008e69,0,false,false,false,true,false,false,0
+ABUSIVE,mb loaddex.hb.com.loaddex.psx 8ea51f4b8b3e,0,true,true,true,true,false,false,0
+ABUSIVE,mb english.speaking.course.hindi b20a64f6e080,0,true,false,false,false,true,false,1
+ABUSIVE,mb com.herocraft.game.free.mig29 650ee3df51c9,0,true,false,false,false,true,false,1

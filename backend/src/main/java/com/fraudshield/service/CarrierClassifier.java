@@ -44,8 +44,20 @@ public final class CarrierClassifier {
     public State classify(String response) {
         if (response == null || response.isBlank()) return State.UNKNOWN;
         String text = response.length() > MAX_TEXT ? response.substring(0, MAX_TEXT) : response;
+        // One line per service ("Voice: +91...", "Data: Not forwarded"): ONE forwarded line = ACTIVE. Mirrors the app.
+        boolean sawInactive = false;
+        for (String line : text.split("\n")) {
+            if (line.isBlank()) continue;
+            State s = line(line);
+            if (s == State.ACTIVE) return State.ACTIVE;
+            if (s == State.INACTIVE) sawInactive = true;
+        }
+        return sawInactive ? State.INACTIVE : State.UNKNOWN;
+    }
+
+    private State line(String line) {
         for (Compiled c : rules) {
-            if (c.pattern().matcher(text).find()) return c.state();
+            if (c.pattern().matcher(line).find()) return c.state();
         }
         return State.UNKNOWN;
     }

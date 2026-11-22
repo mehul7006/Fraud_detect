@@ -1,48 +1,522 @@
-# Known-good apps (roadmap 6.2). GOOD = never flagged by the ad-abuse score.
-# Source: hand-curated list of widely used apps in India, package names as published on Google Play (2026-11).
-# This is a STARTER list (not the full top-500). Expand from a licensed public source before launch and keep
-# every package name exact - a wrong name only means that app is scored normally, never that a bad app is trusted.
-# Admins can add/override entries (GOOD or BAD) with POST /api/v1/admin/apps.
+# Known-good apps (roadmap 6.2). GOOD = not flagged by the ad-abuse score, but ONLY when the installed copy is
+# genuine: signed with the stored certificate or, while no certificate is stored, installed from Google Play
+# (see AppTrust). A sideloaded copy under the same package name is scored normally; a wrong certificate = "Fake copy".
+# Source: 511 widely used apps (India + global). Every package name was checked live on Google Play India on
+# 2026-11-22; label = the title Google Play shows. Rows whose Play developer did not match the brand were removed
+# (e.g. com.blinkit.app belongs to an unrelated developer; real Blinkit is com.grofers.customerapp).
+# Deliberately NOT listed: remote-access apps (AnyDesk, TeamViewer, ...: flagged separately by 2.x clone/remote
+# checks), ad-heavy free VPN / mini browsers. Not an official popularity ranking.
+# Developer of each app (as shown on Google Play) is in docs/evidence/6.2-known-good-apps.md.
+# Admins can add/override entries (GOOD or BAD) with POST /api/v1/admin/apps or bulk POST /api/v1/admin/apps/import.
 package_name,label
 com.whatsapp,WhatsApp
 com.whatsapp.w4b,WhatsApp Business
 org.telegram.messenger,Telegram
 com.instagram.android,Instagram
+com.instagram.barcelona,Threads
 com.facebook.katana,Facebook
 com.facebook.orca,Messenger
+com.facebook.lite,Facebook Lite
+com.facebook.pages.app,Meta Business Suite
+com.facebook.adsmanager,Meta Ads Manager
 com.snapchat.android,Snapchat
-com.twitter.android,X (Twitter)
-com.linkedin.android,LinkedIn
+com.twitter.android,X
+com.linkedin.android,LinkedIn: Community & Network
+com.pinterest,Pinterest
+com.reddit.frontpage,Reddit: Recommended By Sachin
+com.discord,Discord - Talk - Play - Hang Out
+com.tumblr,Tumblr: Social Media & Art
+com.quora.android,Quora: the knowledge platform
+in.mohalla.sharechat,ShareChat Status - Video & Live
+in.mohalla.video,Moj: Free Short Drama & Reels
+com.eterno,Dailyhunt - News & Magazines
+com.next.innovation.takatak,Moj Lite
+com.viber.voip,Rakuten Viber Messenger
+jp.naver.line.android,LINE: Calls & Messages
+com.imo.android.imoim,imo-International Calls & Chat
+org.thoughtcrime.securesms,Signal Private Messenger
+com.wire,Wire - Secure Messenger
+ch.threema.app,Threema. The Secure Messenger
+com.kakao.talk,KakaoTalk : Messenger
 com.google.android.youtube,YouTube
+com.google.android.apps.youtube.music,YouTube Music
+com.google.android.apps.youtube.kids,YouTube Kids
+com.google.android.apps.youtube.creator,YouTube Studio
 com.google.android.gm,Gmail
 com.google.android.apps.maps,Google Maps
-com.android.chrome,Chrome
+com.android.chrome,Google Chrome
 com.google.android.apps.photos,Google Photos
 com.google.android.apps.docs,Google Drive
+com.google.android.apps.docs.editors.docs,Google Docs
+com.google.android.apps.docs.editors.sheets,Google Sheets
+com.google.android.apps.docs.editors.slides,Google Slides
 com.google.android.apps.messaging,Google Messages
-com.google.android.dialer,Google Phone
+com.google.android.dialer,Phone by Google
+com.google.android.contacts,Contacts
 com.google.android.calendar,Google Calendar
-com.google.android.keep,Google Keep
-com.google.android.apps.nbu.paisa.user,Google Pay
-com.phonepe.app,PhonePe
-net.one97.paytm,Paytm
-in.org.npci.upiapp,BHIM
-com.dreamplug.androidapp,CRED
-com.mobikwik_new,MobiKwik
-in.amazon.mShop.android.shopping,Amazon Shopping
-com.flipkart.android,Flipkart
-com.myntra.android,Myntra
-com.application.zomato,Zomato
-in.swiggy.android,Swiggy
-com.olacabs.customer,Ola
-com.ubercab,Uber
+com.google.android.keep,Google Keep - Notes and lists
+com.google.android.apps.nbu.paisa.user,Google Pay: Secure UPI payment
+com.google.android.apps.nbu.files,Files by Google
+com.google.android.googlequicksearchbox,Google
+com.google.android.apps.translate,Google Translate
+com.google.android.apps.tachyon,Google Meet
+com.google.android.apps.magazines,Google News - Daily Headlines
+com.google.android.apps.fitness,Google Fit: Activity Tracking
+com.google.android.apps.authenticator2,Google Authenticator
+com.google.android.apps.walletnfcrel,Google Wallet
+com.google.android.apps.subscriptions.red,Google One
+com.google.android.apps.classroom,Google Classroom
+com.google.android.apps.chromecast.app,Google Home
+com.google.android.apps.recorder,Recorder
+com.google.android.apps.googleassistant,Google Assistant
+com.google.android.apps.bard,Google Gemini
+com.google.android.apps.searchlite,Google Go
+com.google.android.apps.mapslite,Google Maps Go
+com.google.android.apps.dynamite,Google Chat
+com.google.android.apps.adm,Google’s Find Hub
+com.google.android.apps.safetyhub,Personal Safety
+com.google.android.apps.tasks,Google Tasks
+com.google.android.apps.googlevoice,Google Voice
+com.google.android.apps.playconsole,Google Play Console
+com.google.android.apps.adwords,Google Ads
+com.google.android.apps.giant,Google Analytics
+com.google.android.apps.blogger,Blogger
+com.google.android.apps.books,Google Play Books & Audiobooks
+com.google.android.apps.nbu.paisa.merchant,Google Pay for Business
+com.google.android.apps.kids.familylink,Google Family Link
+com.google.android.apps.kids.familylinkhelper,Family Link parental controls
+com.google.android.apps.wellbeing,Digital Wellbeing
+com.google.android.apps.photos.scanner,PhotoScan by Google Photos
+com.google.android.GoogleCamera,Pixel Camera
+com.google.android.inputmethod.latin,Gboard - the Google Keyboard
+com.google.android.marvin.talkback,Android Accessibility Suite
+com.google.android.tts,Speech Recognition & Synthesis
+com.google.android.apps.healthdata,Health Connect
+com.google.android.apps.wearables.maestro.companion,Google Pixel Buds
+com.google.ar.lens,Google Lens
+com.google.earth,Google Earth
+com.google.android.play.games,Google Play Games
+com.google.android.apps.accessibility.voiceaccess,Voice Access
+com.google.android.accessibility.soundamplifier,Sound Amplifier
+com.google.audio.hearing.visualization.accessibility.scribe,Live Transcribe & Notification
+com.google.android.apps.accessibility.auditor,Accessibility Scanner
+com.google.android.videos,Google TV
+com.google.android.music,YouTube Music
+com.phonepe.app,PhonePe UPI Payments - Loan App
+com.phonepe.app.business,PhonePe Business UPI - Loan App
+net.one97.paytm,Paytm: Secure UPI Payments
+com.paytm.business,Paytm for Business
+in.org.npci.upiapp,BHIM Bharat's Own Payments App
+com.dreamplug.androidapp,CRED: Credit Cards - Bills - UPI
+com.mobikwik_new,MobiKwik: Loans - UPI & Wallet
+com.freecharge.android,Freecharge UPI & Bill Payments
+com.amazon.mShop.android.shopping,Amazon Shopping
+in.amazon.mShop.android.shopping,Amazon India Shop - Pay - miniTV
+com.amazon.avod.thirdpartyclient,Prime Video
+com.amazon.mp3,Amazon Music: Songs & Podcasts
+com.amazon.kindle,Amazon Kindle - eBooks & more
+com.amazon.dee.app,Amazon Alexa
+com.amazon.sellermobile.android,Amazon Seller App for Business
+com.audible.application,Audible: Audiobooks & Podcasts
+com.flipkart.android,Flipkart Online Shopping App
+com.flipkart.shopsy,Shopsy Shopping App - Flipkart
+com.myntra.android,Myntra - Fashion Shopping App
+com.meesho.supply,Meesho: Online Shopping App
+com.snapdeal.main,Snapdeal Trendy Budget Fashion
+com.lenskart.app,Lenskart : Eyeglasses & More
+com.ril.ajio,AJIO Online Shopping App
+in.swiggy.android,Swiggy: Food Instamart Dineout
+com.application.zomato,Zomato: Food Delivery & Dining
+com.grofers.customerapp,Blinkit: Groceries & more
+com.bigbasket.mobileapp,bigbasket: Groceries and more
+com.zeptoconsumerapp,Zepto: Groceries in minutes
+com.mcdonalds.mobileapp,McDonald's
+com.olacabs.customer,Ola: Book Cab - Auto - Bike Taxi
+com.ubercab,Uber - Bike - Auto & Car Rides
+com.ubercab.eats,Uber Eats: Food Delivery
+com.rapido.passenger,Rapido: Bike-Taxi - Auto & Cabs
+in.redbus.android,redBus Book Bus - Train Tickets
+com.makemytrip,MakeMyTrip: Hotel - Flight - Bus
+com.goibibo,Goibibo: Hotel - Flight & Train
+com.ixigo.train.ixitrain,ixigo Trains - Bus Ticket Book
+com.ixigo,ixigo: Flight & Hotel Booking
+com.cleartrip.android,Cleartrip - Flight Hotel Train
+com.yatra.base,Yatra - Flights - Hotels - Bus
+com.easemytrip.android,EaseMyTrip Flight - Hotel - Bus
+com.booking,Booking.com: Hotels and more
+com.airbnb.android,Airbnb
+com.tripadvisor.tripadvisor,Tripadvisor: Plan & Book Trips
+com.agoda.mobile.consumer,Agoda: Cheap Flights & Hotels
+com.oyo.consumer,OYO : Hotel Booking App
+cris.org.in.prs.ima,IRCTC Rail Connect
 com.netflix.mediaclient,Netflix
-com.spotify.music,Spotify
-com.truecaller,Truecaller
-com.jio.myjio,MyJio
-com.myairtelapp,Airtel Thanks
+in.startv.hotstar,JioHotstar
+com.jio.jioplay.tv,JioTV: Live TV - OTT & Catch-up
+com.jio.media.jiobeats,JioSaavn - Music & Podcasts
+com.graymatrix.did,Zee 5
+com.sonyliv,Sony LIV: Sports & Entmt
+com.mxtech.videoplayer.ad,MX Player: Video Player & OTT
+com.eros.now,Eros Now for Android TV
+com.spotify.music,Spotify: Music and Podcasts
+com.gaana,Gaana: MP3 Songs - Music App
+com.bsbportal.music,Wynk Music: Hellotunes
+com.shazam.android,Shazam: Find Music & Concerts
+com.soundcloud.android,SoundCloud: Discover Music
+com.pocketfm.novel,Pocket Novel
+fm.castbox.audiobook.radio.podcast,Podcast Player - Castbox
+com.truecaller,Truecaller: Phone Call Blocker
+com.jio.myjio,MyJio: For Everything Jio
+com.myairtelapp,Airtel: Recharge - Bank & Loans
+com.vodafone.vodafoneplay,Vi Movies & TV - 20 OTTs in 1
+com.mventus.selfcare.activity,Vi: Recharge & Payments
 com.microsoft.teams,Microsoft Teams
-us.zoom.videomeetings,Zoom
-com.sbi.lotusintouch,YONO SBI
-com.csam.icici.bank.imobile,ICICI iMobile
-com.snapwork.hdfc,HDFC Bank MobileBanking
+com.microsoft.office.outlook,Microsoft Outlook
+com.microsoft.office.officehubrow,Microsoft Copilot
+com.microsoft.office.word,Microsoft Word: Edit Documents
+com.microsoft.office.excel,Microsoft Excel: Spreadsheets
+com.microsoft.office.powerpoint,Microsoft PowerPoint
+com.microsoft.office.onenote,Microsoft OneNote: Save Notes
+com.microsoft.skydrive,Microsoft OneDrive
+com.microsoft.launcher,Microsoft Launcher
+com.microsoft.bing,Microsoft Bing Search
+com.microsoft.emmx,Microsoft Edge
+com.microsoft.todos,Microsoft To Do: Lists & Tasks
+com.microsoft.translator,Microsoft Translator
+com.azure.authenticator,Microsoft Authenticator
+com.touchtype.swiftkey,Microsoft SwiftKey AI Keyboard
+com.microsoft.xboxone.smartglass,XBOX
+us.zoom.videomeetings,Zoom Workplace
+com.Slack,Slack
+com.dropbox.android,Dropbox: Files & Cloud Storage
+com.box.android,Box
+com.evernote,Evernote - Note Organizer
+com.todoist,Todoist: To Do List & Calendar
+com.trello,Trello: Daily Task Tracker
+com.asana.app,Asana: Work Management
+com.atlassian.android.jira.core,Jira Cloud by Atlassian
+com.anydo,Any.do - To do list & Calendar
+com.adobe.reader,Acrobat Reader: PDF Converter
+com.adobe.scan.android,Adobe Scan: PDF & Doc Scanner
+com.adobe.lrmobile,Lightroom Photo Editor & Video
+com.adobe.psmobile,Photoshop Express Photo Editor
+com.adobe.spark.post,Adobe Express: AI Photo - Video
+com.cv.docscanner,Document Scanner - PDF Creator
+com.canva.editor,Photo & Video Editor - Canva
+com.picsart.studio,Picsart AI Photo Editor - Video
+com.vsco.cam,VSCO: Photo Editor
+com.niksoftware.snapseed,Snapseed
+com.camerasideas.instashot,Video Editor & Maker - InShot
+com.alightcreative.motion,Alight Motion
+com.lightricks.facetune.free,Facetune: Photo & Video Editor
+cn.wps.moffice_eng,WPS Office-PDF - Word - Sheet
+com.zoho.mail,Zoho Mail - Email and Calendar
+com.zoho.books,Zoho Books - GST Accounting
+com.zoho.invoice,Zoho Invoice - GST Invoice App
+com.digilocker.android,DigiLocker
+nic.goi.aarogyasetu,AarogyaSetu 2.0
+com.nic.mparivahan,NextGen mParivahan
+com.sbi.lotusintouch,YONO SBI: Banking - UPI & Pay
+com.sbi.SBIFreedomPlus,Yono Lite SBI - Mobile Banking
+com.sbi.upi,BHIM SBI Pay:Retail & Business
+com.csam.icici.bank.imobile,iMobile: Loan - Cards & Banking
+com.icicibank.pockets,Pockets by ICICI Bank
+com.hdfcbank.payzapp,PayZapp UPI Wallet - Pixel Card
+com.axis.mobile,Axis Mobile: Pay - Invest & UPI
+com.msf.kbank.mobile,Kotak Bank (Old)
+com.kotak811mobilebankingapp.instantsavingsupiscanandpayrecharge,Kotak Bank: 811 Mobile App
+com.bankofbaroda.mconnect,bob World:Banking & Experience
+com.canarabank.mobility,Canara ai1- Mobile Banking App
+com.indusind.indie,IndusInd Bank: Savings A/C - FD
+com.rblbank.mobank,RBL MyBank
+com.idfcfirstbank.optimus,IDFC FIRST Bank: MobileBanking
+com.citi.citimobile,Citi Mobile®
+com.zerodha.kite3,Zerodha Kite - Trade & Invest
+com.zerodha.coin,Coin by Zerodha - Mutual funds
+com.nextbillion.groww,Groww Stocks - Mutual Fund - IPO
+com.msf.angelmobile,Angel One: Stocks - Mutual Fund
+com.dhan.live,Dhan: Stock Market Trading App
+com.fivepaisa.trade,5paisa old: Demat - Stocks - IPO
+com.paytmmoney,Paytm Money Stocks - MF - IPO
+com.smallcase.android,smallcase - Save & Invest
+com.et.market,ET Markets: Stock Tools & News
+com.acko.android,ACKO Insurance
+org.altruist.BajajExperia,Bajaj Finance : UPI & Loan App
+com.tatadigital.tcp,Tata Neu: UPI - Cards - Rewards
+com.mpokket.app,mPokket: Instant Loan App
+com.kreditbee.android,KreditBee: Personal Loans - UPI
+in.indwealth,INDmoney: US Stocks - F&O - IPO
+com.olx.southasia,OLX: Buy & Sell Near You
+com.quikr,Quikr: Homes - Jobs - Cars Etc
+com.nobroker.app,NoBroker Rent - Buy - Sell Flats
+com.urbanclap.urbanclap,Urban Company: Home Services
+com.practo.fabric,Practo: Doctor Appointment App
+com.aranoah.healthkart.plus,TATA 1mg Online Healthcare App
+com.apollo.patientapp,Apollo 247 - Health & Medicine
+com.healthifyme.basic,Healthify: AI Diet & Fitness
+com.myfitnesspal.android,MyFitnessPal: Calorie Counter
+com.fitbit.FitbitMobile,Google Health (Fitbit)
+com.strava,Strava: Run - Bike - Walk
+com.nike.plusgps,Nike Run Club - Running Coach
+com.calm.android,Calm - Sleep - Meditate - Relax
+org.iggymedia.periodtracker,Flo Period & Pregnancy Tracker
+com.byjus.thelearningapp,BYJU'S – The Learning App
+com.unacademyapp,Unacademy: Learn & Crack Exams
+com.vedantu.app,Vedantu | JEE-NEET - Class 1-12
+xyz.penpencil.physicswala,PW - India's Learning Platform
+com.adda247.app,Adda247 Govt Job Exam Prep
+com.testbook.tbapp,Testbook: Exam Preparation App
+com.duolingo,Duolingo: Learn Languages
+com.babbel.mobile.android.en,Babbel - Learn Languages
+com.memrise.android.memrisecompanion,Memrise: Language Learning App
+org.edx.mobile,edX online learning
+com.udemy.android,Udemy - Online Courses
+com.sololearn,Sololearn: Learn Python & Code
+co.brainly,Brainly-Math Solver - Study App
+com.microblink.photomath,Photomath
+com.chegg,Chegg Study - Homework Helper
+com.quizlet.quizletandroid,Quizlet: Study & Exam Prep
+com.instructure.candroid,Canvas By Instructure
+com.nextdoor,Nextdoor: Neighborhood Network
+com.yelp.android,Yelp: Food - Delivery & Reviews
+com.justdial.search,JD -Search - Shop - Travel - B2B
+com.naukriGulf.app,Naukrigulf - Job Search App
+com.linkedin.android.learning,LinkedIn Learning
+com.indeed.android.jobsearch,Indeed Job Search
+com.glassdoor.app,Glassdoor | Jobs & Careers
+in.workindia.nileshdungarwal.workindiaandroid,WorkIndia Job Search App
+com.timesgroup.techgig,TechGig: Contests -Tests & News
+com.toi.reader.activities,TOI Breaking News App & ePaper
+com.htmedia.mint,Mint: Stock Market & IPO News
+com.ht.news,Hindustan Times: News & ePaper
+com.indianexpress.android,Indian Express Latest News App
+in.AajTak.headlines,Hindi News:Aaj Tak Live TV App
+com.opera.app.news,Opera News: breaking & local
+bbc.mobile.news.ww,BBC: World News & Stories
+com.cnn.mobile.android.phone,CNN: Live & Breaking News
+com.nytimes.android,NYTimes: US and Global News
+com.guardian,The Guardian - US & World News
+com.bloomberg.android.plus,Bloomberg: Finance Market News
+com.medium.reader,Medium: Read & Write Stories
+com.pratilipi.mobile.android,Pratilipi - Read Stories
+com.goodreads,Goodreads: Book Tracker & More
+com.scribd.app.reader0,Everand: Audiobooks & Ebooks
+com.opera.browser,Opera: AI browser with VPN
+com.opera.mini.native,Opera Mini: Fast Web Browser
+com.opera.gx,Opera GX: Gaming Browser
+org.mozilla.firefox,Firefox Fast & Private Browser
+org.mozilla.focus,Firefox Focus: No Fuss Browser
+com.brave.browser,Brave Private Web Browser - VPN
+com.duckduckgo.mobile.android,DuckDuckGo - optional Duck.ai
+com.sec.android.app.sbrowser,Samsung Browser
+com.vivaldi.browser,Vivaldi Browser: Fast - Private
+com.yandex.browser,Yandex Browser with Alice AI
+org.torproject.torbrowser,Tor Browser
+com.ecosia.android,Ecosia: Search to plant trees
+com.nordvpn.android,NordVPN – fast VPN for privacy
+com.expressvpn.vpn,ExpressVPN: Fast & Secure VPN
+ch.protonmail.android,Proton Mail: Encrypted Email
+me.proton.android.drive,Proton Drive: Cloud Storage
+com.surfshark.vpnclient.android,Surfshark: Secure VPN service
+com.lastpass.lpandroid,LastPass Password Manager
+com.x8bit.bitwarden,Bitwarden Password Manager
+com.onepassword.android,1Password: Password Manager
+com.dashlane,Dashlane Password Manager
+com.avast.android.mobilesecurity,Avast Antivirus & Security
+com.avg.cleaner,AVG Cleaner – Storage Cleaner
+com.antivirus,AVG AntiVirus & Security
+com.eset.ems2.gp,ESET Mobile Security Antivirus
+com.bitdefender.security,Bitdefender Mobile Security
+com.symantec.mobilesecurity,Norton 360: Mobile Security
+com.quickheal.platform,Quick Heal Mobile Security.
+com.lookout,Kiren by F-Secure
+com.wsandroid.suite,McAfee: Stay Secure & Private
+com.piriform.ccleaner,CCleaner – Phone Cleaner
+com.samsung.android.lool,Device Care
+com.sec.android.app.myfiles,Samsung My Files
+com.samsung.android.app.notes,Samsung Notes
+com.samsung.android.oneconnect,SmartThings
+com.samsung.android.spay,Samsung Wallet (Samsung Pay)
+com.samsung.android.app.watchmanager,Galaxy Wearable
+com.sec.android.easyMover,Samsung Smart Switch Mobile
+com.samsung.android.voc,Samsung Members
+com.miui.player,Mi Music: Songs & Playlists
+com.xiaomi.wearable,Mi Fitness (Xiaomi Wear)
+com.xiaomi.smarthome,Xiaomi Home
+com.mi.android.globalFileexplorer,File Manager
+com.oneplus.backuprestore,Clone Phone - OnePlus app
+com.coloros.backuprestore,OPPO Clone Phone
+com.realme.link,realme Link
+com.vivo.easyshare,EasyShare
+com.motorola.ccc.notification,Motorola Notifications
+com.dewmobile.kuaiya.play,Zapya - File Transfer - Share
+com.ghisler.android.TotalCommander,Total Commander - file manager
+com.rarlab.rar,RAR
+org.zwanoo.android.speedtest,Speedtest by Ookla
+com.netflix.Speedtest,FAST Speed Test
+com.overlook.android.fing,Fing - Network Tools
+com.supercell.clashofclans,Clash of Clans
+com.supercell.clashroyale,Clash Royale
+com.supercell.brawlstars,Brawl Stars
+com.supercell.hayday,Hay Day
+com.supercell.boombeach,Boom Beach: War Strategy Game
+com.pubg.imobile,BGMI: FPS Battle Royale
+com.dts.freefiremax,Free Fire MAX: Storm Arena
+com.activision.callofduty.shooter,Call of Duty®: Mobile
+com.king.candycrushsaga,Candy Crush Saga
+com.king.candycrushsodasaga,Candy Crush Soda Saga
+com.king.farmheroessaga,Farm Heroes Saga
+com.kiloo.subwaysurf,Subway Surfers
+com.imangi.templerun2,Temple Run 2
+com.imangi.templerun,Temple Run
+com.mojang.minecraftpe,Minecraft: Dream it - Build it!
+com.roblox.client,Roblox
+com.miniclip.eightballpool,8 Ball Pool
+com.ludo.king,Ludo King®
+com.dream11sportsguru,FanCode - Watch Live Sports
+com.rovio.baba,Angry Birds 2
+com.outfit7.mytalkingtomfree,My Talking Tom
+com.outfit7.mytalkingtom2,My Talking Tom 2: Pet Game
+com.outfit7.talkingtom,Talking Tom Cat
+com.outfit7.mytalkingangelafree,My Talking Angela
+com.fingersoft.hillclimb,Hill Climb Racing
+com.fingersoft.hcr2,Hill Climb Racing 2
+com.ea.gp.fifamobile,EA SPORTS FC Soccer Mobile 27
+com.ea.game.pvzfree_row,Plants vs. Zombies™
+com.gameloft.android.ANMP.GloftA9HM,Asphalt Legends - Racing Game
+com.halfbrick.fruitninjafree,Fruit Ninja®
+com.halfbrick.jetpackjoyride,Jetpack Joyride
+com.nianticlabs.pokemongo,Pokémon GO
+com.innersloth.spacemafia,Among Us
+com.chess,Chess - Play and Learn Online
+com.playrix.township,Township
+com.playrix.homescapes,Homescapes
+com.playrix.gardenscapes,Gardenscapes
+com.playrix.fishdomdd.gplay,Fishdom
+com.moonactive.coinmaster,Coin Master
+com.zynga.words3,Words With Friends Word Game
+com.zynga.FarmVille2CountryEscape,FarmVille 2: Country Escape
+com.scopely.monopolygo,MONOPOLY GO!
+com.garena.game.codm,Call of Duty®: Mobile - Garena
+com.miHoYo.GenshinImpact,Genshin Impact
+com.HoYoverse.hkrpgoversea,Honkai: Star Rail
+com.netease.newspike,Blood Strike x DJ SNAKE
+com.nextwave.wcc3,WCC3: Cricket Game 2026
+com.nautilus.RealCricket3D,Real Cricket™ 20
+com.sega.sonicdash,Sonic Dash Run
+com.vectorunit.purple.googleplay,Beach Buggy Racing
+com.tinyco.familyguy,Family Guy The Quest for Stuff
+com.easybrain.sudoku.android,Sudoku.com - Sudoku Puzzle
+com.easybrain.nonogram,Nonogram.com - Puzzle Games
+com.microsoft.microsoftsolitairecollection,Microsoft Solitaire Collection
+com.ketchapp.stack,Stack
+com.peoplefun.wordcross,Wordscapes
+com.google.android.apps.youtube.unplugged,YouTube TV: Live TV & more
+com.disney.disneyplus,Disney+
+com.wbd.stream,HBO Max: Stream TV & Movies
+com.hulu.plus,Hulu: Stream TV shows & movies
+com.plexapp.android,Plex: Find Movies & TV Shows
+org.videolan.vlc,VLC for Android
+com.kmplayer,KMPlayer - All Video Player
+tv.twitch.android.app,Twitch: Live Streaming
+com.zee5.hipi,Hipi: India’s creator app
+com.bumble.app,Bumble: Dating App & Friends
+com.tinder,Tinder - Match. Chat. Date.
+co.hinge.app,Hinge Dating App: Date & Chat
+com.shaadi.android,Shaadi.com Matrimony App
+com.bharatmatrimony,Bharat Matrimony® Marriage App
+com.jeevansathi.android,Jeevansathi.com® Matrimony App
+com.cars24.seller,Cars24®: Buy & Sell Used Cars
+com.bikewale.app,BikeWale- Bikes & Two Wheelers
+com.emirates.ek.android,Emirates
+com.lufthansa.android.lufthansa,Lufthansa
+com.ba.mobile,British Airways
+com.united.mobile.android,United Airlines
+com.delta.mobile.android,Fly Delta
+com.aa.android,American Airlines
+com.marriott.mrt,Marriott Bonvoy: Book Hotels
+com.ihg.apps.android,IHG One Rewards: Book Hotels
+com.hilton.android.hhonors,Hilton Honors: Book Hotels
+com.accor.appli.hybrid,ALL Accor - Hotel Booking
+com.trivago,trivago: Compare hotel prices
+com.kayak.android,KAYAK: Flights - Hotels & Cars
+com.expedia.bookings,Expedia: Hotels - Flights - Cars
+com.citymapper.app.release,Citymapper
+com.waze,Waze Navigation & Live Traffic
+com.here.app.maps,HERE WeGo: Maps & Navigation
+net.osmand,OsmAnd — Maps & GPS Offline
+com.weather.Weather,The Weather Channel - Radar
+com.accuweather.android,AccuWeather: Weather Radar
+com.yahoo.mobile.client.android.weather,Yahoo Weather: Forecast & Maps
+com.windyty.android,Windy.com - Weather Forecast
+com.yahoo.mobile.client.android.mail,Yahoo Mail: Your Email & Inbox
+com.yahoo.mobile.client.android.finance,Yahoo Finance: Stocks & News
+com.yahoo.mobile.client.android.yahoo,Yahoo News: Daily News For You
+com.aol.mobile.aolapp,AOL: Email News Weather
+com.fastmail.app,Fastmail
+com.readdle.spark,Spark Mail: AI Email - Calendar
+com.jio.photos,JioPhotos
+com.jiochat.jiochatapp,JioChat Messenger & Video Call
+com.tatasky.binge,Tata Play Binge: 30+ OTTs in 1
+com.hungama.myplay.activity,Hungama OTT: Shows & Movies
+com.discovery.discoveryplus.mobile,discovery+ | Stream TV Shows
+com.mubi,MUBI: Curated Cinema
+com.bt.bms,BookMyShow | Movies & Events
+com.decathlon.app,Decathlon Sports Shop
+com.urbanladder.catalog,Urban Ladder - Furniture Store
+com.samsung.ecomm.global.in,Samsung Shop : Meet the Galaxy
+com.mi.global.shop,Mi Store
+com.oneplus.store,OnePlus Store
+com.apple.android.music,Apple Music
+com.apple.movetoios,Move to iOS
+com.apple.atve.androidtv.appletv,Apple TV: Shows - Movies & More
+com.shopify.mobile,Shopify: Sell. Run a business.
+com.shopify.arrive,Shop: Track - Pay - Discover
+com.ebay.mobile,eBay online shopping & selling
+com.alibaba.intl.android.apps.poseidon,Alibaba.com - B2B marketplace
+com.einnovation.temu,Temu: Shop Like a Billionaire
+com.etsy.android,Etsy: Shop from Real People
+com.walmart.android,Walmart: Shopping & Savings
+com.target.ui,Target: Shop. Style. Save.
+com.ubercab.driver,Uber - Driver: Drive & Deliver
+com.olacabs.oladriver,Ola Driver
+in.swiggy.deliveryapp,Swiggy Delivery Partner App
+com.zomato.delivery,Zomato Delivery Partner
+com.theporter.android.customerapp,Porter - Logistics Service App
+com.nike.omega,Nike: Engineered for Athletes
+com.adidas.app,adidas: Shop Shoes & Clothing
+com.hm.goe,H&M
+com.inditex.zara,Zara
+com.uniqlo.in.catalogue,UNIQLO India: Clothing Store
+com.gojek.app,Gojek - Food & Transportation
+com.grabtaxi.passenger,Grab - Taxi & Food Delivery
+com.didiglobal.passenger,DiDi Rider: Affordable rides
+taxi.android.client,Freenow by Lyft – taxi & more
+com.paypal.android.p2pmobile,PayPal - Pay - Send - Save
+com.venmo,Venmo
+com.squareup.cash,Cash App
+com.revolut.revolut,Revolut
+com.transferwise.android,Wise: International Transfers
+com.westernunion.moneytransferr3app.eu,Western Union
+com.remitly.androidapp,Remitly: Send & Receive Money
+com.coinbase.android,Coinbase: Buy BTC - ETH - SOL
+com.binance.dev,Binance: Buy Bitcoin & Crypto
+com.coindcx.btc,CoinDCX: Bitcoin Crypto App
+com.coinswitch.kuber,Buy Bitcoin and Crypto app
+piuk.blockchain.android,Blockchain Wallet: Buy BTC
+io.metamask,MetaMask: Trade Crypto
+com.wallet.crypto.trustapp,Trust: Crypto & Bitcoin Wallet
+com.robinhood.android,Robinhood: Trading & Investing
+com.etrade.mobilepro.activity,E*TRADE: Invest. Trade. Save.
+com.fidelity.android,Fidelity Investments
+com.schwab.mobile,Schwab Mobile: Invest & Trade
+com.tradingview.tradingviewapp,TradingView: Bitcoin & crypto
+com.intuit.quickbooks,Intuit QuickBooks for Business
+com.daamitt.walnut.app,axio: Expense Tracker & Budget
+in.okcredit.merchant,OkCredit: Ledger - UPI - Billing
+in.android.vyapar,Vyapar Invoice GST Billing App
+com.bharatpe.app,BharatPe for Business
+com.razorpay.payments.app,Razorpay Payments for Business
+com.dukaan.app,Dukaan - Create Online Dukaan
+com.indiamart.m,IndiaMART B2B Marketplace App
+com.udaan.android,udaan: B2B for Retailers
+com.jumbotail.app,Jumbotail

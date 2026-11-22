@@ -29,3 +29,24 @@ key.properties
 *.iml
 .DS_Store
 Thumbs.db
+
+# local tools data kept off C: (emulators, Gradle and Pub caches) - never commit
+_devtools/
+
+# e2e emulator test run output
+mobile/tool/e2e/u.xml
+mobile/tool/e2e/result-*.txt
+mobile/tool/e2e/fail-*.png
+mobile/tool/e2e/emu*.log
+mobile/tool/e2e/lock-*
+
+# 7.3 / 9.6 Firebase app config (project-specific; keep out of the public repo)
+mobile/android-native/google-services.json
+mobile/android/app/google-services.json
+
+# e2e / capture run outputs (results are copied into docs/evidence and test fixtures)
+mobile/tool/e2e/capture-*.jsonl
+mobile/tool/e2e/capture-*.log
+mobile/tool/e2e/flog*.txt
+mobile/tool/e2e/push_email.txt
+mobile/tool/e2e/u*.xml

@@ -28,10 +28,18 @@ class AdAbuseAccuracyTest {
         double recall() { return tp + fn == 0 ? 1 : (double) tp / (tp + fn); }
     }
 
-    static List<Row> load() throws Exception {
+    static List<Row> load() throws Exception { return load("/adabuse-labelled.csv"); }
+
+    /** Same CSV format as GET /api/v1/admin/apps/labels.csv; null when the resource does not exist. */
+    static List<Row> load(String resource) throws Exception {
+        var stream = AdAbuseAccuracyTest.class.getResourceAsStream(resource);
+        if (stream == null) return null;
+        return parse(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
+    }
+
+    static List<Row> parse(String csv) throws Exception {
         List<Row> rows = new ArrayList<>();
-        try (var in = new BufferedReader(new InputStreamReader(
-                AdAbuseAccuracyTest.class.getResourceAsStream("/adabuse-labelled.csv"), StandardCharsets.UTF_8))) {
+        try (var in = new BufferedReader(new java.io.StringReader(csv))) {
             String line;
             while ((line = in.readLine()) != null) {
                 if (line.isBlank() || line.startsWith("#") || line.startsWith("label,")) continue;
@@ -80,5 +88,38 @@ class AdAbuseAccuracyTest {
         System.out.println(line("after ", now));
         assertTrue(now.precision() >= 0.90, line("after", now));
         assertTrue(now.recall() >= old.recall(), "tuning must not lose recall");
+    }
+
+    /**
+     * REAL apps measured in the lab (adabuse-lab.csv: 7 real adware from MalwareBazaar + 29 real F-Droid apps, see the
+     * file header). First real measurement 2026-11-22: precision 50%, recall 1/7 - the 6.1 gate (90%) is NOT met.
+     * This test prints the numbers and only blocks regressions below that baseline; raise the floor as signals improve.
+     */
+    static final double LAB_PRECISION_FLOOR = 0.50;
+    static final int LAB_TP_FLOOR = 1;
+
+    @Test
+    void realLabSet_reportsHonestNumbers_andNeverGetsWorse() throws Exception {
+        var rows = load("/adabuse-lab.csv");
+        org.junit.jupiter.api.Assumptions.assumeTrue(rows != null && !rows.isEmpty(), "no lab set");
+        Metrics m = measure(new AdAbuseService(), rows);
+        System.out.println(line("lab   ", m) + "   (6.1 gate is 90%)");
+        assertTrue(m.tp() >= LAB_TP_FLOOR && m.precision() >= LAB_PRECISION_FLOOR, "regression: " + line("lab", m));
+    }
+
+    /** Real opt-in beta labels (export of /admin/apps/labels.csv saved as adabuse-real.csv). Gate: >=30 rows, >=90%. */
+    static final int REAL_NEEDED = 30;
+
+    @Test
+    void precisionIsAtLeast90PercentOnRealBetaLabels() throws Exception {
+        var rows = load("/adabuse-real.csv");
+        int n = rows == null ? 0 : rows.size();
+        org.junit.jupiter.api.Assumptions.assumeTrue(n >= REAL_NEEDED,
+                "6.1 gate waits for real data: " + n + " of " + REAL_NEEDED + " real labelled apps (adabuse-real.csv)");
+        Metrics m = measure(new AdAbuseService(), rows);
+        System.out.println(line("real  ", m));
+        // precision() is 100% when nothing is flagged; that must not count as passing
+        assertTrue(m.tp() >= 1, "no real abusive app was flagged at all: " + line("real", m));
+        assertTrue(m.precision() >= 0.90, line("real", m));
     }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/native_bridge.dart';
+import '../l10n/l10n.dart';
 
 typedef AppsLoader = Future<List<Map<String, dynamic>>> Function();
 
@@ -21,27 +22,24 @@ class _SmsAuditScreenState extends State<SmsAuditScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Apps that can read your SMS')),
+        appBar: AppBar(title: Text(context.l10n.smsAuditTitle)),
         body: FutureBuilder<List<Map<String, dynamic>>>(
           future: _f,
           builder: (c, s) {
-            if (s.hasError) return const Center(child: Text('Could not read installed apps'));
+            if (s.hasError) return Center(child: Text(context.l10n.smsAuditError));
             if (!s.hasData) return const Center(child: CircularProgressIndicator());
             final all = s.data!.where(_canReadMessages).toList()
               ..sort((a, b) => (a['label'] as String).toLowerCase().compareTo((b['label'] as String).toLowerCase()));
             final user = all.where((a) => a['isSystem'] != true).toList();
             final system = all.where((a) => a['isSystem'] == true).toList();
             return ListView(children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('If you do not recognise an app below, uninstall it. An unknown app that can read SMS can forward your OTPs.'),
-              ),
-              _section('Installed by you (${user.length})'),
+              Padding(padding: const EdgeInsets.all(16), child: Text(context.l10n.smsAuditIntro)),
+              _section(context.l10n.smsAuditUser('${user.length}')),
               if (user.isEmpty)
-                const ListTile(leading: Icon(Icons.check_circle, color: Colors.green), title: Text('No user-installed app can read your SMS'))
+                ListTile(leading: const Icon(Icons.check_circle, color: Colors.green), title: Text(context.l10n.smsAuditNoneUser))
               else
                 for (final a in user) _row(a, canUninstall: true),
-              _section('System apps - usually safe (${system.length})'),
+              _section(context.l10n.smsAuditSystem('${system.length}')),
               for (final a in system) _row(a, canUninstall: false),
             ]);
           },
@@ -58,14 +56,19 @@ class _SmsAuditScreenState extends State<SmsAuditScreen> {
     return ListTile(
       leading: Icon(Icons.sms_failed, color: canUninstall ? Colors.red : Colors.grey),
       title: Text(a['label'] as String),
-      subtitle: Wrap(spacing: 6, children: [
-        Text(pkg, style: const TextStyle(fontSize: 12)),
-        if (a['hasSmsPermission'] == true) const Chip(label: Text('Reads SMS'), visualDensity: VisualDensity.compact),
-        if (a['hasNotificationListener'] == true) const Chip(label: Text('Reads notifications'), visualDensity: VisualDensity.compact),
+      // 8.12: the button sits under the text, not beside it, so very large text (or longer Hindi words) never squeezes it
+      subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Wrap(spacing: 6, children: [
+          Text(pkg, style: const TextStyle(fontSize: 12)),
+          if (a['hasSmsPermission'] == true) Chip(label: Text(context.l10n.readsSms), visualDensity: VisualDensity.compact),
+          if (a['hasNotificationListener'] == true) Chip(label: Text(context.l10n.readsNotifications), visualDensity: VisualDensity.compact),
+        ]),
+        if (canUninstall)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(onPressed: () => (widget.onUninstall ?? NativeBridge.uninstallApp)(pkg), child: Text(context.l10n.uninstall)),
+          ),
       ]),
-      trailing: canUninstall
-          ? TextButton(onPressed: () => (widget.onUninstall ?? NativeBridge.uninstallApp)(pkg), child: const Text('Uninstall'))
-          : null,
     );
   }
 }

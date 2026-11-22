@@ -4,6 +4,7 @@ import com.fraudshield.domain.Enums.Severity;
 import com.fraudshield.domain.Enums.ThreatType;
 import com.fraudshield.dto.Dtos.ReportRequest;
 import com.fraudshield.dto.Dtos.ThreatDto;
+import com.fraudshield.service.TakeoverService;
 import com.fraudshield.service.ThreatService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,8 +18,9 @@ import java.util.List;
 @RequestMapping("/api/v1")
 public class ThreatController {
     private final ThreatService threats;
+    private final TakeoverService takeover;
 
-    public ThreatController(ThreatService threats) { this.threats = threats; }
+    public ThreatController(ThreatService threats, TakeoverService takeover) { this.threats = threats; this.takeover = takeover; }
 
     @GetMapping("/threats")
     public List<ThreatDto> list(@AuthenticationPrincipal Long uid, @RequestParam(required = false) String status) {
@@ -43,6 +45,7 @@ public class ThreatController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown type or severity");
         }
         ThreatService.Reported res = threats.report(uid, type, sev, r.title(), r.detail(), r.sourceApp());
+        takeover.check(uid); // 7.2: login code / linked-device notice + new device or SIM change = takeover
         return ResponseEntity.status(res.created() ? HttpStatus.CREATED : HttpStatus.OK).body(res.threat());
     }
 

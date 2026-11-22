@@ -15,6 +15,13 @@ public final class Repositories {
     }
 
     @Repository
+    public interface RefreshTokenRepository extends JpaRepository<com.fraudshield.domain.RefreshToken, Long> {
+        Optional<com.fraudshield.domain.RefreshToken> findByTokenHash(String tokenHash);
+        List<com.fraudshield.domain.RefreshToken> findByFamily(String family);
+        List<com.fraudshield.domain.RefreshToken> findByUserIdAndRevokedAtIsNull(Long userId);
+    }
+
+    @Repository
     public interface DeviceRepository extends JpaRepository<Device, Long> {
         Optional<Device> findByUserIdAndDeviceId(Long userId, String deviceId);
         List<Device> findByUserId(Long userId);
@@ -25,6 +32,8 @@ public final class Repositories {
     public interface ThreatEventRepository extends JpaRepository<ThreatEvent, Long> {
         List<ThreatEvent> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, String status);
         List<ThreatEvent> findByUserIdOrderByCreatedAtDesc(Long userId);
+        List<ThreatEvent> findByUserIdAndTypeInAndCreatedAtAfter(Long userId, java.util.Collection<com.fraudshield.domain.Enums.ThreatType> types,
+                java.time.Instant after);
         @org.springframework.data.jpa.repository.Query("select t.type, count(t) from ThreatEvent t where t.userId = :uid group by t.type")
         List<Object[]> countByType(@org.springframework.data.repository.query.Param("uid") Long uid);
         @org.springframework.data.jpa.repository.Query("select t.severity, count(t) from ThreatEvent t where t.userId = :uid group by t.severity")
@@ -49,6 +58,12 @@ public final class Repositories {
     public interface AppReputationRepository extends JpaRepository<AppReputation, Long> {
         Optional<AppReputation> findByPackageName(String packageName);
         List<AppReputation> findByVerdictOrderByPackageName(String verdict);
+    }
+
+    @Repository
+    public interface AppLabelRepository extends JpaRepository<com.fraudshield.domain.AppLabel, Long> {
+        Optional<com.fraudshield.domain.AppLabel> findByUserIdAndPackageName(Long userId, String packageName);
+        List<com.fraudshield.domain.AppLabel> findAllByOrderByIdAsc();
     }
 
     @Repository

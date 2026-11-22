@@ -34,8 +34,11 @@ class AdNotificationListener : NotificationListenerService() {
             extras.getCharSequence("android.bigText")).joinToString(" ")
 
         // 2. URLs in any notification (WhatsApp, Telegram, SMS, mail...)
+        // 7.11: while FraudShield is closed the link is checked right here (BackgroundScanner); otherwise / if that
+        // is not possible it is queued for the app exactly as before.
+        val queue: (JSONObject) -> Unit = { addEvent(prefs, it) }
         UrlExtractor.extract(text).take(5).filter { firstSeenRecently(it, now) }
-            .forEach { addEvent(prefs, JSONObject().put("kind", "LINK").put("pkg", pkg).put("url", it)) }
+            .forEach { url -> if (!BackgroundScanner.onLink(this, url, pkg, queue)) queue(JSONObject().put("kind", "LINK").put("pkg", pkg).put("url", url)) }
 
         // 3. login-code notifications for WhatsApp/Telegram -> possible takeover attempt
         val low = text.lowercase()
@@ -48,7 +51,7 @@ class AdNotificationListener : NotificationListenerService() {
         if (mentionsApp && (low.contains("new login") || low.contains("new device") || low.contains("linked device")
                     || low.contains("whatsapp web") || low.contains("log in from"))) {
             val app = if (low.contains("telegram") || pkg.contains("telegram")) "telegram" else "whatsapp"
-            addEvent(prefs, JSONObject().put("kind", "NEW_DEVICE").put("pkg", pkg).put("app", app))
+            if (!BackgroundScanner.onNewDevice(this, app, queue)) addEvent(prefs, JSONObject().put("kind", "NEW_DEVICE").put("pkg", pkg).put("app", app))
         }
     }
 

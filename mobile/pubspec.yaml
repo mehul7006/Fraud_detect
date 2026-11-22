@@ -9,6 +9,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations: # 8.11 English + Hindi
+    sdk: flutter
+  intl: any
+  # 7.3 push + 9.6 crash reports. Pinned to the 2026-10-23 release train (a month old, not the newest).
+  firebase_core: 5.1.0
+  firebase_messaging: 17.0.1
+  firebase_crashlytics: 6.0.1
   http: ^1.2.2
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.2
@@ -20,3 +27,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true # 8.11: lib/l10n/app_*.arb -> AppLocalizations

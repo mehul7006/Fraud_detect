@@ -6,6 +6,7 @@ import 'package:fraudshield/core/ignored_apps.dart';
 import 'package:fraudshield/core/protection_engine.dart';
 import 'package:fraudshield/core/settings_store.dart';
 import 'package:fraudshield/screens/risky_apps_screen.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'helpers.dart';
 
@@ -15,6 +16,7 @@ void main() {
   late FakeNative native;
   late List<Map<String, dynamic>> sent;
   late List<Map<String, dynamic>> results;
+  late List<Map<String, dynamic>> labels;
 
   Map<String, dynamic> app(String pkg, {int notif = 0, bool overlay = false, int self = 0}) => {
         'packageName': pkg, 'label': 'L-$pkg', 'notifPerHour': notif, 'hasOverlayPermission': overlay,
@@ -25,6 +27,10 @@ void main() {
       {'packageName': pkg, 'adAbuseScore': score, 'verdict': verdict, 'reasons': reasons, 'newSinceLastScan': isNew};
 
   ApiClient api() => apiWith((req) async {
+        if (req.url.path.endsWith('/scan/apps/label')) {
+          labels.add(jsonDecode(req.body) as Map<String, dynamic>);
+          return http.Response('', 204);
+        }
         if (req.url.path.endsWith('/scan/apps')) {
           sent.add(jsonDecode(req.body) as Map<String, dynamic>);
           return jsonResponse(200, {'results': results});
@@ -38,6 +44,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     native = FakeNative()..install();
     sent = [];
+    labels = [];
     native.apps = [app('com.spam', notif: 30, overlay: true), app('com.self', self: 4), app('com.meh', notif: 9), app('com.calm')];
     results = [
       res('com.meh', 30, 'SUSPICIOUS', ['9 notifications/hour']),
@@ -119,6 +126,59 @@ void main() {
     });
   });
 
+  group('6.1 opt-in labels', () {
+    test('OFF by default: Ignore and Uninstall send nothing', () async {
+      final e = engine();
+      await e.checkApps();
+      await e.ignoreApp(e.riskyApps.value.first);
+      native.installed = {};
+      await e.uninstall('com.self');
+      await e.onResume();
+      expect(labels, isEmpty);
+    });
+
+    test('opted in: Ignore = BENIGN with only the score signals', () async {
+      await SettingsStore().setShareAppLabels(true);
+      final e = engine();
+      await e.checkApps();
+      await e.ignoreApp(e.riskyApps.value.first); // com.spam, score 90
+      expect(labels, hasLength(1));
+      expect(labels.single['label'], 'BENIGN');
+      expect(labels.single['scoreShown'], 90);
+      final app = labels.single['app'] as Map<String, dynamic>;
+      expect(app['packageName'], 'com.spam');
+      expect(app['notifPerHour'], 30);
+      expect(app.keys.toSet(), ApiClient.labelFields.toSet().intersection(app.keys.toSet()));
+      expect(app.containsKey('label'), false, reason: 'the app name is not sent with a label');
+    });
+
+    test('opted in: a real uninstall = ABUSIVE, pressing Cancel sends nothing', () async {
+      await SettingsStore().setShareAppLabels(true);
+      final e = engine();
+      await e.checkApps();
+      native.installed = {'com.self'}; // user pressed Cancel
+      await e.uninstall('com.self');
+      await e.onResume();
+      expect(labels, isEmpty);
+      native.installed = {}; // now really removed
+      await e.uninstall('com.self');
+      await e.onResume();
+      expect(labels.single['label'], 'ABUSIVE');
+      expect(labels.single['scoreShown'], 45);
+      expect((labels.single['app'] as Map)['selfLaunchCount'], 4);
+    });
+
+    test('a failing label upload never breaks Ignore', () async {
+      await SettingsStore().setShareAppLabels(true);
+      final e = ProtectionEngine(
+          api: apiWith((r) async => r.url.path.endsWith('/label') ? http.Response('x', 500) : jsonResponse(200, {'results': results})),
+          settings: SettingsStore(), ignored: IgnoredApps());
+      await e.checkApps();
+      await e.ignoreApp(e.riskyApps.value.first);
+      expect(e.riskyApps.value.map((a) => a.packageName), isNot(contains('com.spam')));
+    });
+  });
+
   group('screen', () {
     Future<ProtectionEngine> pump(WidgetTester t) async {
       final e = engine();
@@ -154,6 +214,21 @@ void main() {
       await t.tap(find.descendant(of: find.byKey(const Key('risky-com.self')), matching: find.text('Uninstall')));
       await t.pump();
       expect(native.calls.where((c) => c.method == 'uninstallApp').single.arguments, {'package': 'com.self'});
+    });
+
+    testWidgets('opt-in switch is OFF by default and saves the choice', (t) async {
+      await pump(t);
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await t.pump();
+      await t.scrollUntilVisible(find.byKey(const Key('share-app-labels')), 200);
+      expect(t.widget<SwitchListTile>(find.byKey(const Key('share-app-labels'))).value, false);
+      await t.runAsync(() async {
+        await t.tap(find.byKey(const Key('share-app-labels')));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await t.pump();
+      expect(t.widget<SwitchListTile>(find.byKey(const Key('share-app-labels'))).value, true);
+      expect(await t.runAsync(() => SettingsStore().shareAppLabels()), true);
     });
 
     testWidgets('empty state', (t) async {

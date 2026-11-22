@@ -29,6 +29,19 @@ void main() {
   });
   tearDown(() => native.remove());
 
+  group('8.10 offline / server unreachable', () {
+    testWidgets('a failed check shows a calm banner and "tap to retry" instead of ERROR', (t) async {
+      await pumpDashboard(t);
+      expect(find.byKey(const Key('offline-banner')), findsNothing);
+      engine.status.value = {...engine.status.value, 'clone': 'ERROR'};
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('offline-banner')), findsOneWidget);
+      expect(find.text("Can't reach the FraudShield server"), findsOneWidget);
+      expect(find.text("Couldn't check right now - tap to retry"), findsOneWidget);
+      expect(find.text('ERROR'), findsNothing);
+    });
+  });
+
   group('2.6 permission onboarding', () {
     testWidgets('every missing permission shows a plain-language card', (t) async {
       native.notifPermission = false;

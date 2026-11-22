@@ -18,6 +18,9 @@ import android.provider.Settings
  *  - notification listener = it is switched ON in Notification access
  *  - SMS stays "declares READ_SMS/RECEIVE_SMS" so the 3.7 audit also lists apps that could be granted it in one tap;
  *    smsGranted carries the granted state.
+ *
+ * 6.2: certSha256 (signing certificate) and installer (com.android.vending = Google Play) let the backend tell the
+ * real WhatsApp from a sideloaded look-alike that uses the same package name.
  */
 object AppAuditor {
     private fun enabledPackages(ctx: Context, key: String): Set<String> =
@@ -35,9 +38,25 @@ object AppAuditor {
             (mode == AppOpsManager.MODE_DEFAULT && pm.checkPermission(Manifest.permission.SYSTEM_ALERT_WINDOW, pkg) == PackageManager.PERMISSION_GRANTED)
     }
 
-    fun audit(ctx: Context): List<Map<String, Any>> {
+    @Suppress("DEPRECATION")
+    private fun certs(p: android.content.pm.PackageInfo): String? = try {
+        val sigs = if (Build.VERSION.SDK_INT >= 28) {
+            val si = p.signingInfo ?: return null
+            if (si.hasMultipleSigners()) si.apkContentsSigners else si.signingCertificateHistory
+        } else p.signatures
+        CertHash.join(sigs?.map { it.toByteArray() } ?: emptyList())
+    } catch (e: Exception) { null }
+
+    private fun installer(pm: PackageManager, pkg: String): String? = try {
+        if (Build.VERSION.SDK_INT >= 30) pm.getInstallSourceInfo(pkg).installingPackageName
+        else @Suppress("DEPRECATION") pm.getInstallerPackageName(pkg)
+    } catch (e: Exception) { null }
+
+    fun audit(ctx: Context): List<Map<String, Any?>> {
         val pm = ctx.packageManager
-        val flags = PackageManager.GET_PERMISSIONS or PackageManager.GET_SERVICES
+        @Suppress("DEPRECATION")
+        val flags = PackageManager.GET_PERMISSIONS or PackageManager.GET_SERVICES or
+            (if (Build.VERSION.SDK_INT >= 28) PackageManager.GET_SIGNING_CERTIFICATES else PackageManager.GET_SIGNATURES)
         val pkgs = if (Build.VERSION.SDK_INT >= 33)
             pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(flags.toLong()))
         else @Suppress("DEPRECATION") pm.getInstalledPackages(flags)
@@ -69,6 +88,8 @@ object AppAuditor {
                 "hasNotificationListener" to (p.packageName in listenerOn),
                 "hasFullScreenIntent" to perms.contains(Manifest.permission.USE_FULL_SCREEN_INTENT),
                 "selfLaunchCount" to (selfLaunches[p.packageName] ?: 0),
+                "certSha256" to certs(p),
+                "installer" to installer(pm, p.packageName),
                 "isSystem" to isSystem
             )
         }

@@ -74,6 +74,91 @@ void main() {
     });
   });
 
+  group('8.9 https only in release', () {
+    test('release refuses http, allows https', () {
+      expect(() => checkBaseUrl('http://10.0.2.2:8080/api/v1', release: true), throwsStateError);
+      expect(checkBaseUrl('https://api.fraudshield.app/api/v1', release: true), 'https://api.fraudshield.app/api/v1');
+    });
+    test('debug may use the local emulator backend over http', () {
+      expect(checkBaseUrl('http://10.0.2.2:8080/api/v1', release: false), 'http://10.0.2.2:8080/api/v1');
+    });
+  });
+
+  group('8.2 refresh tokens', () {
+    ApiClient withServer(Map<String, int> hits, {bool refreshOk = true, TokenStore? store}) => _client((r) async {
+          final p = r.url.path;
+          hits[p] = (hits[p] ?? 0) + 1;
+          if (p.endsWith('/auth/login')) return _json(200, {'token': 'old', 'refreshToken': 'r1', 'expiresIn': 900});
+          if (p.endsWith('/auth/refresh')) {
+            expect(jsonDecode(r.body), {'refreshToken': 'r1'});
+            return refreshOk ? _json(200, {'token': 'new', 'refreshToken': 'r2', 'expiresIn': 900})
+                : _json(401, {'status': 401, 'message': 'Refresh token already used'});
+          }
+          if (p.endsWith('/auth/logout')) return http.Response('', 204);
+          // the 15-minute access token "ran out": only the renewed one works
+          return r.headers['Authorization'] == 'Bearer new' ? _json(200, []) : _json(401, {'status': 401, 'message': 'expired'});
+        }, store: store);
+
+    test('an expired access token is renewed once, quietly, and the call succeeds', () async {
+      final hits = <String, int>{};
+      final store = MemoryTokenStore();
+      var expired = 0;
+      final api = withServer(hits, store: store)..onSessionExpired = () => expired++;
+      await api.login('a@b.com', 'password123');
+      expect(await api.threats(), isEmpty);
+      expect(hits['/api/v1/auth/refresh'], 1);
+      expect(expired, 0);
+      expect(jsonDecode((await store.read())!), {'a': 'new', 'r': 'r2'}, reason: 'rotated pair saved');
+    });
+
+    test('several calls failing at once share ONE refresh (a second one would look like token theft)', () async {
+      final hits = <String, int>{};
+      final api = withServer(hits);
+      await api.login('a@b.com', 'password123');
+      await Future.wait([api.threats(), api.threats(), api.threats()]);
+      expect(hits['/api/v1/auth/refresh'], 1);
+    });
+
+    test('refresh refused -> session expired, back to login', () async {
+      final hits = <String, int>{};
+      var expired = 0;
+      final api = withServer(hits, refreshOk: false)..onSessionExpired = () => expired++;
+      await api.login('a@b.com', 'password123');
+      await expectLater(api.threats(), throwsA(isA<ApiException>()));
+      expect(expired, 1);
+      expect(api.hasToken, isFalse);
+    });
+
+    test('offline while renewing does NOT log the user out', () async {
+      var expired = 0;
+      final api = _client((r) async {
+        if (r.url.path.endsWith('/auth/login')) return _json(200, {'token': 'old', 'refreshToken': 'r1'});
+        if (r.url.path.endsWith('/auth/refresh')) throw http.ClientException('no network');
+        return _json(401, {'status': 401});
+      })..onSessionExpired = () => expired++;
+      await api.login('a@b.com', 'password123');
+      await expectLater(api.threats(), throwsA(isA<http.ClientException>()));
+      expect(expired, 0);
+      expect(api.hasToken, isTrue);
+    });
+
+    test('logout tells the server, then forgets both tokens', () async {
+      final hits = <String, int>{};
+      final store = MemoryTokenStore();
+      final api = withServer(hits, store: store);
+      await api.login('a@b.com', 'password123');
+      await api.logout();
+      expect(hits['/api/v1/auth/logout'], 1);
+      expect(await store.read(), isNull);
+    });
+
+    test('a token saved by an older app version (plain string) still loads', () async {
+      final api = _client((r) async => _json(200, []), store: MemoryTokenStore()..write('legacy.jwt'));
+      expect(await api.loadToken(), isTrue);
+      expect(api.token, 'legacy.jwt');
+    });
+  });
+
   group('error mapping (matches backend ErrorBody)', () {
     test('401 / 409 / 400 become ApiException with status and message', () async {
       for (final c in [

@@ -17,6 +17,9 @@ public class User {
 
     @Column(nullable = false)
     private String role = "USER";
+    /** 8.2: access tokens issued before this moment are rejected (set by logout). */
+    @Column(name = "tokens_valid_after")
+    private Instant tokensValidAfter;
 
     protected User() {}
     public String getRole() { return role; }
@@ -26,4 +29,6 @@ public class User {
     public Long getId() { return id; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
+    public Instant getTokensValidAfter() { return tokensValidAfter; }
+    public void invalidateTokensIssuedBefore(Instant t) { this.tokensValidAfter = t; }
 }

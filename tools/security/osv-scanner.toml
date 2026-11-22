@@ -1,0 +1,12 @@
+# 8.6: findings that were checked and do NOT apply to FraudShield. Every entry needs a reason and a review date.
+# Fixed only in Spring Framework 7 (Spring Boot 4) - planned as roadmap 8.6b.
+
+[[IgnoredVulns]]
+id = "GHSA-pc63-qcmh-9cmg"
+ignoreUntil = 2027-03-31
+reason = "Spring MVC XsltView path limitation. FraudShield has no view layer (JSON REST only) and never uses XsltView. Fixed in Spring 7.0.9 -> Spring Boot 4 migration (8.6b)."
+
+[[IgnoredVulns]]
+id = "GHSA-j9f9-w8pj-32f8"
+ignoreUntil = 2027-03-31
+reason = "Spring MVC Server-Sent Event stream corruption when rendering fragments. FraudShield sends no SSE and renders no fragments. Fixed in Spring 7.0.9 -> Spring Boot 4 migration (8.6b)."

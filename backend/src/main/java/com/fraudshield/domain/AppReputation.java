@@ -15,6 +15,8 @@ public class AppReputation {
     private String verdict; // GOOD | BAD
     @Column(nullable = false)
     private String source;
+    @Column(name = "cert_sha256")
+    private String certSha256; // 6.2: official signing cert(s), normalised hex, comma separated; null = not known yet
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 
@@ -28,6 +30,8 @@ public class AppReputation {
     public String getLabel() { return label; }
     public String getVerdict() { return verdict; }
     public String getSource() { return source; }
+    public String getCertSha256() { return certSha256; }
+    public void setCertSha256(String certSha256) { this.certSha256 = certSha256; this.updatedAt = Instant.now(); }
     public void update(String label, String verdict, String source) {
         this.label = label; this.verdict = verdict; this.source = source; this.updatedAt = Instant.now();
     }

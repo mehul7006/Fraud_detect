@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'api_client.dart';
 import 'carrier_classifier.dart';
 import 'ignored_apps.dart';
 import 'native_bridge.dart';
+import 'push.dart';
+import '../l10n/l10n.dart';
 import 'settings_store.dart';
 import 'url_extractor.dart';
 
@@ -35,6 +38,9 @@ class RiskyApp {
 /// events in the background, so nothing is lost when the app is closed.
 class ProtectionEngine {
   final ApiClient api;
+  /// 7.3: server push (token sent with the device check-in; alerts while the app is open shown in-app).
+  final PushClient push;
+  StreamSubscription<PushAlert>? _pushSub;
   final alerts = StreamController<Alert>.broadcast();
   final status = ValueNotifier<Map<String, String>>({});
   Timer? _fast, _slow;
@@ -53,6 +59,10 @@ class ProtectionEngine {
   final riskyApps = ValueNotifier<List<RiskyApp>>([]);
   String? _deviceId;
   bool _recheckAppsOnResume = false;
+  /// Signals of each app at the last check, so a later Uninstall / Ignore can be labelled (6.1, opt-in).
+  final _lastAudit = <String, Map<String, dynamic>>{};
+  /// Apps the user tried to uninstall: package -> score shown. Labelled ABUSIVE once they are really gone.
+  final _uninstallAsked = <String, int>{};
   final _alertedApps = <String>{};
 
   /// Link scan bookkeeping (4.7): same link is not scanned twice within 10 minutes, at most 3 scans at once.
@@ -62,8 +72,9 @@ class ProtectionEngine {
   int _running = 0;
   final _waiting = <Completer<void>>[];
 
-  ProtectionEngine({ApiClient? api, SettingsStore? settings, IgnoredApps? ignored})
+  ProtectionEngine({ApiClient? api, SettingsStore? settings, IgnoredApps? ignored, PushClient? push})
       : api = api ?? ApiClient.instance,
+        push = push ?? NoPushClient(),
         settings = settings ?? SettingsStore(),
         ignored = ignored ?? IgnoredApps();
 
@@ -71,12 +82,20 @@ class ProtectionEngine {
   Future<void> onResume() async {
     if (_recheckAppsOnResume) {
       _recheckAppsOnResume = false;
+      final asked = Map<String, int>.from(_uninstallAsked);
+      _uninstallAsked.clear();
       await checkApps();
+      // 6.1: only a real uninstall counts as "abusive" - pressing Cancel in the system dialog does not
+      for (final e in asked.entries) {
+        if (!await NativeBridge.isInstalled(e.key)) await _label(e.key, 'ABUSIVE', e.value);
+      }
     }
   }
 
   Future<void> uninstall(String pkg) async {
     _recheckAppsOnResume = true;
+    final shown = riskyApps.value.where((x) => x.packageName == pkg);
+    _uninstallAsked[pkg] = shown.isEmpty ? 0 : shown.first.score;
     await NativeBridge.uninstallApp(pkg);
   }
 
@@ -84,6 +103,18 @@ class ProtectionEngine {
     await ignored.ignore(a.packageName, a.score);
     riskyApps.value = riskyApps.value.where((x) => x.packageName != a.packageName).toList();
     _set('apps', _appsStatus(riskyApps.value));
+    await _label(a.packageName, 'BENIGN', a.score);
+  }
+
+  /// 6.1: sends nothing unless the user switched "Help improve risky-app detection" on. Never blocks the UI flow.
+  Future<void> _label(String pkg, String label, int score) async {
+    try {
+      final app = _lastAudit[pkg];
+      if (app == null || !await settings.shareAppLabels()) return;
+      await api.labelApp(app, label, score);
+    } catch (e) {
+      debugPrint('app label not sent: $e');
+    }
   }
 
   static String _appsStatus(List<RiskyApp> l) {
@@ -92,6 +123,7 @@ class ProtectionEngine {
   }
 
   void start() {
+    _pushSub ??= push.foreground.listen(onPush);
     runFast();
     runSlow();
     _fast = Timer.periodic(const Duration(seconds: 15), (_) => runFast()); // 15 s + 3 s settle keeps a new file under the 20 s goal (5.4)
@@ -101,13 +133,19 @@ class ProtectionEngine {
   void stop() {
     _fast?.cancel();
     _slow?.cancel();
+    _pushSub?.cancel();
+    _pushSub = null;
   }
+
+  /// 7.3: a server push while the app is on screen becomes a normal in-app alert (critical: blocking popup).
+  void onPush(PushAlert p) => alerts.add(Alert(p.title, p.body, p.type == 'ACCOUNT_TAKEOVER' ? 'CRITICAL' : 'HIGH', []));
 
   void _set(String k, String v) => status.value = {...status.value, k: v};
 
   // ---------------- fast loop: links, OTP/new device events, files ----------------
   Future<void> runFast() async {
     try {
+      await syncBackgroundSession();
       await flushOfflineQueue();
       final shared = await NativeBridge.takeSharedText();
       if (shared != null && shared.trim().isNotEmpty) await scanShared(shared);
@@ -134,6 +172,37 @@ class ProtectionEngine {
       }
     } catch (e) {
       debugPrint('fast loop error: $e');
+    }
+  }
+
+  String? _bgSig;
+  bool _bgSessionSent = false;
+
+  /// 7.11 + 8.2: the native background scanner gets its OWN session (it renews itself while the app is closed) once
+  /// per app start, after that only settings changes are sent. Logged out -> its copy is cleared.
+  Future<void> syncBackgroundSession() async {
+    try {
+      if (!api.hasToken) {
+        if (_bgSig != '') await NativeBridge.clearBackgroundSession();
+        _bgSig = '';
+        _bgSessionSent = false;
+        return;
+      }
+      final disabled = (await settings.disabledPackages()).toList()..sort();
+      final trusted = await settings.trustedDomains();
+      final sig = '${api.baseUrl}|${disabled.join(',')}|${trusted.join(',')}';
+      if (_bgSessionSent && sig == _bgSig) return;
+      String? token, refresh;
+      if (!_bgSessionSent) {
+        final s = await api.backgroundSession();
+        token = s['token'] as String?;
+        refresh = s['refreshToken'] as String?;
+      }
+      await NativeBridge.setBackgroundSession(api.baseUrl, token, refresh, disabled, trusted);
+      _bgSessionSent = true;
+      _bgSig = sig;
+    } catch (e) {
+      debugPrint('background session not updated: $e');
     }
   }
 
@@ -194,13 +263,14 @@ class ProtectionEngine {
   Future<void> _showVerdict(String url, Map<String, dynamic> r, {bool showSafe = false}) async {
     final verdict = r['verdict'] as String;
     final reasons = (r['reasons'] as List).join(', ');
+    final t = currentL10n();
     if (verdict == 'SAFE') {
-      if (showSafe) alerts.add(Alert('No known danger found', '$url\n\nStill be careful with links you did not expect.', 'INFO', []));
+      if (showSafe) alerts.add(Alert(t.alertNoDanger, t.alertNoDangerBody(url), 'INFO', []));
       return;
     }
     final bad = verdict == 'MALICIOUS';
-    await NativeBridge.showAlert(bad ? 'Dangerous link!' : 'Suspicious link', '$url\n$reasons', id: url.hashCode);
-    alerts.add(Alert(bad ? 'DANGEROUS LINK - do not open' : 'Suspicious link', '$url\n\n$reasons',
+    await NativeBridge.showAlert(bad ? t.notifDangerous : t.alertSuspiciousLink, '$url\n$reasons', id: url.hashCode);
+    alerts.add(Alert(bad ? t.alertDangerous : t.alertSuspiciousLink, '$url\n\n$reasons',
         bad ? 'CRITICAL' : 'MEDIUM', []));
   }
 
@@ -221,10 +291,10 @@ class ProtectionEngine {
       try {
         await _showVerdict(u, await api.scanUrl(u, 'share'), showSafe: true);
       } catch (_) {
-        alerts.add(Alert('Could not check the link', '$u\n\nNo connection to FraudShield. Try again in a moment.', 'INFO', []));
+        alerts.add(Alert(currentL10n().alertCheckFailed, currentL10n().alertCheckFailedBody(u), 'INFO', []));
       }
     }
-    if (urls.isEmpty) alerts.add(Alert('No link found', 'The text you shared does not contain a web link.', 'INFO', []));
+    if (urls.isEmpty) alerts.add(Alert(currentL10n().alertNoLink, currentL10n().alertNoLinkBody, 'INFO', []));
     return urls.length;
   }
 
@@ -234,31 +304,32 @@ class ProtectionEngine {
     if (verdict == 'SAFE') return;
     final reasons = (r['reasons'] as List).join(', ');
     final path = f['path'] as String;
-    await NativeBridge.showAlert('Suspicious file received', '${f['fileName']}\n$reasons', id: path.hashCode);
-    alerts.add(Alert(verdict == 'MALICIOUS' ? 'MALICIOUS FILE' : 'Suspicious file', '${f['fileName']}\n\n$reasons',
+    final t = currentL10n();
+    await NativeBridge.showAlert(t.notifSuspiciousFile, '${f['fileName']}\n$reasons', id: path.hashCode);
+    alerts.add(Alert(verdict == 'MALICIOUS' ? t.alertMaliciousFile : t.alertSuspiciousFile, '${f['fileName']}\n\n$reasons',
         verdict == 'MALICIOUS' ? 'CRITICAL' : 'MEDIUM', [
-      AlertAction('Delete file', () async => _confirmDelete(path, f['fileName'] as String)),
+      AlertAction(t.actionDeleteFile, () async => _confirmDelete(path, f['fileName'] as String)),
     ]));
   }
 
   /// 5.7: deleting is a second, explicit step. The native side still refuses anything outside the scan folders.
   void _confirmDelete(String path, String name) {
-    alerts.add(Alert('Delete "$name"?', 'This removes the file from your phone. It cannot be undone.', 'HIGH', [
-      AlertAction('Yes, delete it', () async {
+    final t = currentL10n();
+    alerts.add(Alert(t.alertDeleteQ(name), t.alertDeleteQBody, 'HIGH', [
+      AlertAction(t.actionYesDelete, () async {
         final ok = await NativeBridge.deleteFile(path);
         alerts.add(ok
-            ? Alert('File deleted', '"$name" was removed.', 'INFO', [])
-            : Alert('Could not delete the file', 'FraudShield only deletes files in Downloads, WhatsApp and Telegram folders.', 'INFO', []));
+            ? Alert(t.alertDeleted, t.alertDeletedBody(name), 'INFO', [])
+            : Alert(t.alertDeleteFailed, t.alertDeleteFailedBody, 'INFO', []));
       }),
     ]));
   }
 
   Future<void> _handleLoginCode(String app) async {
     final name = app == 'telegram' ? 'Telegram' : 'WhatsApp';
-    alerts.add(Alert('$name login code received',
-        'A $name login code just arrived. If YOU did not just log in, someone is trying to take over your account. NEVER share this code.',
-        'HIGH', [
-      AlertAction('I did NOT request it', () async {
+    final t = currentL10n();
+    alerts.add(Alert(t.alertLoginCode(name), t.alertLoginCodeBody(name), 'HIGH', [
+      AlertAction(t.actionNotMe, () async {
         await api.report(app == 'telegram' ? 'TELEGRAM_TAKEOVER' : 'WHATSAPP_TAKEOVER', 'CRITICAL',
             '$name takeover attempt', detail: 'Unrequested login code', sourceApp: app);
       }),
@@ -267,11 +338,11 @@ class ProtectionEngine {
 
   Future<void> _handleNewDevice(String app) async {
     final name = app == 'telegram' ? 'Telegram' : 'WhatsApp';
-    await NativeBridge.showAlert('$name: new device activity', 'Open FraudShield to secure your account', id: 77);
+    final t = currentL10n();
+    await NativeBridge.showAlert(t.notifNewDevice(name), t.notifNewDeviceBody, id: 77);
     await api.report(app == 'telegram' ? 'TELEGRAM_TAKEOVER' : 'WHATSAPP_TAKEOVER', 'CRITICAL',
         '$name new device / session notice', sourceApp: app);
-    alerts.add(Alert('$name may be accessed from another device',
-        'A new-device or linked-device notice appeared. Log out all other devices now.', 'CRITICAL', []));
+    alerts.add(Alert(t.alertNewDevice(name), t.alertNewDeviceBody, 'CRITICAL', []));
   }
 
   // ---------------- slow loop: device, forwarding, apps ----------------
@@ -283,13 +354,15 @@ class ProtectionEngine {
 
   Future<void> checkDevice() async {
     try {
-      final info = await NativeBridge.deviceInfo();
+      final info = Map<String, dynamic>.from(await NativeBridge.deviceInfo());
       _deviceId = info['deviceId'] as String?;
+      final pushToken = await push.token(); // 7.3: lets the server push alerts it detects itself
+      if (pushToken != null) info['pushToken'] = pushToken;
       final r = await api.heartbeat(info);
       final score = r['cloneRiskScore'] as int;
       _set('clone', score >= 50 ? 'RISK $score' : 'OK');
       if (score >= 50) {
-        alerts.add(Alert('Possible clone / remote access', (r['reasons'] as List).join('\n'),
+        alerts.add(Alert(currentL10n().alertClone, (r['reasons'] as List).join('\n'),
             score >= 75 ? 'CRITICAL' : 'HIGH', []));
       }
     } catch (e) {
@@ -300,6 +373,15 @@ class ProtectionEngine {
   // ---------------- call forwarding (roadmap 3.3 - 3.6) ----------------
 
   /// Carrier MMI codes that query each forwarding condition. `##002#` (disable all) is used to turn it off.
+  /// The English condition names below are also what the backend report uses; this shows them in the app language.
+  static String conditionLabel(String english, AppLocalizations t) => switch (english) {
+        'all calls' => t.fwdAll,
+        'when busy' => t.fwdBusy,
+        'when not answered' => t.fwdNoAnswer,
+        'when unreachable' => t.fwdUnreachable,
+        _ => english,
+      };
+
   static const Map<String, String> forwardingCodes = {
     '*#21#': 'all calls',
     '*#67#': 'when busy',
@@ -332,12 +414,20 @@ class ProtectionEngine {
       await refreshCarrierRules();
       var sawUnknown = false;
       unrecognisedAnswer.value = null;
+      final indicator = await _forwardingIndicator();
+      Future<void> indicatorSaysOn(String reply) async {
+        _set('forwarding', 'ACTIVE');
+        await _forwardingFound(forwardingCodes['*#21#']!, '$reply\n${currentL10n().fwdIconNote}');
+      }
+
       for (final e in forwardingCodes.entries) {
         final resp = await NativeBridge.ussd(e.key);
         debugPrint('forwarding ${e.key} -> ${_cannotQuery(resp) ? resp : '"$resp"'}');
         if (_cannotQuery(resp)) {
+          // permission/API missing: the other codes would fail the same way. Android's own flag still counts.
+          if (indicator == true) return await indicatorSaysOn('(the carrier could not be asked)');
           _set('forwarding', 'UNAVAILABLE');
-          return; // permission/API missing: the other codes would fail the same way
+          return;
         }
         final state = _carriers.classify(resp);
         if (state == CarrierState.active) {
@@ -350,11 +440,47 @@ class ProtectionEngine {
           unrecognisedAnswer.value ??= resp;
         }
       }
+      // A bare "Call forwarding" reply (service class 0) reads the same for on and off; Android's flag decides.
+      if (indicator == true) return await indicatorSaysOn(unrecognisedAnswer.value?.trim() ?? 'no clear answer');
       _set('forwarding', sawUnknown ? 'UNKNOWN' : 'OFF');
     } catch (e) {
       _set('forwarding', 'UNAVAILABLE');
     }
   }
+
+  static Future<bool?> _forwardingIndicator() async {
+    try {
+      return await NativeBridge.forwardingIndicator();
+    } catch (e) {
+      return null; // older app build / no telephony: carrier text alone decides
+    }
+  }
+
+  /// 3.4 evidence: asks all four codes (does not stop at the first ACTIVE) and returns rows in the shape of
+  /// test/fixtures/ussd_responses.json. Phone numbers are masked; nothing is sent anywhere, the user copies it.
+  Future<List<Map<String, String>>> captureCarrierReplies() async {
+    await refreshCarrierRules();
+    final rows = <Map<String, String>>[];
+    final indicator = await _forwardingIndicator();
+    for (final code in forwardingCodes.keys) {
+      final resp = await NativeBridge.ussd(code);
+      rows.add({
+        'code': code,
+        'text': maskPhoneNumbers(resp),
+        'classifiedAs': _carriers.classify(resp).name.toUpperCase(),
+        'androidForwardingIcon': '$indicator',
+      });
+    }
+    return rows;
+  }
+
+  /// Every digit of a phone-number-like run (7+ digits, may contain spaces, dashes, a leading +) becomes 9.
+  /// Length and format stay the same so the carrier rules still match the masked text.
+  static String maskPhoneNumbers(String s) =>
+      s.replaceAllMapped(RegExp(r'\+?\d[\d\s-]{5,}\d'), (m) {
+        final digits = m[0]!.replaceAll(RegExp(r'\D'), '').length;
+        return digits >= 7 ? m[0]!.replaceAll(RegExp(r'\d'), '9') : m[0]!;
+      });
 
   Future<void> _forwardingFound(String condition, String carrierText) async {
     try {
@@ -362,10 +488,11 @@ class ProtectionEngine {
     } catch (e) {
       debugPrint('could not report forwarding: $e');
     }
-    await NativeBridge.showAlert('Call forwarding is ON', 'Forwarding $condition is active. Scammers use this to steal OTP calls.', id: 21);
-    alerts.add(Alert('Call forwarding is ON',
-        'Forwarding $condition is active.\n\nCarrier says:\n$carrierText\n\nScammers use this to steal OTP calls.', 'CRITICAL', [
-      AlertAction('Turn OFF forwarding', disableCallForwarding),
+    final t = currentL10n();
+    final cond = conditionLabel(condition, t);
+    await NativeBridge.showAlert(t.notifFwdOn, t.notifFwdOnBody(cond), id: 21);
+    alerts.add(Alert(t.notifFwdOn, t.alertFwdOnBody(cond, carrierText), 'CRITICAL', [
+      AlertAction(t.actionFwdOff, disableCallForwarding),
     ]));
   }
 
@@ -378,9 +505,22 @@ class ProtectionEngine {
   /// Fallback when the app cannot query the carrier: opens the dialer pre-filled with the check code.
   Future<void> dialForwardingCheck() => NativeBridge.dial('*#21#');
 
+  static const _auditFields = ['packageName', 'notifPerHour', 'hasOverlayPermission', 'hasSmsPermission',
+      'hasAccessibility', 'hasNotificationListener', 'hasFullScreenIntent', 'isSystem', 'selfLaunchCount', 'installer'];
+
   Future<void> checkApps() async {
     try {
       final apps = await NativeBridge.auditApps();
+      _lastAudit
+        ..clear()
+        ..addAll({for (final a in apps) a['packageName'] as String: a});
+      // 6.1 research (debug builds only): one log line per installed app with the signals the score uses, read by
+      // mobile/tool/adabuse/collect.sh to build the real labelled test set. Never in release builds.
+      if (kDebugMode) {
+        for (final a in apps.where((a) => a['isSystem'] != true)) {
+          debugPrint('app audit ${jsonEncode({for (final k in _auditFields) k: a[k]})}');
+        }
+      }
       // only send non-system apps that have at least one risky trait, keeps payload small
       final risky = apps.where((a) =>
           a['isSystem'] != true &&
@@ -407,9 +547,10 @@ class ProtectionEngine {
       for (final a in list.where((x) => x.verdict == 'MALICIOUS')) {
         if (!a.isNew && _alertedApps.contains(a.packageName)) continue;
         _alertedApps.add(a.packageName);
-        alerts.add(Alert('${a.isNew ? 'New risky app' : 'Risky app'}: ${a.label}', a.reasons.join('\n'), 'HIGH', [
-          AlertAction('Uninstall', () => uninstall(a.packageName)),
-          AlertAction('Ignore this app', () => ignoreApp(a)),
+        final t = currentL10n();
+        alerts.add(Alert(a.isNew ? t.alertNewRiskyApp(a.label) : t.alertRiskyApp(a.label), a.reasons.join('\n'), 'HIGH', [
+          AlertAction(t.uninstall, () => uninstall(a.packageName)),
+          AlertAction(t.actionIgnoreApp, () => ignoreApp(a)),
         ]));
       }
     } catch (e) {

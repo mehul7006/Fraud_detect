@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,16 +24,20 @@ public class ThreatService {
      * Also enforced by the unique index uq_threat_open_once (V2), so concurrent reports cannot duplicate.
      */
     static final Set<ThreatType> ONE_OPEN_AT_A_TIME = EnumSet.of(ThreatType.CALL_FORWARDING, ThreatType.SMS_FORWARDING,
-            ThreatType.WHATSAPP_TAKEOVER, ThreatType.TELEGRAM_TAKEOVER, ThreatType.CLONE_RISK);
+            ThreatType.WHATSAPP_TAKEOVER, ThreatType.TELEGRAM_TAKEOVER, ThreatType.CLONE_RISK, ThreatType.ACCOUNT_TAKEOVER);
 
     /** @param created false when an equivalent OPEN threat already existed and was returned instead */
     public record Reported(ThreatDto threat, boolean created) {}
 
     private final ThreatEventRepository threats;
     private final UserRepository users;
+    private final PushService push;
 
-    public ThreatService(ThreatEventRepository threats, UserRepository users) {
-        this.threats = threats; this.users = users;
+    /** 7.3: threats the SERVER detects (not the phone itself) are pushed to all of the user's devices. */
+    static final Set<String> SERVER_SOURCES = Set.of("correlation", "device");
+
+    public ThreatService(ThreatEventRepository threats, UserRepository users, PushService push) {
+        this.threats = threats; this.users = users; this.push = push;
     }
 
     /** Plain insert, used for per-event threats (links, files, apps). */
@@ -50,6 +55,16 @@ public class ThreatService {
      * creating a duplicate - safe against repeated and concurrent calls.
      */
     public Reported report(Long userId, ThreatType type, Severity sev, String title, String detail, String src) {
+        Reported r = reportOnly(userId, type, sev, title, detail, src);
+        if (r.created() && src != null && SERVER_SOURCES.contains(src) && (sev == Severity.CRITICAL || sev == Severity.HIGH)) {
+            // short, no personal data: the payload passes through Google's servers
+            push.notifyUser(userId, title, "Open FraudShield now to secure your account.",
+                    Map.of("threatId", String.valueOf(r.threat().id()), "type", type.name()));
+        }
+        return r;
+    }
+
+    private Reported reportOnly(Long userId, ThreatType type, Severity sev, String title, String detail, String src) {
         if (!ONE_OPEN_AT_A_TIME.contains(type)) {
             return new Reported(toDto(record(userId, type, sev, title, detail, src)), true);
         }

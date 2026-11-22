@@ -9,11 +9,15 @@ public final class Dtos {
     private Dtos() {}
 
     public record AuthRequest(@Email @NotBlank String email, @Size(min = 8, max = 72) String password) {}
-    public record TokenResponse(String token) {}
+    /** token = short-lived access token (Bearer); refreshToken = use once at POST /auth/refresh; expiresIn = seconds. */
+    public record TokenResponse(String token, String refreshToken, long expiresIn) {}
+    public record RefreshRequest(@NotBlank @Size(max = 200) String refreshToken) {}
 
     public record DeviceRequest(@NotBlank String deviceId, String model, String osVersion, String simHash,
                                 String fingerprint, boolean rooted, boolean emulator, boolean playProtectOn,
-                                List<String> remoteAppsInstalled) {}
+                                List<String> remoteAppsInstalled,
+                                @Size(max = 512) String pushToken) { // 7.3: FCM token, optional
+    }
     public record DeviceResponse(String deviceId, int cloneRiskScore, List<String> reasons) {}
 
     public record UrlScanRequest(@NotBlank @Size(max = 2048) String url, String sourceApp) {}
@@ -32,7 +36,16 @@ public final class Dtos {
     public record AppInfo(@NotBlank String packageName, String label, int notifPerHour,
                           boolean hasOverlayPermission, boolean hasSmsPermission,
                           boolean hasAccessibility, boolean hasNotificationListener,
-                          boolean hasFullScreenIntent, boolean isSystem, int selfLaunchCount) {
+                          boolean hasFullScreenIntent, boolean isSystem, int selfLaunchCount,
+                          @Size(max = 400) String certSha256, @Size(max = 200) String installer) {
+        /** 6.2: certSha256 = SHA-256 of the app's signing certificate(s), hex, comma separated; installer = the
+         *  package that installed it (com.android.vending = Google Play). Both optional (older clients). */
+        public AppInfo(String packageName, String label, int notifPerHour, boolean hasOverlayPermission,
+                       boolean hasSmsPermission, boolean hasAccessibility, boolean hasNotificationListener,
+                       boolean hasFullScreenIntent, boolean isSystem, int selfLaunchCount) {
+            this(packageName, label, notifPerHour, hasOverlayPermission, hasSmsPermission, hasAccessibility,
+                 hasNotificationListener, hasFullScreenIntent, isSystem, selfLaunchCount, null, null);
+        }
         /** Older clients (before 6.6) send no selfLaunchCount. */
         public AppInfo(String packageName, String label, int notifPerHour, boolean hasOverlayPermission,
                        boolean hasSmsPermission, boolean hasAccessibility, boolean hasNotificationListener,
@@ -52,9 +65,15 @@ public final class Dtos {
         }
     }
     public record AppReputationRequest(@NotBlank @Size(max = 200) String packageName, @Size(max = 120) String label,
-                                       @NotBlank @Pattern(regexp = "GOOD|BAD") String verdict) {}
-    public record AppReputationEntry(String packageName, String label, String verdict, String source) {}
+                                       @NotBlank @Pattern(regexp = "GOOD|BAD") String verdict,
+                                       @Size(max = 400) String certSha256) {
+        public AppReputationRequest(String packageName, String label, String verdict) { this(packageName, label, verdict, null); }
+    }
+    public record AppReputationEntry(String packageName, String label, String verdict, String source, String certSha256) {}
     public record AppsScanResponse(List<AppResult> results) {}
+    /** 6.1 (opt-in): the user's decision about a flagged app. Uninstall = ABUSIVE, Ignore = BENIGN. */
+    public record AppLabelRequest(@Valid @NotNull AppInfo app, @NotBlank @Pattern(regexp = "ABUSIVE|BENIGN") String label,
+                                  int scoreShown) {}
 
     public record ThreatDto(Long id, String type, String severity, String title, String detail,
                             String sourceApp, String status, String createdAt) {}

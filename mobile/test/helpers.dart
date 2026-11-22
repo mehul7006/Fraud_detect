@@ -30,6 +30,9 @@ class FakeNative {
   String Function(String code) ussd = (_) => 'Call forwarding is not active';
   Object? Function()? ussdThrows;
 
+  /// Android's unconditional-forwarding flag (CallForwardIndicator.kt); null = unknown.
+  bool? forwardingIndicator;
+
   /// Called when the app runs ##002#.
   void Function()? onDisableForwarding;
 
@@ -72,6 +75,8 @@ class FakeNative {
         case 'checkCallForwarding':
           if (ussdThrows != null) throw PlatformException(code: 'NATIVE_ERROR', message: 'boom');
           return ussd((call.arguments as Map)['code'] as String);
+        case 'forwardingIndicator':
+          return forwardingIndicator;
         case 'disableCallForwarding':
           onDisableForwarding?.call();
           return 'OK';

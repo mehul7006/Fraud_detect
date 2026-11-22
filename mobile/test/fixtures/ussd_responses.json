@@ -1,0 +1,298 @@
+{
+  "_readme": "Carrier answers to the call-forwarding codes, used by mobile/test/call_forward_parser_test.dart AND backend ForwardingIT. source=real only for text captured on a real SIM (long-press the Call forwarding tile -> Copy). source=emulator: captured on the Android emulator (real Android telephony code, simulated network) - real Android output but no carrier, does not count toward the 3.4 gate. Typed or invented text MUST be source=synthetic; it never counts toward the 3.4 gate (>=10 real rows). Mask phone numbers (every digit -> 9).",
+  "rows": [
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Voice call forwarding: Active. Forwarded to +919876543210",
+      "expected": "ACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Forwarded to 9876543210",
+      "expected": "ACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Call forward unconditional: registered and active, number +14155552671",
+      "expected": "ACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#67#",
+      "text": "Divert on busy: Active +447911123456",
+      "expected": "ACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#62#",
+      "text": "Forward when unreachable: Forwarded to 8000123456, delay 20s",
+      "expected": "ACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Call forwarding is not active",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Unconditional forwarding: Not forwarded",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Not forwarded to 9876543210",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#61#",
+      "text": "The service was disabled",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#62#",
+      "text": "Service not provisioned",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Forwarding is OFF",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#67#",
+      "text": "Call forwarding: Deactivated",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Connection problem or invalid MMI code.",
+      "expected": "UNKNOWN",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Your request is being processed",
+      "expected": "UNKNOWN",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Please try again later",
+      "expected": "UNKNOWN",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "",
+      "expected": "UNKNOWN",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Forwarded to +91-98765-43210",
+      "expected": "ACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "Divert all calls +91 98765 43210",
+      "expected": "ACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#61#",
+      "text": "Call forwarding active to +91 98765 43210",
+      "expected": "ACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "कॉल फॉरवर्डिंग सक्रिय है: +91 98765 43210",
+      "expected": "ACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#21#",
+      "text": "कॉल फॉरवर्डिंग निष्क्रिय है",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#67#",
+      "text": "कॉल फॉरवर्डिंग सक्रिय नहीं है",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "generic",
+      "code": "*#62#",
+      "text": "Call forwarding बंद है",
+      "expected": "INACTIVE",
+      "source": "synthetic"
+    },
+    {
+      "carrier": "android13-emulator",
+      "code": "*#21#",
+      "text": "Call forwarding\n",
+      "expected": "UNKNOWN",
+      "source": "emulator",
+      "note": "forwarding was ON (radio log: status active, service class 0); same text both ways"
+    },
+    {
+      "carrier": "android13-emulator",
+      "code": "*#21#",
+      "text": "Call forwarding\n",
+      "expected": "UNKNOWN",
+      "source": "emulator",
+      "note": "forwarding was OFF (radio log: status not active, service class 0); same text both ways"
+    },
+    {
+      "carrier": "android13-emulator",
+      "code": "*#67#",
+      "text": "Call forwarding\n",
+      "expected": "UNKNOWN",
+      "source": "emulator",
+      "note": "forwarding was OFF (radio log: status not active, service class 0); same text both ways"
+    },
+    {
+      "carrier": "android13-emulator",
+      "code": "*#61#",
+      "text": "Call forwarding\n",
+      "expected": "UNKNOWN",
+      "source": "emulator",
+      "note": "forwarding was OFF (radio log: status not active, service class 0); same text both ways"
+    },
+    {
+      "carrier": "android13-emulator",
+      "code": "*#62#",
+      "text": "Call forwarding\n",
+      "expected": "UNKNOWN",
+      "source": "emulator",
+      "note": "forwarding was OFF (radio log: status not active, service class 0); same text both ways"
+    },
+    {
+      "carrier": "Vi",
+      "code": "*#21#",
+      "text": "Call forwarding\nVoice: Not forwarded\n",
+      "expected": "INACTIVE",
+      "source": "real",
+      "note": "Xiaomi Redmi Note 12 5G, Android 15, Vi India (MCC-MNC 404-05), 2026-11-22, forwarding OFF; app tile showed OFF"
+    },
+    {
+      "carrier": "Vi",
+      "code": "*#67#",
+      "text": "Call forwarding\nVoice: Not forwarded\nData: Not forwarded\nFAX: Not forwarded\nSMS: Not forwarded\nSync: Not forwarded\nAsync: Not forwarded\nPacket: Not forwarded\nPAD: Not forwarded\n",
+      "expected": "INACTIVE",
+      "source": "real",
+      "note": "Xiaomi Redmi Note 12 5G, Android 15, Vi India (MCC-MNC 404-05), 2026-11-22, forwarding OFF; app tile showed OFF"
+    },
+    {
+      "carrier": "Vi",
+      "code": "*#61#",
+      "text": "Call forwarding\nVoice: Not forwarded\nData: Not forwarded\nFAX: Not forwarded\nSMS: Not forwarded\nSync: Not forwarded\nAsync: Not forwarded\nPacket: Not forwarded\nPAD: Not forwarded\n",
+      "expected": "INACTIVE",
+      "source": "real",
+      "note": "Xiaomi Redmi Note 12 5G, Android 15, Vi India (MCC-MNC 404-05), 2026-11-22, forwarding OFF; app tile showed OFF"
+    },
+    {
+      "carrier": "Vi",
+      "code": "*#62#",
+      "text": "Call forwarding\nVoice: Not forwarded\nData: Not forwarded\nFAX: Not forwarded\nSMS: Not forwarded\nSync: Not forwarded\nAsync: Not forwarded\nPacket: Not forwarded\nPAD: Not forwarded\n",
+      "expected": "INACTIVE",
+      "source": "real",
+      "note": "Xiaomi Redmi Note 12 5G, Android 15, Vi India (MCC-MNC 404-05), 2026-11-22, forwarding OFF; app tile showed OFF"
+    },
+    {
+      "carrier": "Vi",
+      "code": "*#21#",
+      "text": "कॉल आगे भेजना\nVoice: अग्रेषित नहीं किया गया\nडेटा: अग्रेषित नहीं किया गया\nफ़ैक्स: अग्रेषित नहीं किया गया\nएसएमएस: अग्रेषित नहीं किया गया\nसमन्वयन: अग्रेषित नहीं किया गया\nAsync: अग्रेषित नहीं किया गया\nपैकेट: अग्रेषित नहीं किया गया\nPAD: अग्रेषित नहीं किया गया\n",
+      "expected": "INACTIVE",
+      "source": "real",
+      "lang": "hi-IN",
+      "note": "Xiaomi Redmi Note 12 5G, Android 15, Vi India, 2026-11-22, forwarding OFF, phone service in Hindi"
+    },
+    {
+      "carrier": "Vi",
+      "code": "*#67#",
+      "text": "कॉल आगे भेजना\nVoice: अग्रेषित नहीं किया गया\nडेटा: अग्रेषित नहीं किया गया\nफ़ैक्स: अग्रेषित नहीं किया गया\nएसएमएस: अग्रेषित नहीं किया गया\nसमन्वयन: अग्रेषित नहीं किया गया\nAsync: अग्रेषित नहीं किया गया\nपैकेट: अग्रेषित नहीं किया गया\nPAD: अग्रेषित नहीं किया गया\n",
+      "expected": "INACTIVE",
+      "source": "real",
+      "lang": "hi-IN",
+      "note": "Xiaomi Redmi Note 12 5G, Android 15, Vi India, 2026-11-22, forwarding OFF, phone service in Hindi"
+    },
+    {
+      "carrier": "Vi",
+      "code": "*#61#",
+      "text": "कॉल आगे भेजना\nVoice: अग्रेषित नहीं किया गया\nडेटा: अग्रेषित नहीं किया गया\nफ़ैक्स: अग्रेषित नहीं किया गया\nएसएमएस: अग्रेषित नहीं किया गया\nसमन्वयन: अग्रेषित नहीं किया गया\nAsync: अग्रेषित नहीं किया गया\nपैकेट: अग्रेषित नहीं किया गया\nPAD: अग्रेषित नहीं किया गया\n",
+      "expected": "INACTIVE",
+      "source": "real",
+      "lang": "hi-IN",
+      "note": "Xiaomi Redmi Note 12 5G, Android 15, Vi India, 2026-11-22, forwarding OFF, phone service in Hindi"
+    },
+    {
+      "carrier": "Vi",
+      "code": "*#62#",
+      "text": "कॉल आगे भेजना\nVoice: अग्रेषित नहीं किया गया\nडेटा: अग्रेषित नहीं किया गया\nफ़ैक्स: अग्रेषित नहीं किया गया\nएसएमएस: अग्रेषित नहीं किया गया\nसमन्वयन: अग्रेषित नहीं किया गया\nAsync: अग्रेषित नहीं किया गया\nपैकेट: अग्रेषित नहीं किया गया\nPAD: अग्रेषित नहीं किया गया\n",
+      "expected": "INACTIVE",
+      "source": "real",
+      "lang": "hi-IN",
+      "note": "Xiaomi Redmi Note 12 5G, Android 15, Vi India, 2026-11-22, forwarding OFF, phone service in Hindi"
+    },
+    {
+      "carrier": "android-template",
+      "code": "*#21#",
+      "text": "Call forwarding\nVoice: +999999999999\nData: Not forwarded\nFAX: Not forwarded\nSMS: Not forwarded\nSync: Not forwarded\nAsync: Not forwarded\nPacket: Not forwarded\nPAD: Not forwarded\n",
+      "expected": "ACTIVE",
+      "source": "synthetic",
+      "note": "Android template, voice forwarded, other services not (real Vi format, number masked)"
+    },
+    {
+      "carrier": "android-template",
+      "code": "*#61#",
+      "text": "Call forwarding\nVoice: +999999999999 after 20 seconds\nData: Not forwarded\nFAX: Not forwarded\nSMS: Not forwarded\nSync: Not forwarded\nAsync: Not forwarded\nPacket: Not forwarded\nPAD: Not forwarded\n",
+      "expected": "ACTIVE",
+      "source": "synthetic",
+      "note": "Android template with delay"
+    },
+    {
+      "carrier": "android-template",
+      "code": "*#67#",
+      "text": "कॉल आगे भेजना\nVoice: +999999999999\nडेटा: अग्रेषित नहीं किया गया\nफ़ैक्स: अग्रेषित नहीं किया गया\nएसएमएस: अग्रेषित नहीं किया गया\n",
+      "expected": "ACTIVE",
+      "source": "synthetic",
+      "note": "Hindi Android template, voice forwarded"
+    }
+  ]
+}

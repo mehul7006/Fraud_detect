@@ -52,8 +52,14 @@ perms = ['INTERNET', 'POST_NOTIFICATIONS', 'USE_FULL_SCREEN_INTENT', 'CALL_PHONE
          'QUERY_ALL_PACKAGES', 'MANAGE_EXTERNAL_STORAGE', 'PACKAGE_USAGE_STATS', 'REQUEST_DELETE_PACKAGES']
 add = ''.join(f'    <uses-permission android:name="android.permission.{x}"/>\n' for x in perms
               if f'android.permission.{x}"' not in m)
+# 5.8: old storage permissions, Android 8-10 only
+for x in ['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']:
+    if f'android.permission.{x}"' not in m:
+        add += f'    <uses-permission android:name="android.permission.{x}" android:maxSdkVersion="29"/>\n'
 if add:
     m = m.replace('<application', add + '    <application', 1)
+if 'requestLegacyExternalStorage' not in m:
+    m = m.replace('<application', '<application android:requestLegacyExternalStorage="true"', 1)
 if 'AdNotificationListener' not in m:
     svc = ('        <service android:name=".AdNotificationListener" android:exported="true" '
            'android:label="FraudShield link and ad monitor" '
@@ -80,6 +86,11 @@ m = m.replace('</manifest>', '    <application android:usesCleartextTraffic="tru
 open(p, 'w', encoding='utf-8').write(m)
 print('debug manifest: cleartext allowed (debug only)')
 PY
+
+# 8.9 + 9.5: release signing from android/key.properties, R8 shrink/obfuscate, refuse debug-signed release builds
+"$PYBIN" tool/release_gradle.py
+# 7.3 + 9.6: Firebase (push alerts, crash reports) when android-native/google-services.json is present
+"$PYBIN" tool/firebase_gradle.py
 
 flutter pub get
 echo "Android setup complete."

@@ -8,6 +8,10 @@
 <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
 <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>   <!-- Play declaration needed -->
 <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/> <!-- Play declaration needed -->
+<!-- 5.8 Android 8-10 only: file protection uses the old storage permissions there -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
+<!-- and on <application>: android:requestLegacyExternalStorage="true" (Android 10 plain File access; ignored on 11+) -->
 <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"/>     <!-- 6.6 Usage Access, user opt-in -->
 <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"/> <!-- 6.7 uninstall dialog, Android 9+ -->
 

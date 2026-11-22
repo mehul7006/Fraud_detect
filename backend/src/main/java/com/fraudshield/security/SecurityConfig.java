@@ -27,7 +27,40 @@ public class SecurityConfig {
     PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 
     @Bean
-    SecurityFilterChain chain(HttpSecurity http, JwtService jwt) throws Exception {
+    SecurityFilterChain chain(HttpSecurity http, JwtService jwt,
+                              com.fraudshield.repo.Repositories.UserRepository users,
+                              @org.springframework.beans.factory.annotation.Value("${fraudshield.ratelimit.enabled:true}") boolean rlOn,
+                              @org.springframework.beans.factory.annotation.Value("${fraudshield.ratelimit.per-minute:100}") long rlPerMin,
+                              @org.springframework.beans.factory.annotation.Value("${fraudshield.ratelimit.auth-per-minute:10}") long rlAuthPerMin,
+                              @org.springframework.beans.factory.annotation.Value("${fraudshield.cors.allowed-origins:}") List<String> corsOrigins)
+            throws Exception {
+        // 8.3: security headers on every response. The API returns JSON only, so the strictest CSP fits; the Swagger UI
+        // pages (dev only, disabled in prod) need their scripts, so they are left out of the CSP.
+        var notDocs = new org.springframework.security.web.util.matcher.NegatedRequestMatcher(
+                new org.springframework.security.web.util.matcher.OrRequestMatcher(
+                        new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/swagger-ui/**"),
+                        new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/swagger-ui.html"),
+                        new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/v3/api-docs/**")));
+        http.headers(h -> h
+                .contentTypeOptions(org.springframework.security.config.Customizer.withDefaults())
+                .frameOptions(f -> f.deny())
+                .referrerPolicy(r -> r.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                .httpStrictTransportSecurity(t -> t.includeSubDomains(true).maxAgeInSeconds(31_536_000)) // only on HTTPS
+                .addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter(
+                        "Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()"))
+                .addHeaderWriter(new org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter(notDocs,
+                        new org.springframework.security.web.header.writers.StaticHeadersWriter(
+                                "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"))));
+        // 8.3: CORS closed unless web origins are named (the Android app sends no Origin, so it is unaffected)
+        http.cors(c -> c.configurationSource(req -> {
+            var cfg = new org.springframework.web.cors.CorsConfiguration();
+            cfg.setAllowedOrigins(corsOrigins.stream().map(String::trim).filter(o -> !o.isEmpty()).toList());
+            cfg.setAllowedMethods(List.of("GET", "POST", "DELETE"));
+            cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+            cfg.setExposedHeaders(List.of("X-Request-Id", "Retry-After"));
+            cfg.setMaxAge(3600L);
+            return cfg;
+        }));
         http.csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(a -> a
@@ -47,9 +80,15 @@ public class SecurityConfig {
                         throws ServletException, IOException {
                     String h = req.getHeader("Authorization");
                     if (h != null && h.startsWith("Bearer ")) {
-                        Long uid = jwt.parse(h.substring(7));
-                        if (uid != null) {
-                            String role = jwt.parseRole(h.substring(7));
+                        JwtService.Access acc = jwt.verify(h.substring(7));
+                        // a validly signed token is not enough: the account must still exist (not deleted / DB reset)
+                        // and the token must be newer than the user's last logout (8.2). Otherwise 401, never a 500.
+                        var user = acc == null ? null : users.findById(acc.userId()).orElse(null);
+                        boolean ok = user != null && (user.getTokensValidAfter() == null
+                                || acc.issuedAt().isAfter(user.getTokensValidAfter()));
+                        if (ok) {
+                            Long uid = acc.userId();
+                            String role = acc.role();
                             var authorities = "ADMIN".equals(role)
                                 ? List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))
                                 : List.<org.springframework.security.core.authority.SimpleGrantedAuthority>of();
@@ -59,7 +98,9 @@ public class SecurityConfig {
                     }
                     chain.doFilter(req, res);
                 }
-            }, UsernamePasswordAuthenticationFilter.class);
+            }, UsernamePasswordAuthenticationFilter.class)
+            // 8.1: after the JWT filter, so limits are per user when logged in, per IP otherwise
+            .addFilterAfter(new RateLimitFilter(rlOn, rlPerMin, rlAuthPerMin), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

@@ -33,10 +33,18 @@ void main() {
     expect(find.text('No threats found. You are safe.'), findsOneWidget);
   });
 
-  testWidgets('2.7 load failure shows an error, not a crash', (t) async {
-    await t.pumpWidget(MaterialApp(home: ThreatsScreen(api: _api((r) async => throw const SocketException('down')))));
+  testWidgets('2.7 / 8.10 offline: plain message + Try again, which reloads', (t) async {
+    var down = true;
+    await t.pumpWidget(MaterialApp(home: ThreatsScreen(api: _api((r) async {
+      if (down) throw const SocketException('down');
+      return http.Response('[]', 200, headers: {'content-type': 'application/json'});
+    }))));
     await t.pumpAndSettle();
-    expect(find.text('Could not load'), findsOneWidget);
+    expect(find.textContaining('No internet connection'), findsOneWidget);
+    down = false;
+    await t.tap(find.text('Try again'));
+    await t.pumpAndSettle();
+    expect(find.text('No threats found. You are safe.'), findsOneWidget);
   });
 
   testWidgets('2.7 Resolve posts to the backend and reloads the list', (t) async {

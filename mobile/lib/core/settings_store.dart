@@ -7,9 +7,17 @@ class SettingsStore {
   static const _disabled = 'disabled_packages';
   static const _trusted = 'trusted_domains';
   static const _queue = 'offline_link_queue';
+  static const _shareLabels = 'share_app_labels';
+  static const _language = 'app_language'; // 8.11: 'system' | 'en' | 'hi'
+  static const _consent = 'consent_version'; // 9.4: privacy notice version the user accepted
   static const maxQueue = 100;
 
   Future<SharedPreferences> get _p => SharedPreferences.getInstance();
+
+  Future<String> language() async => (await _p).getString(_language) ?? 'system';
+  Future<int> consentVersion() async => (await _p).getInt(_consent) ?? 0;
+  Future<void> setConsentVersion(int v) async => (await _p).setInt(_consent, v);
+  Future<void> setLanguage(String code) async => (await _p).setString(_language, code);
 
   Future<Set<String>> disabledPackages() async => ((await _p).getStringList(_disabled) ?? []).toSet();
   Future<void> setPackageMonitored(String pkg, bool monitored) async {
@@ -17,6 +25,10 @@ class SettingsStore {
     monitored ? s.remove(pkg) : s.add(pkg);
     await (await _p).setStringList(_disabled, s.toList());
   }
+
+  /// 6.1 opt-in, OFF by default: send the app's risk signals + my Uninstall / Ignore decision to improve detection.
+  Future<bool> shareAppLabels() async => (await _p).getBool(_shareLabels) ?? false;
+  Future<void> setShareAppLabels(bool on) async => (await _p).setBool(_shareLabels, on);
 
   Future<List<String>> trustedDomains() async => (await _p).getStringList(_trusted) ?? [];
   Future<void> addTrustedDomain(String domain) async {

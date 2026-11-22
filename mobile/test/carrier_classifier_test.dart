@@ -29,7 +29,7 @@ void main() {
       test('"$text" -> $expected', () => expect(c.classify(text), expected));
     });
     test('corpus has at least 12 samples', () => expect(corpus.length, greaterThanOrEqualTo(12)));
-    test('all 6 built-in rules compile (inline (?i) translated)', () => expect(c.ruleCount, 6));
+    test('all 9 built-in rules compile (inline (?i) translated)', () => expect(c.ruleCount, 9));
   });
 
   group('classifier behaviour', () {

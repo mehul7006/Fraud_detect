@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Spring Boot's normal console logging, but every message and stack trace goes through LogScrubber (8.4):
+     no emails, URL query strings, tokens or phone numbers in the logs. -->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <conversionRule conversionWord="m" converterClass="com.fraudshield.logging.ScrubbingMessageConverter"/>
+    <conversionRule conversionWord="msg" converterClass="com.fraudshield.logging.ScrubbingMessageConverter"/>
+    <conversionRule conversionWord="message" converterClass="com.fraudshield.logging.ScrubbingMessageConverter"/>
+    <conversionRule conversionWord="wEx" converterClass="com.fraudshield.logging.ScrubbingThrowableConverter"/>
+    <conversionRule conversionWord="ex" converterClass="com.fraudshield.logging.ScrubbingThrowableConverter"/>
+    <conversionRule conversionWord="exception" converterClass="com.fraudshield.logging.ScrubbingThrowableConverter"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

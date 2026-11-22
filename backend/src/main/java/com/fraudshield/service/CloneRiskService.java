@@ -15,7 +15,7 @@ import java.util.*;
  */
 @Service
 public class CloneRiskService {
-    private static final Set<String> REMOTE_APPS = Set.of("com.anydesk.anydeskandroid", "com.teamviewer.quicksupport.market",
+    static final Set<String> REMOTE_APPS = Set.of("com.anydesk.anydeskandroid", "com.teamviewer.quicksupport.market",
             "com.teamviewer.host.market", "com.sand.airdroid", "com.airdroid.kids", "com.rustdesk.rustdesk",
             "com.microsoft.rdc.androidx", "net.christianbeier.droidvnc_ng");
 
@@ -31,6 +31,7 @@ public class CloneRiskService {
 
         if (d.getId() != null && d.getSimHash() != null && r.simHash() != null && !d.getSimHash().equals(r.simHash())) {
             score += 30; reasons.add("SIM card changed since last check");
+            d.markSimChanged();
         }
         if (d.getId() != null && d.getFingerprint() != null && r.fingerprint() != null
                 && !d.getFingerprint().equals(r.fingerprint())) {
@@ -57,6 +58,7 @@ public class CloneRiskService {
 
         d.setModel(r.model()); d.setOsVersion(r.osVersion());
         d.setSimHash(r.simHash()); d.setFingerprint(r.fingerprint());
+        if (r.pushToken() != null && !r.pushToken().isBlank()) d.setPushToken(r.pushToken());
         d.setCloneRiskScore(score); d.touch();
         devices.save(d);
         return new DeviceResponse(r.deviceId(), score, reasons);

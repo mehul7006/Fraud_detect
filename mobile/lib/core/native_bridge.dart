@@ -20,6 +20,15 @@ class NativeBridge {
 
   /// Returns carrier text, or NO_PERMISSION / UNSUPPORTED / ERROR:n
   static Future<String> ussd(String code) async => (await _ch.invokeMethod<String>('checkCallForwarding', {'code': code})) ?? 'ERROR';
+  /// Android's "unconditional forwarding is on" flag (status-bar icon); null = unknown. See CallForwardIndicator.kt.
+  static Future<bool?> forwardingIndicator() => _ch.invokeMethod<bool>('forwardingIndicator');
+  /// 7.11: lets the notification listener check links while the app is closed (see BackgroundScanner.kt).
+  /// [token]/[refresh] null = keep the session already stored natively, only update the settings.
+  static Future<void> setBackgroundSession(String apiBase, String? token, String? refresh, List<String> disabled,
+          List<String> trusted) =>
+      _ch.invokeMethod('setBackgroundSession',
+          {'apiBase': apiBase, 'token': token, 'refresh': refresh, 'disabled': disabled, 'trusted': trusted});
+  static Future<void> clearBackgroundSession() => _ch.invokeMethod('clearBackgroundSession');
   static Future<String> disableCallForwarding() async => (await _ch.invokeMethod<String>('disableCallForwarding')) ?? 'ERROR';
   static Future<void> dial(String code) => _ch.invokeMethod('dialCode', {'code': code});
 
@@ -47,6 +56,8 @@ class NativeBridge {
   static Future<void> openUsageAccessSettings() => _ch.invokeMethod('openUsageAccessSettings');
   static Future<bool> isInstalled(String pkg) async => (await _ch.invokeMethod<bool>('isInstalled', {'package': pkg})) ?? false;
 
+  /// 9.4: opens an https page (privacy policy) in the browser. Only https is allowed.
+  static Future<bool> openUrl(String url) async => (await _ch.invokeMethod<bool>('openUrl', {'url': url})) ?? false;
   static Future<void> uninstallApp(String pkg) => _ch.invokeMethod('uninstallApp', {'package': pkg});
   static Future<bool> openApp(String pkg) async => (await _ch.invokeMethod<bool>('openApp', {'package': pkg})) ?? false;
   static Future<void> showAlert(String title, String body, {int id = 1}) =>

@@ -235,5 +235,9 @@ class ApiFlowIT {
         postJson("/api/v1/devices", t, "{\"deviceId\":\"d\",\"playProtectOn\":true}");
         mvc.perform(delete("/api/v1/me").header("Authorization", "Bearer " + t)).andExpect(status().isNoContent());
         postJson("/api/v1/auth/login", null, "{\"email\":\"" + e + "\",\"password\":\"password123\"}").andExpect(status().isUnauthorized());
+        // the old, still validly signed token must not work any more: 401 (log in again), never a 500 from the DB
+        postJson("/api/v1/scan/url", t, "{\"url\":\"http://example.com\"}").andExpect(status().isUnauthorized());
+        postJson("/api/v1/threats", t, "{\"type\":\"CALL_FORWARDING\",\"severity\":\"HIGH\",\"title\":\"x\"}")
+            .andExpect(status().isUnauthorized());
     }
 }

@@ -4,6 +4,7 @@ import com.fraudshield.domain.Blocklist;
 import com.fraudshield.domain.UrlFeedback;
 import com.fraudshield.dto.Dtos.*;
 import com.fraudshield.repo.Repositories.UrlFeedbackRepository;
+import com.fraudshield.service.AppReputationService;
 import com.fraudshield.service.BlocklistService;
 import com.fraudshield.service.BlocklistService.ImportResult;
 import jakarta.validation.Valid;
@@ -23,28 +24,53 @@ public class AdminController {
     private final BlocklistService blocklist;
     private final UrlFeedbackRepository feedback;
     private final com.fraudshield.repo.Repositories.AppReputationRepository apps;
+    private final AppReputationService appService;
+    private final com.fraudshield.repo.Repositories.AppLabelRepository labels;
 
     public AdminController(BlocklistService blocklist, UrlFeedbackRepository feedback,
-                           com.fraudshield.repo.Repositories.AppReputationRepository apps) {
-        this.blocklist = blocklist; this.feedback = feedback; this.apps = apps;
+                           com.fraudshield.repo.Repositories.AppReputationRepository apps, AppReputationService appService,
+                           com.fraudshield.repo.Repositories.AppLabelRepository labels) {
+        this.blocklist = blocklist; this.feedback = feedback; this.apps = apps; this.appService = appService;
+        this.labels = labels;
+    }
+
+    /**
+     * 6.1: real labelled data in the format of src/test/resources/adabuse-labelled.csv. Save it as
+     * src/test/resources/adabuse-real.csv and AdAbuseAccuracyTest measures the weights on it.
+     */
+    @GetMapping(value = "/apps/labels.csv", produces = "text/csv")
+    public String labelsCsv() {
+        StringBuilder b = new StringBuilder("# REAL opt-in beta labels (Uninstall = ABUSIVE, Ignore = BENIGN), exported ")
+            .append(java.time.LocalDate.now())
+            .append("\nlabel,name,notifPerHour,overlay,sms,accessibility,listener,fullScreen,isSystem,selfLaunch\n");
+        for (var l : labels.findAllByOrderByIdAsc()) {
+            b.append(l.getLabel()).append(',').append(l.getPackageName()).append(',').append(l.getNotifPerHour()).append(',')
+             .append(l.isOverlay()).append(',').append(l.isSms()).append(',').append(l.isAccessibility()).append(',')
+             .append(l.isListener()).append(',').append(l.isFullScreen()).append(",false,").append(l.getSelfLaunch()).append('\n');
+        }
+        return b.toString();
     }
 
     /** 6.2: list known GOOD or BAD apps. */
     @GetMapping("/apps")
     public List<AppReputationEntry> apps(@RequestParam(defaultValue = "BAD") String verdict) {
         return apps.findByVerdictOrderByPackageName(verdict.toUpperCase()).stream()
-                .map(a -> new AppReputationEntry(a.getPackageName(), a.getLabel(), a.getVerdict(), a.getSource())).toList();
+                .map(AdminController::dto).toList();
     }
 
     /** 6.2: add or change an app's reputation (BAD = always flagged, GOOD = never flagged). */
     @PostMapping("/apps")
-    @Transactional
     public AppReputationEntry setApp(@Valid @RequestBody AppReputationRequest r) {
-        String pkg = r.packageName().trim();
-        var a = apps.findByPackageName(pkg).orElseGet(() -> new com.fraudshield.domain.AppReputation(pkg, r.label(), r.verdict(), "admin"));
-        a.update(r.label(), r.verdict(), "admin");
-        apps.save(a);
-        return new AppReputationEntry(a.getPackageName(), a.getLabel(), a.getVerdict(), a.getSource());
+        return dto(appService.set(r.packageName(), r.label(), r.verdict(), r.certSha256(), "admin", true));
+    }
+
+    /** 6.2: bulk import (e.g. the top-500 list). CSV package_name,label,verdict,cert_sha256; existing rows are updated. */
+    @PostMapping(value = "/apps/import", consumes = "multipart/form-data")
+    public AppReputationService.ImportResult importApps(@RequestParam("file") MultipartFile file,
+                                                        @RequestParam(defaultValue = "import") String source) throws IOException {
+        String src = source.replaceAll("[^A-Za-z0-9_.-]", "");
+        return appService.importCsv(new String(file.getBytes(), StandardCharsets.UTF_8),
+                src.isEmpty() ? "import" : src.substring(0, Math.min(60, src.length())), true);
     }
 
     @GetMapping("/blocklist")
@@ -79,6 +105,9 @@ public class AdminController {
         return dto(f);
     }
 
+    private static AppReputationEntry dto(com.fraudshield.domain.AppReputation a) {
+        return new AppReputationEntry(a.getPackageName(), a.getLabel(), a.getVerdict(), a.getSource(), a.getCertSha256());
+    }
     private static BlocklistEntry dto(Blocklist b) { return new BlocklistEntry(b.getId(), b.getKind(), b.getValue(), b.getReason()); }
     private static FeedbackEntry dto(UrlFeedback f) {
         return new FeedbackEntry(f.getId(), f.getHost(), f.getKind(), f.getNote(), f.getStatus(), f.getResolution(), f.getCreatedAt());
