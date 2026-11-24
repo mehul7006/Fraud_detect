@@ -28,6 +28,7 @@ public class User {
 
     public Long getId() { return id; }
     public String getEmail() { return email; }
+    public Instant getCreatedAt() { return createdAt; }
     public String getPasswordHash() { return passwordHash; }
     public Instant getTokensValidAfter() { return tokensValidAfter; }
     public void invalidateTokensIssuedBefore(Instant t) { this.tokensValidAfter = t; }

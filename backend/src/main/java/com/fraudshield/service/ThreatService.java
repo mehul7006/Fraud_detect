@@ -24,7 +24,7 @@ public class ThreatService {
      * Also enforced by the unique index uq_threat_open_once (V2), so concurrent reports cannot duplicate.
      */
     static final Set<ThreatType> ONE_OPEN_AT_A_TIME = EnumSet.of(ThreatType.CALL_FORWARDING, ThreatType.SMS_FORWARDING,
-            ThreatType.WHATSAPP_TAKEOVER, ThreatType.TELEGRAM_TAKEOVER, ThreatType.CLONE_RISK, ThreatType.ACCOUNT_TAKEOVER);
+            ThreatType.WHATSAPP_TAKEOVER, ThreatType.TELEGRAM_TAKEOVER, ThreatType.CLONE_RISK, ThreatType.ACCOUNT_TAKEOVER, ThreatType.LIVE_SCAM);
 
     /** @param created false when an equivalent OPEN threat already existed and was returned instead */
     public record Reported(ThreatDto threat, boolean created) {}
@@ -43,6 +43,14 @@ public class ThreatService {
     /** Plain insert, used for per-event threats (links, files, apps). */
     public ThreatEvent record(Long userId, ThreatType type, Severity sev, String title, String detail, String src) {
         return threats.save(new ThreatEvent(userId, type, sev, title, trim(detail, 1000), src));
+    }
+
+    /** 11.10: as {@link #record}, keeping the {en, hi} explanation of the verdict. */
+    public ThreatEvent record(Long userId, ThreatType type, Severity sev, String title, String detail, String src,
+                              java.util.Map<String, String> explanation) {
+        var t = new ThreatEvent(userId, type, sev, title, trim(detail, 1000), src);
+        if (explanation != null) t.setExplanation(trim(explanation.get("en"), 600), trim(explanation.get("hi"), 600));
+        return threats.save(t);
     }
 
     /** Records only if the user has no OPEN threat of this type yet (avoids hourly duplicates). */
@@ -112,7 +120,7 @@ public class ThreatService {
 
     static ThreatDto toDto(ThreatEvent t) {
         return new ThreatDto(t.getId(), t.getType().name(), t.getSeverity().name(), t.getTitle(), t.getDetail(),
-                t.getSourceApp(), t.getStatus(), t.getCreatedAt().toString());
+                t.getSourceApp(), t.getStatus(), t.getCreatedAt().toString(), t.getExplanationEn(), t.getExplanationHi());
     }
     private static String trim(String s, int n) { return s == null ? null : s.length() > n ? s.substring(0, n) : s; }
 }

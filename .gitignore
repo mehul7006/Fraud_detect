@@ -50,3 +50,9 @@ mobile/tool/e2e/capture-*.log
 mobile/tool/e2e/flog*.txt
 mobile/tool/e2e/push_email.txt
 mobile/tool/e2e/u*.xml
+
+# Phase 11 training data (rebuild with ml/build_dataset.py); keep ml/data/manifest.json
+ml/data/dataset.csv
+ml/data/dataset.tsv
+ml/data/features.csv
+ml/data/feedback.tsv

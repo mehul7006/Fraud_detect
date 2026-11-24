@@ -108,5 +108,20 @@ class AdminFeedbackIT {
             .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("CLOSED"));
         mvc.perform(post("/api/v1/scan/url").header("Authorization", adm).contentType(MediaType.APPLICATION_JSON)
             .content("{\"url\":\"https://reported-site.test/\"}")).andExpect(jsonPath("$.score").value(100));
+
+        // 11.8: reviewed reports become training labels (same format as ml/data/dataset.tsv); hosts only
+        mvc.perform(post("/api/v1/scan/url/feedback").header("Authorization", user).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"url\":\"https://good-shop.test/cart\",\"kind\":\"FALSE_POSITIVE\"}")).andExpect(status().isNoContent());
+        String open = mvc.perform(get("/api/v1/admin/feedback?status=OPEN").header("Authorization", adm))
+            .andReturn().getResponse().getContentAsString();
+        String id2 = open.replaceAll(".*\\{\"id\":(\\d+),\"host\":\"good-shop\\.test\".*", "$1");
+        mvc.perform(post("/api/v1/admin/feedback/" + id2 + "/close").header("Authorization", adm)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"resolution\":\"ALLOW\"}")).andExpect(status().isOk());
+        String tsv = mvc.perform(get("/api/v1/admin/feedback/labels.tsv").header("Authorization", adm))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(tsv.contains("1\ttrain\thttps://reported-site.test/\n"), tsv);
+        assertTrue(tsv.contains("0\ttrain\thttps://good-shop.test/\n"), tsv);
+        assertTrue(!tsv.contains("token") && !tsv.contains("/cart"), "no paths or tokens: " + tsv);
+        mvc.perform(get("/api/v1/admin/feedback/labels.tsv").header("Authorization", user)).andExpect(status().isForbidden());
     }
 }

@@ -2,8 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fraudshield/core/protection_engine.dart';
 import 'package:fraudshield/l10n/l10n.dart';
+import 'package:fraudshield/screens/app_detail_screen.dart';
+import 'package:fraudshield/screens/check_message_screen.dart';
 import 'package:fraudshield/screens/dashboard_screen.dart';
+import 'package:fraudshield/screens/drills_screen.dart';
+import 'package:fraudshield/screens/guardian_screen.dart';
+import 'package:fraudshield/screens/recovery_kit_screen.dart';
+import 'package:fraudshield/screens/safety_screen.dart';
+import 'package:fraudshield/screens/scam_stop_screen.dart';
+import 'package:fraudshield/screens/fake_site_screen.dart';
 import 'package:fraudshield/screens/login_screen.dart';
+import 'package:fraudshield/screens/vpn_consent_screen.dart';
+import 'package:fraudshield/screens/vpn_state_screen.dart';
 import 'package:fraudshield/screens/risky_apps_screen.dart';
 import 'package:fraudshield/screens/settings_screen.dart';
 import 'package:fraudshield/screens/sms_audit_screen.dart';
@@ -43,13 +53,29 @@ void main() {
       return DashboardScreen(engine: e, api: apiWith((r) async => jsonResponse(200, {})), autoStart: false, onLogout: () {});
     },
     'threats': () => ThreatsScreen(api: apiWith((r) async => jsonResponse(200, [
-          {'id': 1, 'type': 'MALICIOUS_LINK', 'severity': 'HIGH', 'title': 'Dangerous link', 'detail': 'http://x', 'status': 'OPEN', 'createdAt': '2026-11-22'}
+          {'id': 1, 'type': 'MALICIOUS_LINK', 'severity': 'HIGH', 'title': 'Dangerous link', 'detail': 'http://x', 'status': 'OPEN', 'createdAt': '2026-11-22',
+            'explanationEn': 'This link pretends to be Flipkart, but it is not the real Flipkart website. The site was created only a few days ago.',
+            'explanationHi': 'यह लिंक Flipkart होने का दिखावा करता है, लेकिन यह Flipkart की असली वेबसाइट नहीं है।'}
         ]))),
     'settings': () => SettingsScreen(engine: engine()),
     'risky apps': () => RiskyAppsScreen(engine: engine()),
     'sms audit': () => const SmsAuditScreen(),
     'sms forwarding': () => const SmsForwardingScreen(),
     'whatsapp wizard': () => const TakeoverWizardScreen(app: 'whatsapp'),
+    'vpn consent (12.1)': () => const VpnConsentScreen(),
+    'scam STOP (15.3)': () => const ScamStopScreen(speakOnOpen: false),
+    'recovery kit (15.6)': () => const RecoveryKitScreen(),
+    'scam help hub (15.x)': () => const SafetyScreen(),
+    'live scam guard (15.2)': () => const ScamGuardScreen(),
+    'drills (15.10)': () => const DrillsScreen(),
+    'guardian (15.8)': () => const GuardianScreen(),
+    'check a message (14.4)': () => CheckMessageScreen(api: apiWith((r) async => jsonResponse(200, {})),
+        initialText: 'Dear customer aapka SBI account aaj block ho jayega, KYC pending hai. Turant update karein'),
+    'risky app detail (13.8)': () => AppDetailScreen(engine: engine(), app: const RiskyApp('com.x.torch', 'Torch Pro', 80, 'MALICIOUS',
+        ['Asks for your contacts and SMS, which a torch app does not need'], audit: {'grantedPermissions': ['android.permission.READ_SMS']})),
+    'vpn protection (12.10)': () => const VpnStateScreen(),
+    'fake site (10.11)': () => const FakeSiteScreen(site: FakeSite(url: 'https://fleepkart.com/big-billion-days', brand: 'Flipkart',
+        officialUrl: 'https://www.flipkart.com', reasons: ['Looks like Flipkart but is not Flipkart: Misspells "flipkart" by 2 letters', 'Website was created only 3 days ago'])),
   };
 
   Future<void> pump(WidgetTester t, Widget w, {Locale locale = const Locale('en'), double textScale = 1}) async {

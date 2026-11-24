@@ -37,7 +37,7 @@ class TakeoverWizardScreen extends StatelessWidget {
           onPressed: () async {
             final ok = await NativeBridge.openApp(pkg);
             if (!ok && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.wizNotInstalled)));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.wizNotInstalled), duration: const Duration(seconds: 6)));
             }
           },
         ),

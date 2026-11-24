@@ -1,0 +1,55 @@
+# 13.14 labelled app set. CONSTRUCTED rows (not measured on devices): each row describes what the phone would report
+# for a realistic app. RISKY = should get a warning (leaky / fraud / fake), BENIGN = should not.
+# Patterns follow public reports on Indian fraud apps (fake bank / UPI APKs sent on WhatsApp, predatory loan apps,
+# flashlight / wallpaper / cleaner apps over-asking). Real measured data: append when the opt-in labels exist (6.1).
+# expected	kind	package	label	installer	targetSdk	permissions	trackers	domains
+BENIGN	benign	com.example.torch	Super Torch LED	PLAY	34	CAMERA
+BENIGN	benign	com.example.calc	Calculator Plus	PLAY	34
+BENIGN	benign	com.example.notes	Simple Notes	PLAY	34	READ_EXTERNAL_STORAGE	Firebase Analytics	app-measurement.com;api.notes.example
+BENIGN	benign	com.example.cam	Open Camera HD	PLAY	34	CAMERA;RECORD_AUDIO;ACCESS_FINE_LOCATION
+BENIGN	benign	com.example.maps	Trail Maps GPS	PLAY	34	ACCESS_FINE_LOCATION;ACCESS_BACKGROUND_LOCATION		tiles.trailmaps.example
+BENIGN	benign	com.example.chat	Hello Chat Messenger	PLAY	34	READ_CONTACTS;CAMERA;RECORD_AUDIO;READ_SMS	Firebase Analytics	app-measurement.com
+BENIGN	benign	com.example.kb	Fancy Keyboard Fonts	PLAY	34	RECORD_AUDIO
+BENIGN	benign	com.example.wall	HD Wallpapers 4K	PLAY	34	READ_MEDIA_IMAGES	AdMob	googleads.g.doubleclick.net
+BENIGN	benign	com.example.qr	QR & Barcode Scanner	PLAY	34	CAMERA	AdMob	googleads.g.doubleclick.net
+BENIGN	benign	com.example.game	Racing Cars 3D Game	PLAY	34		Unity Ads;AdMob	unityads.unity3d.com;googleads.g.doubleclick.net
+BENIGN	benign	com.example.ludo	Ludo Classic Game	PLAY	33	RECORD_AUDIO	AdMob	googleads.g.doubleclick.net
+BENIGN	benign	com.goodbank.app	Good Bank Mobile Banking	PLAY	34	READ_SMS;CAMERA;ACCESS_FINE_LOCATION;READ_PHONE_STATE		api.goodbank.example
+BENIGN	benign	com.example.shop	City Mart Grocery Shop	PLAY	34	ACCESS_FINE_LOCATION;CAMERA	Firebase Analytics;AppsFlyer	app-measurement.com;t.appsflyer.com
+BENIGN	benign	com.example.food	Tasty Food Delivery	PLAY	34	ACCESS_FINE_LOCATION;READ_PHONE_STATE	Firebase Analytics	app-measurement.com
+BENIGN	benign	com.example.health	Yoga Daily Health	PLAY	34	BODY_SENSORS;ACCESS_FINE_LOCATION
+BENIGN	benign	com.example.learn	Learn English Course	PLAY	34	RECORD_AUDIO;CAMERA	Firebase Analytics	app-measurement.com
+BENIGN	benign	com.example.news	Daily Hindi News	PLAY	34	ACCESS_COARSE_LOCATION	AdMob	googleads.g.doubleclick.net
+BENIGN	benign	com.example.files	Easy File Manager	PLAY	34	MANAGE_EXTERNAL_STORAGE;REQUEST_INSTALL_PACKAGES
+BENIGN	benign	com.example.music	Bhakti Songs Music	PLAY	34	READ_MEDIA_AUDIO	AdMob	googleads.g.doubleclick.net
+BENIGN	benign	com.example.status	Status Saver for WhatsApp	PLAY	34	READ_EXTERNAL_STORAGE	AdMob	googleads.g.doubleclick.net
+BENIGN	benign	com.example.waweb	WhatsApp Web Scanner	PLAY	34	CAMERA	AdMob	googleads.g.doubleclick.net
+BENIGN	benign	com.phonepe.app	PhonePe UPI Payments	PLAY	34	READ_SMS;READ_CONTACTS;CAMERA;ACCESS_FINE_LOCATION	AppsFlyer	t.appsflyer.com
+BENIGN	benign	com.sbi.lotusintouch	YONO SBI	PLAY	34	READ_SMS;CAMERA;ACCESS_FINE_LOCATION;READ_PHONE_STATE
+BENIGN	benign	com.example.dialer	Caller ID & Dialer	PLAY	34	READ_CALL_LOG;READ_CONTACTS;READ_PHONE_STATE;SYSTEM_ALERT_WINDOW	Firebase Analytics	app-measurement.com
+BENIGN	benign	com.example.vpn	Fast Secure VPN Proxy	PLAY	34		AdMob	googleads.g.doubleclick.net
+RISKY	leaky	com.example.torch2	Bright Flashlight	PLAY	34	CAMERA;READ_CONTACTS;READ_SMS;ACCESS_FINE_LOCATION	AppsFlyer;Facebook Ads	t.appsflyer.com
+RISKY	leaky	com.example.calc2	Smart Calculator	PLAY	34	READ_CONTACTS;READ_CALL_LOG;RECORD_AUDIO
+RISKY	leaky	com.example.qr2	QR Scanner Pro	PLAY	34	CAMERA;ACCESS_BACKGROUND_LOCATION;READ_CONTACTS
+RISKY	leaky	com.example.wall2	Neon Wallpapers	PLAY	34	READ_CONTACTS;ACCESS_FINE_LOCATION;GET_ACCOUNTS;RECORD_AUDIO	AdMob;AppLovin;InMobi	googleads.g.doubleclick.net;applovin.com;inmobi.com
+RISKY	leaky	com.example.clean2	Super Cleaner Booster	PLAY	34	READ_CONTACTS;READ_SMS;ACCESS_FINE_LOCATION;CAMERA	AdMob;AppLovin;Unity Ads;Mintegral;Vungle	doubleclick.net;googlesyndication.com;applovin.com;unityads.unity3d.com;inmobi.com;vungle.com;chartboost.com;adcolony.com;mintegral.com;startapp.com
+RISKY	leaky	com.example.game2	Ludo Game Star	PLAY	34	READ_SMS;READ_CONTACTS;READ_CALL_LOG
+RISKY	leaky	com.example.notes2	Quick Notes Free	PLAY	34		AppsFlyer;Adjust;Facebook Ads;AdMob;AppLovin	doubleclick.net;googlesyndication.com;applovin.com;unityads.unity3d.com;inmobi.com;vungle.com;chartboost.com;adcolony.com;mintegral.com;startapp.com
+RISKY	leaky	com.example.fonts	Stylish Fonts Keyboard	NONE	34	RECORD_AUDIO;READ_CONTACTS;READ_SMS;ACCESS_FINE_LOCATION
+RISKY	leaky	com.example.horoscope	Daily Horoscope Rashifal	PLAY	34	READ_CONTACTS;READ_CALL_LOG;ACCESS_FINE_LOCATION	AppsFlyer	t.appsflyer.com
+RISKY	leaky	com.quickcash.loan	Quick Cash Instant Loan	PLAY	34	READ_CONTACTS;READ_SMS;READ_CALL_LOG;CAMERA
+RISKY	leaky	com.rupee.easyloan	Easy Rupee Loan	NONE	29	READ_CONTACTS;READ_SMS;CAMERA;ACCESS_FINE_LOCATION
+RISKY	leaky	com.example.oldtorch	Torch Old	NONE	19	CAMERA;READ_CONTACTS
+RISKY	leaky	com.example.mal1	Video Downloader Fast	PLAY	34			beneon.hypstok.info;api.vd.example
+RISKY	leaky	com.example.sms2	Free SMS Recharge	NONE	34	READ_SMS;RECEIVE_SMS;BIND_ACCESSIBILITY_SERVICE;REQUEST_INSTALL_PACKAGES
+RISKY	leaky	com.example.theme	Live Wallpaper Themes	NONE	34	READ_SMS;SYSTEM_ALERT_WINDOW;BIND_ACCESSIBILITY_SERVICE
+RISKY	fake	com.phonepe.app.secure	PhonePe	NONE	34	READ_SMS
+RISKY	fake	com.example.sbi.yono	YONO SBI	NONE	34	READ_SMS;BIND_ACCESSIBILITY_SERVICE
+RISKY	fake	com.hdfc.kyc.update	PayZapp	NONE	34	READ_SMS;SYSTEM_ALERT_WINDOW
+RISKY	fake	com.paytm.reward.app	Paytm	NONE	30
+RISKY	fake	com.icici.imobile.kyc	iMobile	NONE	34	READ_SMS;RECEIVE_SMS
+RISKY	fake	com.whatsapp.gold	WhatsApp	NONE	34	READ_CONTACTS;READ_SMS
+RISKY	fake	in.gov.mparivahan.challan	NextGen mParivahan	NONE	34	READ_SMS;BIND_ACCESSIBILITY_SERVICE
+RISKY	fake	com.airtel.thanks.reward	Airtel	NONE	34	READ_SMS
+RISKY	fake	com.bhim.upi.new	BHIM	PLAY	34	READ_SMS
+RISKY	fake	com.flipkart.bigsale	Flipkart	NONE	34

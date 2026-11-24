@@ -10,12 +10,37 @@ class SettingsStore {
   static const _shareLabels = 'share_app_labels';
   static const _language = 'app_language'; // 8.11: 'system' | 'en' | 'hi'
   static const _consent = 'consent_version'; // 9.4: privacy notice version the user accepted
+  static const _contact = 'emergency_contact'; // 7.4: [name, number], on this phone only
   static const maxQueue = 100;
 
   Future<SharedPreferences> get _p => SharedPreferences.getInstance();
 
   Future<String> language() async => (await _p).getString(_language) ?? 'system';
   Future<int> consentVersion() async => (await _p).getInt(_consent) ?? 0;
+
+  /// 7.4: null = none. Indian mobile number normalised to 10 digits (an optional +91 / 0 prefix is dropped).
+  Future<({String name, String phone})?> emergencyContact() async {
+    final l = (await _p).getStringList(_contact);
+    return l == null || l.length != 2 ? null : (name: l[0], phone: l[1]);
+  }
+
+  /// Returns false (and saves nothing) when the name is empty or the number is not a valid mobile number.
+  Future<bool> setEmergencyContact(String name, String phone) async {
+    final n = name.trim();
+    final p = normalisePhone(phone);
+    if (n.isEmpty || n.length > 40 || p == null) return false;
+    await (await _p).setStringList(_contact, [n, p]);
+    return true;
+  }
+
+  Future<void> clearEmergencyContact() async => (await _p).remove(_contact);
+
+  static String? normalisePhone(String s) {
+    var d = s.replaceAll(RegExp(r'[\s()-]'), '');
+    if (d.startsWith('+91')) d = d.substring(3);
+    if (d.startsWith('0') && d.length == 11) d = d.substring(1);
+    return RegExp(r'^[6-9]\d{9}$').hasMatch(d) ? d : null;
+  }
   Future<void> setConsentVersion(int v) async => (await _p).setInt(_consent, v);
   Future<void> setLanguage(String code) async => (await _p).setString(_language, code);
 

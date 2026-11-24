@@ -11,6 +11,8 @@ public final class Enums {
         MALICIOUS_LINK, MALICIOUS_FILE, AD_ABUSE, CALL_FORWARDING, SMS_FORWARDING,
         CLONE_RISK, WHATSAPP_TAKEOVER, TELEGRAM_TAKEOVER, UNEXPECTED_OTP,
         /** 7.2: correlated - a login code / linked-device notice AND a new device or SIM change within minutes. */
-        ACCOUNT_TAKEOVER
+        ACCOUNT_TAKEOVER,
+        /** 15.1: correlated - long call from an unknown number + remote-access app + banking/UPI app + OTP, within minutes. */
+        LIVE_SCAM
     }
 }

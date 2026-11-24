@@ -25,6 +25,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _error;
   bool _loading = true;
   String _language = 'system'; // 8.11
+  ({String name, String phone})? _contact; // 7.4
+  final _cName = TextEditingController();
+  final _cPhone = TextEditingController();
+  String? _contactError;
 
   @override
   void initState() {
@@ -35,6 +39,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _domain.dispose();
+    _cName.dispose();
+    _cPhone.dispose();
     super.dispose();
   }
 
@@ -47,7 +53,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final d = await store.disabledPackages();
     final t = await store.trustedDomains();
     final lang = await store.language();
-    if (mounted) setState(() { _apps = apps; _disabled = d; _trusted = t; _language = lang; _loading = false; });
+    final contact = await store.emergencyContact();
+    if (mounted) setState(() { _apps = apps; _disabled = d; _trusted = t; _language = lang; _contact = contact; _loading = false; });
   }
 
   Future<void> _add() async {
@@ -59,6 +66,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await store.addTrustedDomain(d);
     _domain.clear();
     setState(() => _error = null);
+    await _load();
+  }
+
+  Future<void> _saveContact() async {
+    final ok = await store.setEmergencyContact(_cName.text, _cPhone.text);
+    if (!mounted) return;
+    if (!ok) {
+      setState(() => _contactError = context.l10n.contactInvalid);
+      return;
+    }
+    _cName.clear();
+    _cPhone.clear();
+    setState(() => _contactError = null);
     await _load();
   }
 
@@ -117,6 +137,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       RadioListTile<String>(key: Key('language-$code'), dense: true, title: Text(label), value: code),
                   ]),
                 ),
+                const Divider(height: 32),
+                // 7.4: optional emergency contact, kept on the phone only
+                Text(context.l10n.contactSection, style: Theme.of(context).textTheme.titleMedium),
+                Text(context.l10n.contactBody),
+                if (_contact != null)
+                  ListTile(
+                    key: const Key('contact-saved'),
+                    leading: const Icon(Icons.contact_phone_outlined),
+                    title: Text(context.l10n.contactSaved(_contact!.name)),
+                    subtitle: Text(_contact!.phone),
+                    trailing: IconButton(
+                      key: const Key('contact-remove'),
+                      icon: const Icon(Icons.close),
+                      tooltip: context.l10n.contactRemove,
+                      onPressed: () async { await store.clearEmergencyContact(); await _load(); },
+                    ),
+                  )
+                else ...[
+                  TextField(key: const Key('contact-name'), controller: _cName,
+                      decoration: InputDecoration(labelText: context.l10n.contactName)),
+                  TextField(key: const Key('contact-phone'), controller: _cPhone, keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(labelText: context.l10n.contactPhone, errorText: _contactError)),
+                  Align(alignment: Alignment.centerRight,
+                      child: TextButton(key: const Key('contact-save'), onPressed: _saveContact, child: Text(context.l10n.contactSave))),
+                ],
                 const Divider(height: 32),
                 // 9.4: privacy policy + in-app account deletion (Google Play requirement)
                 Text(context.l10n.accountSection, style: Theme.of(context).textTheme.titleMedium),

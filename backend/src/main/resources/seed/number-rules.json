@@ -1,0 +1,121 @@
+{
+  "version": "2026-11-24.1",
+  "matching": "Rules see the dialled/displayed number with spaces, '-', '.', '(', ')' removed and a leading '00' turned into '+'. 'national' = the 10 digits of an Indian number (+91XXXXXXXXXX, 0XXXXXXXXXX, 91XXXXXXXXXX or a bare 10-digit number). First matching rule wins, in the order listed.",
+  "rules": [
+    {
+      "id": "IN_1600_SERVICE",
+      "type": "NATIONAL_PREFIX",
+      "prefix": "1600",
+      "length": 10,
+      "category": "BFSI_GOVT_SERVICE",
+      "action": "NEVER_BLOCK",
+      "label": {
+        "en": "Official service call (1600 number) from a bank, insurer, investment firm or government office",
+        "hi": "बैंक, बीमा, निवेश कंपनी या सरकारी विभाग की आधिकारिक सेवा कॉल (1600 नंबर)"
+      },
+      "note": "1600-ABC-XXX (ABC = licensed service area). TRAI: calls from the 1600 series may not be tagged, filtered or blocked. Never mark as spam; crowd reports are refused (422 PROTECTED_SERIES).",
+      "sources": ["TRAI-DIR-2025-11-19", "TRAI-PR-91-2026", "DOT-1600-ALLOT-2025"]
+    },
+    {
+      "id": "IN_140_PROMOTIONAL",
+      "type": "NATIONAL_PREFIX",
+      "prefix": "140",
+      "length": 10,
+      "category": "PROMOTIONAL",
+      "action": "NEVER_BLOCK",
+      "label": {
+        "en": "Registered promotional call (140 number). To stop these, use DND: call or SMS 1909.",
+        "hi": "पंजीकृत प्रचार कॉल (140 नंबर)। इन्हें रोकने के लिए DND लें: 1909 पर कॉल या SMS करें।"
+      },
+      "note": "140 series = promotional voice calls by registered senders, any sector. TRAI: not to be tagged or filtered except through the customer's DND preference. Crowd reports are refused (422 PROTECTED_SERIES).",
+      "sources": ["TRAI-PR-91-2026", "TRAI-TCCCPR-2018"]
+    },
+    {
+      "id": "IN_ODD_LENGTH",
+      "type": "COUNTRY_LENGTH",
+      "countryCode": "91",
+      "notLength": 10,
+      "category": "ODD_LENGTH",
+      "action": "WARN",
+      "label": {
+        "en": "Unusual number: an Indian number has 10 digits after +91",
+        "hi": "असामान्य नंबर: भारतीय नंबर में +91 के बाद 10 अंक होते हैं"
+      },
+      "note": "+91 followed by more or fewer than 10 digits is not a real Indian number (often spoofed or a VoIP gateway).",
+      "sources": ["ITU-E164", "DOT-NNP-2003"]
+    },
+    {
+      "id": "E164_ODD_LENGTH",
+      "type": "E164_LENGTH",
+      "minDigits": 8,
+      "maxDigits": 15,
+      "category": "ODD_LENGTH",
+      "action": "WARN",
+      "label": {
+        "en": "Unusual number length - be careful",
+        "hi": "असामान्य लंबाई का नंबर - सावधान रहें"
+      },
+      "note": "An international (+) number with fewer than 8 or more than 15 digits.",
+      "sources": ["ITU-E164"]
+    },
+    {
+      "id": "RISKY_COUNTRY",
+      "type": "COUNTRY_CODE_IN",
+      "list": "riskyCountryCodes",
+      "category": "RISKY_FOREIGN",
+      "action": "WARN",
+      "label": {
+        "en": "Call from abroad ({code}) - government offices, banks and police never call you from a foreign number",
+        "hi": "विदेश से कॉल ({code}) - सरकारी विभाग, बैंक और पुलिस कभी विदेशी नंबर से कॉल नहीं करते"
+      },
+      "note": "Country codes come from riskyCountryCodes (server configuration fraudshield.calls.risky-country-codes).",
+      "sources": ["DOT-ADV-2024-03-29"]
+    },
+    {
+      "id": "INTERNATIONAL",
+      "type": "NOT_COUNTRY",
+      "countryCode": "91",
+      "category": "INTERNATIONAL",
+      "action": "LABEL",
+      "label": {
+        "en": "International call ({code})",
+        "hi": "अंतरराष्ट्रीय कॉल ({code})"
+      },
+      "note": "Any +number that is not +91.",
+      "sources": ["DOT-ADV-2024-03-29"]
+    }
+  ],
+  "countryNotes": {
+    "+92": "DoT advisory (29 Mar 2024): WhatsApp calls from +92 numbers impersonating DoT / police, threatening disconnection or arrest"
+  },
+  "sources": {
+    "TRAI-DIR-2025-11-19": {
+      "title": "TRAI Direction of 19 Nov 2025: phased mandatory use of the 1600 series for service/transactional voice calls by RBI, SEBI, PFRDA and IRDAI regulated entities (from 1 Jan 2026)",
+      "url": "https://www.trai.gov.in/sites/default/files/2025-11/Direction_19112025_0.pdf"
+    },
+    "TRAI-PR-91-2026": {
+      "title": "TRAI press release No. 91/2026 (Jul 2026): 1600 calls cannot be tagged, filtered or blocked; 140 is for promotional calls, blocked only by DND preference",
+      "url": "https://trai.gov.in/sites/default/files/2026-07/PR_No91of2026.pdf"
+    },
+    "DOT-1600-ALLOT-2025": {
+      "title": "DoT allotment of '1600' numbering series (format 1600-ABC-XXX per licensed service area), Jan 2025",
+      "url": "https://dot.gov.in/sites/default/files/Allocation%20of%201600%20series%20to%20TTSL.pdf?download=1"
+    },
+    "TRAI-TCCCPR-2018": {
+      "title": "TRAI Telecom Commercial Communications Customer Preference Regulations, 2018 (as amended): 140-series for promotional calls; DND via 1909",
+      "url": "https://www.trai.gov.in/"
+    },
+    "DOT-ADV-2024-03-29": {
+      "title": "DoT advisory, 29 Mar 2024: do not answer WhatsApp calls from foreign numbers such as +92 impersonating DoT; report on Sanchar Saathi / 1930",
+      "url": "https://www.newsonair.gov.in/government-issues-advisory-against-calls-impersonating-dot-threatening-people-to-disconnect-mobile-numbers"
+    },
+    "ITU-E164": {
+      "title": "ITU-T E.164: international numbers have at most 15 digits",
+      "url": "https://www.itu.int/rec/T-REC-E.164"
+    },
+    "DOT-NNP-2003": {
+      "title": "DoT National Numbering Plan: 10-digit national significant numbers in India",
+      "url": "https://dot.gov.in/"
+    }
+  }
+}

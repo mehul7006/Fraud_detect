@@ -28,3 +28,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true # 8.11: lib/l10n/app_*.arb -> AppLocalizations
+  assets:
+    - assets/models/msg-v1.bin   # 14.3 on-device scam-message model
+    - assets/data/care-numbers.csv   # 15.6 / 15.9 official numbers read on each brand's own site (copy of backend seed)
+    - assets/leftovers/known-folders.json   # 17.5 folders of popular apps (read natively by OrphanScanner)

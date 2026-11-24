@@ -62,8 +62,15 @@ object BackgroundScanner {
         return true
     }
 
+    /** 12.4 / 12.5: the VPN's server calls (same session + token renewal). [json] null = GET. */
+    fun request(ctx: Context, path: String, json: JSONObject?): Pair<Int, String?> {
+        appContext = ctx.applicationContext
+        val s = BackgroundSession.load(ctx) ?: return 0 to null
+        return post(s, path, json)
+    }
+
     /** Sends; on 401 renews the scanner's own token once with its refresh token (8.2) and sends again. */
-    private fun post(s: BackgroundSession.Session, path: String, json: JSONObject): Pair<Int, String?> {
+    private fun post(s: BackgroundSession.Session, path: String, json: JSONObject?): Pair<Int, String?> {
         val first = send(s.apiBase, path, json, s.token)
         if (first.first != 401 || s.refresh == null) return first
         val ctx = appContext ?: return first
@@ -80,12 +87,15 @@ object BackgroundScanner {
 
     @Volatile private var appContext: Context? = null
 
-    private fun send(apiBase: String, path: String, json: JSONObject, token: String?): Pair<Int, String?> = try {
+    private fun send(apiBase: String, path: String, json: JSONObject?, token: String?): Pair<Int, String?> = try {
         val c = URL(apiBase.trimEnd('/') + path).openConnection() as HttpURLConnection
-        c.requestMethod = "POST"; c.connectTimeout = 10_000; c.readTimeout = 20_000; c.doOutput = true
-        c.setRequestProperty("Content-Type", "application/json")
+        c.connectTimeout = 10_000; c.readTimeout = 20_000
         if (token != null) c.setRequestProperty("Authorization", "Bearer $token")
-        c.outputStream.use { it.write(json.toString().toByteArray(Charsets.UTF_8)) }
+        if (json != null) {
+            c.requestMethod = "POST"; c.doOutput = true
+            c.setRequestProperty("Content-Type", "application/json")
+            c.outputStream.use { it.write(json.toString().toByteArray(Charsets.UTF_8)) }
+        } else c.requestMethod = "GET"
         val code = c.responseCode
         val body = (if (code in 200..299) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() }
         c.disconnect()

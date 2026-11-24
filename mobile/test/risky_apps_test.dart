@@ -55,12 +55,12 @@ void main() {
   tearDown(() => native.remove());
 
   group('engine', () {
-    test('sends deviceId and selfLaunchCount; calm apps are not sent', () async {
+    test('sends deviceId and selfLaunchCount; calm apps are sent too (13.x privacy + fake-app checks)', () async {
       await engine().checkApps();
       expect(sent.single['deviceId'], 'dev1');
       final pkgs = (sent.single['apps'] as List).map((a) => a['packageName']).toList();
       expect(pkgs, containsAll(['com.spam', 'com.self', 'com.meh']));
-      expect(pkgs, isNot(contains('com.calm')));
+      expect(pkgs, contains('com.calm'), reason: '13.x: every non-system app is checked for privacy / fake-app risks');
       expect((sent.single['apps'] as List).firstWhere((a) => a['packageName'] == 'com.self')['selfLaunchCount'], 4);
     });
 

@@ -4,3 +4,8 @@ fraudshield:
   ratelimit:
     per-minute: 1000000
     auth-per-minute: 1000000
+  # Phase 10 network layers (RDAP, page fetch) are off in the integration tests: they must not need the internet.
+  # They are tested with local stub servers (siteintel package).
+  urlscan:
+    deep:
+      enabled: false

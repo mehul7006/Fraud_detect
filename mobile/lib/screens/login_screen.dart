@@ -1,7 +1,11 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import 'states.dart';
 import '../l10n/l10n.dart';
+
+/// 9.6: test-crash button, compiled in only with --dart-define CRASH_TEST=true.
+const bool kCrashTest = bool.fromEnvironment('CRASH_TEST');
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onDone;
@@ -34,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? e.message
                   : friendlyError(e, l));
     } catch (e) {
+      if (kDebugMode) debugPrint('login/register failed: ${e.runtimeType}: $e'); // debug builds only; no password / token
       if (!mounted) return;
       setState(() => _error = friendlyError(e, context.l10n));
     } finally {
@@ -61,6 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: context.l10n.signingIn))
                       : Text(_register ? context.l10n.createAccount : context.l10n.login))),
               TextButton(onPressed: () => setState(() => _register = !_register), child: Text(_register ? context.l10n.haveAccount : context.l10n.newHere)),
+              // 9.6: only in builds made with --dart-define CRASH_TEST=true (never in store builds) - checks Crashlytics
+              if (kCrashTest)
+                TextButton(key: const Key('test-crash'), onPressed: () => throw StateError('FraudShield Crashlytics test crash'),
+                    child: const Text('Send test crash')),
             ]),
           ),
         ),

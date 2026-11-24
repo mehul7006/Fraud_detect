@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import 'states.dart';
+import 'why_panel.dart';
 import '../l10n/l10n.dart';
 
 class ThreatsScreen extends StatefulWidget {
@@ -41,7 +42,7 @@ class _ThreatsScreenState extends State<ThreatsScreen> {
                 return _f;                               // keeps the pull-to-refresh spinner until loaded
               },
               child: ListView(children: [
-                for (final t in s.data!)
+                for (final t in s.data!) ...[
                   ListTile(
                     leading: Icon(Icons.warning, color: _c(t['severity'])),
                     title: Text(t['title']),
@@ -51,6 +52,9 @@ class _ThreatsScreenState extends State<ThreatsScreen> {
                         ? TextButton(onPressed: () => _resolve(t['id'] as int), child: Text(context.l10n.resolve))
                         : const Icon(Icons.check, color: Colors.green),
                   ),
+                  if (WhyPanel.from({'en': t['explanationEn'], 'hi': t['explanationHi']}) case final why?)
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: why),
+                ],
               ]),
             );
           },

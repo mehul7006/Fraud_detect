@@ -13,7 +13,8 @@ public class BlocklistService {
     public record ImportResult(int added, int skipped, List<String> errors) {}
 
     private final BlocklistRepository repo;
-    public BlocklistService(BlocklistRepository repo) { this.repo = repo; }
+    private final BlocklistSyncService sync;   // 12.5: phones get the change as a hash
+    public BlocklistService(BlocklistRepository repo, BlocklistSyncService sync) { this.repo = repo; this.sync = sync; }
 
     public List<Blocklist> list() { return repo.findAll(); }
 
@@ -43,17 +44,23 @@ public class BlocklistService {
         catch (IllegalArgumentException e) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage()); }
         if (repo.findByKindAndValue(k, v).isPresent())
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Already on blocklist");
-        return repo.save(new Blocklist(k, v, trim(reason)));
+        Blocklist b = repo.save(new Blocklist(k, v, trim(reason)));
+        if ("DOMAIN".equals(k)) sync.recordAdd(v);
+        return b;
     }
 
     /** Adds a domain if it is not there yet (used when closing feedback). */
     public void addDomainIfMissing(String host, String reason) {
-        if (repo.findByKindAndValue("DOMAIN", host).isEmpty()) repo.save(new Blocklist("DOMAIN", host, trim(reason)));
+        if (repo.findByKindAndValue("DOMAIN", host).isEmpty()) {
+            repo.save(new Blocklist("DOMAIN", host, trim(reason)));
+            sync.recordAdd(host);
+        }
     }
 
     public void delete(Long id) {
-        if (!repo.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
+        Blocklist b = repo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"));
         repo.deleteById(id);
+        if ("DOMAIN".equals(b.getKind())) sync.recordRemove(b.getValue());
     }
 
     /** CSV columns: kind,value,reason. Bad lines are skipped and reported; the whole file is capped at 5000 rows. */

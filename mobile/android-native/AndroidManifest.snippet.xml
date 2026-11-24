@@ -15,7 +15,35 @@
 <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"/>     <!-- 6.6 Usage Access, user opt-in -->
 <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"/> <!-- 6.7 uninstall dialog, Android 9+ -->
 
+<!-- Phase 12 VPN -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED"/>
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+<!-- Phase 16 call guard: both optional (user opt-in), only so known people are never blocked.
+     READ_CALL_LOG is Play-restricted: allowed for caller-ID / spam-blocking apps with the Permissions Declaration Form. -->
+<uses-permission android:name="android.permission.READ_CONTACTS"/>
+<uses-permission android:name="android.permission.READ_CALL_LOG"/>
+
 <!-- Put this INSIDE <application> -->
+<service android:name=".FraudVpnService" android:exported="false"
+    android:permission="android.permission.BIND_VPN_SERVICE" android:foregroundServiceType="systemExempted">
+    <intent-filter><action android:name="android.net.VpnService"/></intent-filter>
+    <meta-data android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON" android:value="true"/>
+</service>
+<!-- Phase 16: call screening (needs the "Caller ID & spam" role, Android 10+) and the notification buttons -->
+<service android:name=".CallGuardService" android:exported="true"
+    android:permission="android.permission.BIND_SCREENING_SERVICE">
+    <intent-filter><action android:name="android.telecom.CallScreeningService"/></intent-filter>
+</service>
+<receiver android:name=".CallActionReceiver" android:exported="false"/>
+<receiver android:name=".DebugCommandReceiver" android:exported="true" android:permission="android.permission.DUMP"/>
+<receiver android:name=".VpnBootReceiver" android:exported="false">
+    <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+    </intent-filter>
+</receiver>
 <service
     android:name=".AdNotificationListener"
     android:exported="true"

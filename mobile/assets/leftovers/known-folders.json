@@ -1,0 +1,23 @@
+{
+  "_about": "17.5 known folders: shared-storage folders popular apps create OUTSIDE Android/data (those are removed by Android itself). A folder is offered as an orphan only when none of the packages is installed. Built from the apps' commonly observed save locations; every entry must be confirmed on a real phone (17.8) before release - unconfirmed entries are marked verified:false.",
+  "apps": [
+    {"app": "WhatsApp", "packages": ["com.whatsapp"], "folders": ["WhatsApp"], "verified": false},
+    {"app": "WhatsApp Business", "packages": ["com.whatsapp.w4b"], "folders": ["WhatsApp Business"], "verified": false},
+    {"app": "Telegram", "packages": ["org.telegram.messenger", "org.telegram.messenger.web", "org.thunderdog.challegram"], "folders": ["Telegram", "Download/Telegram", "Pictures/Telegram", "Movies/Telegram"], "verified": false},
+    {"app": "SHAREit", "packages": ["com.lenovo.anyshare.gps", "shareit.lite"], "folders": ["SHAREit"], "verified": false},
+    {"app": "Xender", "packages": ["cn.xender"], "folders": ["Xender"], "verified": false},
+    {"app": "Instagram", "packages": ["com.instagram.android", "com.instagram.lite"], "folders": ["Pictures/Instagram", "Movies/Instagram"], "verified": false},
+    {"app": "Facebook", "packages": ["com.facebook.katana", "com.facebook.lite"], "folders": ["Pictures/Facebook", "Movies/Facebook"], "verified": false},
+    {"app": "Messenger", "packages": ["com.facebook.orca", "com.facebook.mlite"], "folders": ["Pictures/Messenger"], "verified": false},
+    {"app": "X (Twitter)", "packages": ["com.twitter.android"], "folders": ["Pictures/Twitter"], "verified": false},
+    {"app": "Snapchat", "packages": ["com.snapchat.android"], "folders": ["Pictures/Snapchat", "Movies/Snapchat"], "verified": false},
+    {"app": "Truecaller", "packages": ["com.truecaller"], "folders": ["Truecaller"], "verified": false},
+    {"app": "Picsart", "packages": ["com.picsart.studio"], "folders": ["Picsart", "Pictures/Picsart"], "verified": false},
+    {"app": "CamScanner", "packages": ["com.intsig.camscanner"], "folders": ["CamScanner", "Documents/CamScanner"], "verified": false},
+    {"app": "Signal", "packages": ["org.thoughtcrime.securesms"], "folders": ["Pictures/Signal"], "verified": false},
+    {"app": "Snapseed", "packages": ["com.niksoftware.snapseed"], "folders": ["Snapseed", "Pictures/Snapseed"], "verified": false},
+    {"app": "InShot", "packages": ["com.camerasideas.instashot"], "folders": ["Movies/InShot", "InShot"], "verified": false},
+    {"app": "Moj", "packages": ["in.mohalla.video"], "folders": ["Moj", "Movies/Moj"], "verified": false},
+    {"app": "ShareChat", "packages": ["in.mohalla.sharechat"], "folders": ["ShareChat", "Pictures/ShareChat"], "verified": false}
+  ]
+}

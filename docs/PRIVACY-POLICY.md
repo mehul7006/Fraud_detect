@@ -44,7 +44,39 @@ takeover. This policy explains exactly what the app reads on your phone, what it
 | Usage access (optional) | notice apps that open by themselves |
 | Notifications | show you warnings |
 | Query all packages | find risky and fake apps |
+| VPN (optional, "Fake-website protection") | block fake websites in every app - see 4a |
 FraudShield works without any single permission; that protection is then switched off and the app says so.
+
+### 4a. Fake-website protection (on-device VPN)
+When you turn it on, FraudShield runs a VPN **on your phone** that handles only website-name lookups (DNS).
+- **Seen:** the website names apps look up (e.g. `flipkart.com`) and which app looked them up. Kept on your phone
+  for 30 days ("Which apps contact which sites"); never uploaded. Data-use numbers come from Android's own counters.
+- **Never seen:** page content, full links, messages, passwords, payments. Your internet traffic does not pass
+  through FraudShield.
+- **Sent to our server:** only a website name not yet known, to check whether it is fake. It is not stored and not
+  linked to your account. In "Local-only mode" nothing is sent. The list of known fake sites is downloaded as
+  hashed, signed entries.
+- You can turn it off in the app or in Android settings at any time.
+
+### 4b. Call guard (PROPOSED text for Phase 16 - needs owner / legal review before release)
+When you make FraudShield your "caller ID & spam app", Android asks it about each incoming call from a number that is
+not in your contacts. The decision is made **on your phone**.
+- **Stays on your phone:** your call log, your contacts, who called you and when, the list of blocked calls
+  (kept 30 days on the phone), your always-allow list.
+- **Downloaded:** a signed list of scam-number fingerprints (SHA-256 hashes, never numbers) and free number-pattern
+  rules (for example the official 1600 and 140 series and foreign country codes).
+- **Lookup of an unknown number:** the phone may send only the **first 5 characters of the number's fingerprint**.
+  That prefix is shared by thousands of numbers, so the server cannot tell which number called you. The server
+  answers with every reported fingerprint in that group and your phone finds the match itself.
+- **When you tap "Report":** the number and the category you choose (scam / spam / telemarketing) are sent to the
+  server. The server turns the number into its fingerprint at once and keeps only the fingerprint, the category and
+  your one vote (so the same person cannot report a number twice). The number itself is never stored or logged. Your
+  vote is deleted when you delete your account.
+- **Never collected:** call recordings, call audio, the caller's name, your contacts, your call history.
+- **Limits, honestly:** a fingerprint of a phone number can in principle be matched back to the number by trying
+  every possible number, so a fingerprint is treated as personal data and protected like it.
+- Calls from the official **1600** (banks, insurers, government) and **140** (registered promotional) series are
+  never marked as spam or blocked by FraudShield, as TRAI requires. To stop promotional calls, use DND (call or SMS 1909).
 
 ## 5. How long we keep data
 Until you delete your account. Threats you mark as resolved stay in your history until then. Login sessions

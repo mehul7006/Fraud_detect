@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/protection_engine.dart';
 import '../l10n/l10n.dart';
+import 'app_detail_screen.dart';
 
 /// 6.8: every flagged app with its reasons, highest risk first. Uninstall / Ignore per app (6.7).
 class RiskyAppsScreen extends StatefulWidget {
@@ -96,7 +97,11 @@ class _AppCard extends StatelessWidget {
     final bad = app.verdict == 'MALICIOUS';
     return Card(
       key: Key('risky-${app.packageName}'),
-      child: Padding(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        // 13.8: details - what it can access, who it talks to, block internet / permissions / uninstall / ignore
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AppDetailScreen(app: app, engine: engine))),
+        child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -116,7 +121,7 @@ class _AppCard extends StatelessWidget {
             FilledButton(onPressed: () => engine.uninstall(app.packageName), child: Text(context.l10n.uninstall)),
           ]),
         ]),
-      ),
+      )),
     );
   }
 }

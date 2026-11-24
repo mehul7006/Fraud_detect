@@ -21,7 +21,7 @@ class BlocklistServiceTest {
             "DOMAIN,not a domain,bad",
             "FOO,x.test,bad kind",
             "DOMAIN");
-        var r = new BlocklistService(repo).importCsv(csv);
+        var r = new BlocklistService(repo, Mockito.mock(BlocklistSyncService.class)).importCsv(csv);
         assertEquals(2, r.added());
         assertEquals(4, r.skipped());
         assertEquals(4, r.errors().size());

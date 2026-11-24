@@ -109,6 +109,22 @@ public class AdminController {
         return new AppReputationEntry(a.getPackageName(), a.getLabel(), a.getVerdict(), a.getSource(), a.getCertSha256());
     }
     private static BlocklistEntry dto(Blocklist b) { return new BlocklistEntry(b.getId(), b.getKind(), b.getValue(), b.getReason()); }
+    /**
+     * 11.8: reviewed reports as training rows (label TAB split TAB url, the ml/data/dataset.tsv format).
+     * ADD_TO_BLOCKLIST = phishing (1), ALLOW = legitimate (0); DISMISS and open reports are left out.
+     * Only the host was ever stored, so the row is "https://host/". Merge: ml/build_dataset.py --feedback file.
+     */
+    @GetMapping(value = "/feedback/labels.tsv", produces = "text/tab-separated-values")
+    public String feedbackLabels() {
+        StringBuilder b = new StringBuilder();
+        for (UrlFeedback f : feedback.findByStatusOrderByCreatedAtAsc("CLOSED")) {
+            String label = "ADD_TO_BLOCKLIST".equals(f.getResolution()) ? "1" : "ALLOW".equals(f.getResolution()) ? "0" : null;
+            if (label == null || f.getHost().contains("\t") || f.getHost().contains("\n")) continue;
+            b.append(label).append("\ttrain\thttps://").append(f.getHost()).append("/\n");
+        }
+        return b.toString();
+    }
+
     private static FeedbackEntry dto(UrlFeedback f) {
         return new FeedbackEntry(f.getId(), f.getHost(), f.getKind(), f.getNote(), f.getStatus(), f.getResolution(), f.getCreatedAt());
     }

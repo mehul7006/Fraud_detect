@@ -21,6 +21,35 @@ class ScanServicesTest {
         assertEquals(Verdict.MALICIOUS, r.verdict());
     }
 
+    /** 10.9: layered score with reason codes, impersonated brand and the real site. */
+    @Test
+    void lookalikeLinkNamesBrandAndRealSite() {
+        Mockito.when(repo.findByKindAndValue(Mockito.any(), Mockito.any())).thenReturn(Optional.empty());
+        var r = new UrlScanService(repo).scan("http://sbi-kyc-update.top/verify");
+        assertEquals(Verdict.MALICIOUS, r.verdict());
+        assertEquals("State Bank of India", r.impersonatedBrand());
+        assertEquals("https://www.sbi.co.in", r.officialUrl());
+        assertTrue(r.reasonCodes().containsAll(java.util.List.of("LOOKALIKE_BRAND", "NO_HTTPS", "RISKY_TLD", "BAIT_WORDS")), r.reasonCodes().toString());
+        assertEquals(r.reasons().size(), r.reasonCodes().size());
+        var hidden = new UrlScanService(repo).scan("https://login.flipkart.com.evil.xyz/");
+        assertEquals("Flipkart", hidden.impersonatedBrand());
+        assertTrue(hidden.reasonCodes().contains("BRAND_IN_SUBDOMAIN"));
+        var path = new UrlScanService(repo).scan("https://random-shop.example/flipkart/sale");
+        assertEquals(null, path.impersonatedBrand(), "brand only in the path: no 'looks like' claim");
+        assertTrue(path.reasonCodes().contains("BRAND_IN_PATH"));
+        var ok = new UrlScanService(repo).scan("https://www.flipkart.com/");
+        assertEquals(Verdict.SAFE, ok.verdict());
+        assertEquals(null, ok.impersonatedBrand());
+    }
+
+    /** A blocklisted registrable domain also covers its sub-domains. */
+    @Test
+    void blocklistCoversSubdomains() {
+        Mockito.when(repo.findByKindAndValue(Mockito.any(), Mockito.any())).thenReturn(Optional.empty());
+        Mockito.when(repo.findByKindAndValue("DOMAIN", "bad-site.in")).thenReturn(Optional.of(Mockito.mock(com.fraudshield.domain.Blocklist.class)));
+        assertEquals(100, new UrlScanService(repo).scan("https://pay.bad-site.in/x").score());
+    }
+
     @Test
     void normalUrlIsSafe() {
         Mockito.when(repo.findByKindAndValue(Mockito.any(), Mockito.any())).thenReturn(Optional.empty());

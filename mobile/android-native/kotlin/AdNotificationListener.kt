@@ -15,6 +15,12 @@ import org.json.JSONObject
  */
 class AdNotificationListener : NotificationListenerService() {
 
+    override fun onListenerConnected() { // 13.10 / 13.11: this service runs all the time - a good host
+        InstallWatcher.register(this)
+        try { WarnScheduler.tick(this) } catch (_: Exception) { }
+        try { ScamSignalCollector.ensure(this) } catch (_: Exception) { } // 15.2 live scam guard (opt-in)
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val pkg = sbn.packageName
         if (pkg == packageName) return
@@ -33,6 +39,11 @@ class AdNotificationListener : NotificationListenerService() {
         val text = listOfNotNull(extras.getCharSequence("android.title"), extras.getCharSequence("android.text"),
             extras.getCharSequence("android.bigText")).joinToString(" ")
 
+        // 15.2 / 15.4: a one-time code arrived - only the FACT is passed on, never the text or the code
+        if (ScamSignalLogic.isOtpText(text) && firstSeenRecently("otp:$pkg:${text.hashCode()}", now)) {
+            try { ScamSignalCollector.onOtp(this) } catch (_: Exception) { }
+        }
+
         // 2. URLs in any notification (WhatsApp, Telegram, SMS, mail...)
         // 7.11: while FraudShield is closed the link is checked right here (BackgroundScanner); otherwise / if that
         // is not possible it is queued for the app exactly as before.
@@ -43,13 +54,16 @@ class AdNotificationListener : NotificationListenerService() {
         // 3. login-code notifications for WhatsApp/Telegram -> possible takeover attempt
         val low = text.lowercase()
         val mentionsApp = low.contains("whatsapp") || low.contains("telegram") || pkg.contains("whatsapp") || pkg.contains("telegram")
-        if (mentionsApp && (low.contains("code") || low.contains("otp"))) {
+        // SMS / chat apps re-post old notifications when their group updates ("3 new messages"): the same notice must
+        // not alert again. Key = app + kind + hash of the text, kept in memory only (the code is never stored).
+        val noticeKey = { kind: String -> "notice:$kind:$pkg:${text.hashCode()}" }
+        if (mentionsApp && (low.contains("code") || low.contains("otp")) && firstSeenRecently(noticeKey("code"), now)) {
             val app = if (low.contains("telegram") || pkg.contains("telegram")) "telegram" else "whatsapp"
             addEvent(prefs, JSONObject().put("kind", "LOGIN_CODE").put("pkg", pkg).put("app", app))
         }
         // 4. new device / linked device notices
         if (mentionsApp && (low.contains("new login") || low.contains("new device") || low.contains("linked device")
-                    || low.contains("whatsapp web") || low.contains("log in from"))) {
+                    || low.contains("whatsapp web") || low.contains("log in from")) && firstSeenRecently(noticeKey("device"), now)) {
             val app = if (low.contains("telegram") || pkg.contains("telegram")) "telegram" else "whatsapp"
             if (!BackgroundScanner.onNewDevice(this, app, queue)) addEvent(prefs, JSONObject().put("kind", "NEW_DEVICE").put("pkg", pkg).put("app", app))
         }
@@ -81,6 +95,16 @@ class AdNotificationListener : NotificationListenerService() {
         }
 
         private val LOCK = Any()
+
+        /** 15.2: other parts (live scam guard) hand events to the app through the same queue. */
+        @Synchronized
+        fun queueEvent(ctx: Context, e: JSONObject) {
+            val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val arr = JSONArray(prefs.getString(EVENTS, "[]"))
+            if (arr.length() > 200) return
+            arr.put(e)
+            prefs.edit().putString(EVENTS, arr.toString()).apply()
+        }
 
         fun notifPerHour(ctx: Context, pkg: String): Int =
             NotifCounter.count(ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("n_$pkg", null), System.currentTimeMillis())

@@ -161,6 +161,32 @@ class ApiClient {
   Future<Map<String, dynamic>> scanUrl(String url, String? sourceApp) =>
       _post('/scan/url', {'url': url, 'sourceApp': sourceApp});
 
+  /// 14.6: opt-in cloud check - only called after the user's explicit tap (CloudConsentDialog).
+  Future<Map<String, dynamic>> scanMessage(String text) => _post('/scan/message', {'text': text, 'consent': true});
+
+  /// 16.5: the user's Report tap - the only time a phone number leaves the phone. [category] SCAM / SPAM / TELEMARKETING.
+  /// Throws ApiException (422 = official 1600 / 140 number, 429 = too many reports today).
+  Future<Map<String, dynamic>> reportNumber(String number, String category) =>
+      _post('/numbers/report', {'number': number, 'category': category});
+
+  /// 15.5: check a UPI ID or the text inside a UPI QR code (upi://pay?...) before paying.
+  Future<Map<String, dynamic>> scanUpi({String? vpa, String? qrPayload}) =>
+      _post('/scan/upi', {if (vpa != null) 'vpa': vpa, if (qrPayload != null) 'qrPayload': qrPayload});
+
+  /// 15.7: the user's Report tap for a link or UPI ID ([type] LINK / UPI). Phone numbers go through [reportNumber].
+  Future<Map<String, dynamic>> reportItem(String type, String value) => _post('/reports', {'type': type, 'value': value});
+
+  /// 15.9: is this a brand's real customer-care number? [brand] optional (e.g. "SBI").
+  Future<Map<String, dynamic>> careNumber(String number, {String? brand}) async {
+    final q = brand == null || brand.trim().isEmpty ? '' : '?brand=${Uri.encodeQueryComponent(brand.trim())}';
+    final r = await _get('/care-number/${Uri.encodeComponent(number.trim())}$q');
+    return r is Map ? Map<String, dynamic>.from(r) : <String, dynamic>{};
+  }
+
+  /// 4.7 / 10.11: the user says a verdict is wrong. [kind] = FALSE_POSITIVE (wrongly flagged) or FALSE_NEGATIVE.
+  Future<void> reportUrl(String url, String kind, String? note) =>
+      _post('/scan/url/feedback', {'url': url, 'kind': kind, 'note': note});
+
   Future<Map<String, dynamic>> scanFile(Map<String, dynamic> f) => _post('/scan/file', {
         'sha256': f['sha256'],
         'fileName': f['fileName'],

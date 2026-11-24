@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fraudshield/core/protection_engine.dart';
 import 'package:fraudshield/screens/dashboard_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'helpers.dart';
 
 void main() {
@@ -23,11 +24,29 @@ void main() {
   }
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     native = FakeNative()..install();
     engine = ProtectionEngine(api: apiWith((r) async => jsonResponse(200, {})));
     logouts = 0;
   });
   tearDown(() => native.remove());
+
+  group('7.10 full-screen alerts on Android 14+', () {
+    testWidgets('not allowed: a card explains it and opens the exact Settings page; allowed: no card', (t) async {
+      native.fullScreen = false;
+      await pumpDashboard(t);
+      expect(find.text('Allow full-screen security alerts'), findsOneWidget);
+      await t.tap(find.descendant(of: find.ancestor(of: find.text('Allow full-screen security alerts'), matching: find.byType(Card)),
+          matching: find.text('Allow')));
+      await t.pumpAndSettle();
+      expect(native.count('openFullScreenAlertSettings'), 1);
+    });
+    testWidgets('allowed (or Android 13 and older): no card', (t) async {
+      native.fullScreen = true;
+      await pumpDashboard(t);
+      expect(find.text('Allow full-screen security alerts'), findsNothing);
+    });
+  });
 
   group('8.10 offline / server unreachable', () {
     testWidgets('a failed check shows a calm banner and "tap to retry" instead of ERROR', (t) async {

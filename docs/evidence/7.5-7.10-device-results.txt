@@ -1,0 +1,18 @@
+== Phase 7 device checks on emulator-5562 (Android 14) ==
+     device row: t|t|t|64|25
+PASS | 7.5 device info stored as the backend expects (model, Android version, SHA-256 fingerprint; emulator scored +25)
+PASS | 7.6 check-in updates last_seen (1795379653.025951 -> 1795379683.391187)
+PASS | 7.10 Android 14: full-screen alerts not allowed -> card shown
+PASS | 7.10 card opens Android's full-screen-notifications page
+PASS | 7.10 after allowing: card gone (refreshed on return)
+PASS | 7.7 Telegram code SMS -> alert 'Telegram login code received'
+PASS | 7.7 the code itself is never stored
+PASS | 7.7 the same notice is not alerted twice when the SMS app re-posts it
+PASS | 7.8 new-device SMS -> CRITICAL alert
+PASS | 7.8 reported to the server as WHATSAPP_TAKEOVER CRITICAL
+PASS | 7.9 wizard opens with readable steps (Linked devices ...)
+PASS | 7.9 WhatsApp not installed -> clear message
+PASS | 7.10 critical alert posted while the phone is locked
+PASS | 7.10 full-screen intent attached (allowed)
+PASS | 7.10 lock screen shows the public version only (details hidden)
+== done: 15 pass, 0 fail ==

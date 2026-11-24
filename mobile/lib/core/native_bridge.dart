@@ -54,10 +54,59 @@ class NativeBridge {
   /// 6.6 Usage Access (opt-in) lets FraudShield count apps that open themselves.
   static Future<bool> hasUsageAccess() async => (await _ch.invokeMethod<bool>('hasUsageAccess')) ?? false;
   static Future<void> openUsageAccessSettings() => _ch.invokeMethod('openUsageAccessSettings');
+
+  // ---- Phase 12: on-device VPN (fake-website protection in every app)
+  /// Shows Android's VPN prompt the first time; true when protection is starting.
+  static Future<bool> vpnStart() async => (await _ch.invokeMethod<bool>('vpnStart')) ?? false;
+  static Future<void> vpnStop() => _ch.invokeMethod('vpnStop');
+  /// running, state (ON/OFF/OTHER_VPN/PRIVATE_DNS/REVOKED/NO_CONSENT/NOT_ALLOWED), privateDns, counters, options.
+  static Future<Map<String, dynamic>> vpnStatus() async =>
+      Map<String, dynamic>.from((await _ch.invokeMethod<Map>('vpnStatus')) ?? const {});
+  static Future<void> vpnSetOptions({bool? localOnly, bool? blockDoh, String? upstream}) => _ch.invokeMethod('vpnSetOptions',
+      {'localOnly': localOnly, 'blockDoh': blockDoh, 'upstream': upstream}..removeWhere((_, v) => v == null));
+  static Future<List<Map<String, dynamic>>> vpnTopApps() async =>
+      ((await _ch.invokeMethod<List>('vpnTopApps')) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  static Future<bool> vpnSyncBlocklist() async => (await _ch.invokeMethod<bool>('vpnSyncBlocklist')) ?? false;
+  static Future<void> openVpnSettings() => _ch.invokeMethod('openVpnSettings');
+
+  // ---- Phase 18: ad / tracker / malware blocking inside the VPN (settings + stats stay on the phone)
+  static Future<Map<String, dynamic>> _blockMap(String m, [Map<String, dynamic>? a]) async =>
+      Map<String, dynamic>.from((await _ch.invokeMethod<Map>(m, a)) ?? const {});
+  static Future<Map<String, dynamic>> blockSettings() => _blockMap('blockSettings');
+  static Future<Map<String, dynamic>> blockSetCategory(String category, bool on) => _blockMap('blockSetCategory', {'category': category, 'on': on});
+  static Future<Map<String, dynamic>> blockPause(int minutes) => _blockMap('blockPause', {'minutes': minutes});
+  static Future<Map<String, dynamic>> blockAllowApp(String package, bool allow) => _blockMap('blockAllowApp', {'package': package, 'allow': allow});
+  static Future<Map<String, dynamic>> blockAllowSite(String domain, bool allow) => _blockMap('blockAllowSite', {'domain': domain, 'allow': allow});
+  static Future<Map<String, dynamic>> blockAppBroke(String package) => _blockMap('blockAppBroke', {'package': package});
+  static Future<Map<String, dynamic>> blockStats(int days) => _blockMap('blockStats', {'days': days});
+  static Future<bool> blockSync() async => (await _ch.invokeMethod<bool>('blockSync')) ?? false;
+  static Future<void> openPrivateDnsSettings() => _ch.invokeMethod('openPrivateDnsSettings');
+  static Future<void> openAutostartSettings() => _ch.invokeMethod('openAutostartSettings');
+
+  // ---- Phase 14: on-device scam-message model (text never leaves the phone)
+  static Future<Map<String, dynamic>> classifyMessage(String text) async =>
+      Map<String, dynamic>.from((await _ch.invokeMethod<Map>('classifyMessage', {'text': text})) ?? const {});
+
+  // ---- Phase 13 app protection
+  static Future<List<Map<String, dynamic>>> appTrackers(String pkg) async =>
+      ((await _ch.invokeMethod<List>('appTrackers', {'package': pkg})) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  /// Last 7 days: {ads, trackers, malware, total, codes, domains:[{domain,count,category}]} - computed on the phone.
+  static Future<Map<String, dynamic>> appNetwork(String pkg) async =>
+      Map<String, dynamic>.from((await _ch.invokeMethod<Map>('appNetwork', {'package': pkg})) ?? const {});
+  static Future<void> appFirewallSet(String pkg, bool block) => _ch.invokeMethod('appFirewallSet', {'package': pkg, 'block': block});
+  static Future<List<String>> appFirewallList() async => ((await _ch.invokeMethod<List>('appFirewallList')) ?? const []).cast<String>();
+  static Future<void> appIgnore(String pkg, {bool ignore = true}) => _ch.invokeMethod('appIgnore', {'package': pkg, 'ignore': ignore});
+  static Future<void> openAppPermissions(String pkg) => _ch.invokeMethod('openAppPermissions', {'package': pkg});
   static Future<bool> isInstalled(String pkg) async => (await _ch.invokeMethod<bool>('isInstalled', {'package': pkg})) ?? false;
 
   /// 9.4: opens an https page (privacy policy) in the browser. Only https is allowed.
   static Future<bool> openUrl(String url) async => (await _ch.invokeMethod<bool>('openUrl', {'url': url})) ?? false;
+  /// 7.4: opens the user's SMS app with [number] and [body] filled in; the user taps Send (no SMS permission).
+  static Future<bool> composeSms(String number, String body) async =>
+      (await _ch.invokeMethod<bool>('composeSms', {'number': number, 'body': body})) ?? false;
+  /// 7.10: Android 14+ only grants full-screen alerts to some apps; true on older Android.
+  static Future<bool> canUseFullScreenAlerts() async => (await _ch.invokeMethod<bool>('canUseFullScreenAlerts')) ?? true;
+  static Future<void> openFullScreenAlertSettings() => _ch.invokeMethod('openFullScreenAlertSettings');
   static Future<void> uninstallApp(String pkg) => _ch.invokeMethod('uninstallApp', {'package': pkg});
   static Future<bool> openApp(String pkg) async => (await _ch.invokeMethod<bool>('openApp', {'package': pkg})) ?? false;
   static Future<void> showAlert(String title, String body, {int id = 1}) =>

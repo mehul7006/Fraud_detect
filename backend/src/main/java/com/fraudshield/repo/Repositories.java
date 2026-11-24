@@ -55,6 +55,30 @@ public final class Repositories {
     }
 
     @Repository
+    public interface BlocklistChangeRepository extends JpaRepository<com.fraudshield.domain.BlocklistChange, Long> {
+        Optional<com.fraudshield.domain.BlocklistChange> findTopByOrderByVersionDesc();
+        List<com.fraudshield.domain.BlocklistChange> findAllByOrderByVersionAsc();
+        List<com.fraudshield.domain.BlocklistChange> findByVersionGreaterThanOrderByVersionAsc(long version);
+    }
+
+    @Repository
+    public interface OfficialAppRepository extends JpaRepository<com.fraudshield.domain.OfficialApp, Long> {
+        Optional<com.fraudshield.domain.OfficialApp> findByPackageName(String packageName);
+    }
+
+    @Repository
+    public interface DomainCategoryChangeRepository extends JpaRepository<com.fraudshield.domain.DomainCategoryChange, Long> {
+        Optional<com.fraudshield.domain.DomainCategoryChange> findTopByOrderByVersionDesc();
+        List<com.fraudshield.domain.DomainCategoryChange> findAllByOrderByVersionAsc();
+        List<com.fraudshield.domain.DomainCategoryChange> findByVersionGreaterThanOrderByVersionAsc(long version);
+    }
+
+    @Repository
+    public interface BrandRepository extends JpaRepository<com.fraudshield.domain.BrandEntry, Long> {
+        Optional<com.fraudshield.domain.BrandEntry> findByName(String name);
+    }
+
+    @Repository
     public interface AppReputationRepository extends JpaRepository<AppReputation, Long> {
         Optional<AppReputation> findByPackageName(String packageName);
         List<AppReputation> findByVerdictOrderByPackageName(String verdict);

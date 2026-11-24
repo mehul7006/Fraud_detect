@@ -22,12 +22,14 @@ public class ScanController {
     private final ThreatService threats;
     private final com.fraudshield.service.DeviceAppService deviceApps;
     private final com.fraudshield.repo.Repositories.AppLabelRepository labels;
+    private final com.fraudshield.service.AppScanService appScan; // 13.7 ad-abuse + privacy / fraud
 
     public ScanController(UrlScanService urls, FileScanService files, AdAbuseService ads, ThreatService threats,
                           com.fraudshield.service.DeviceAppService deviceApps,
-                          com.fraudshield.repo.Repositories.AppLabelRepository labels) {
+                          com.fraudshield.repo.Repositories.AppLabelRepository labels,
+                          com.fraudshield.service.AppScanService appScan) {
         this.urls = urls; this.files = files; this.ads = ads; this.threats = threats; this.deviceApps = deviceApps;
-        this.labels = labels;
+        this.labels = labels; this.appScan = appScan;
     }
 
     /** 6.1: opt-in training label. One row per user and app; a later decision replaces the earlier one. */
@@ -47,9 +49,23 @@ public class ScanController {
         if (res.verdict() != Verdict.SAFE) {
             threats.record(uid, ThreatType.MALICIOUS_LINK,
                     res.verdict() == Verdict.MALICIOUS ? Severity.CRITICAL : Severity.MEDIUM,
-                    "Dangerous link blocked", host(r.url()) + " - " + String.join(", ", res.reasons()), r.sourceApp());
+                    "Dangerous link blocked", host(r.url()) + " - " + String.join(", ", res.reasons()), r.sourceApp(),
+                    res.explanation());
         }
         return res;
+    }
+
+    /**
+     * 12.6: the VPN's question "is this domain safe?". Nothing is stored and nothing is logged: no threat record, so
+     * no domain is ever linked to the user (the phone shows and keeps the alert itself).
+     */
+    @PostMapping("/domain")
+    public DomainScanResponse domain(@Valid @RequestBody DomainScanRequest r) {
+        String d = r.domain().toLowerCase(java.util.Locale.ROOT).replaceAll("\\.$", "");
+        ScanResponse s = urls.scan("https://" + d + "/");
+        // reasons that only make sense for a full link are left out (the phone never had one)
+        var codes = s.reasonCodes().stream().filter(c -> !c.equals("NO_HTTPS") && !c.equals("BAIT_WORDS") && !c.equals("BRAND_IN_PATH")).toList();
+        return new DomainScanResponse(s.verdict(), s.score(), codes, s.impersonatedBrand(), s.officialUrl());
     }
 
     @PostMapping("/file")
@@ -65,7 +81,7 @@ public class ScanController {
 
     @PostMapping("/apps")
     public AppsScanResponse apps(@AuthenticationPrincipal Long uid, @Valid @RequestBody AppsScanRequest r) {
-        var results = ads.scanAll(r.apps());
+        var results = appScan.scanAll(r.apps());
         List<AppResult> toRecord;
         if (r.deviceId() != null && !r.deviceId().isBlank()) {
             // 6.3: remember the device's apps; record a threat only when an app BECOMES malicious (not every hour)
@@ -75,8 +91,15 @@ public class ScanController {
         } else {
             toRecord = results.stream().filter(x -> x.verdict() == Verdict.MALICIOUS).toList(); // old clients
         }
-        toRecord.forEach(x -> threats.record(uid, ThreatType.AD_ABUSE, Severity.HIGH,
-                "App spamming ads / suspicious: " + x.packageName(), String.join(", ", x.reasons()), x.packageName()));
+        toRecord.forEach(x -> {
+            boolean fraud = x.reasonCodes() != null && !x.reasonCodes().isEmpty() && !x.reasonCodes().equals(List.of("AD_ABUSE"));
+            var why = new java.util.ArrayList<>(x.reasons());
+            if (x.privacyReasons() != null) why.addAll(x.privacyReasons());
+            threats.record(uid, ThreatType.AD_ABUSE, Severity.HIGH,
+                    (x.impersonatedBrand() != null ? "Fake " + x.impersonatedBrand() + " app: "
+                            : fraud ? "Risky app: " : "App spamming ads / suspicious: ") + x.packageName(),
+                    String.join(", ", why), x.packageName(), x.explanation());
+        });
         return new AppsScanResponse(results);
     }
 

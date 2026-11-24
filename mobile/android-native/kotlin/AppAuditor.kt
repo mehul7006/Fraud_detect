@@ -52,6 +52,20 @@ object AppAuditor {
         else @Suppress("DEPRECATION") pm.getInstallerPackageName(pkg)
     } catch (e: Exception) { null }
 
+    private fun categoryName(c: Int): String? = when (c) {
+        ApplicationInfo.CATEGORY_GAME -> "GAME"; ApplicationInfo.CATEGORY_AUDIO -> "AUDIO"; ApplicationInfo.CATEGORY_VIDEO -> "VIDEO"
+        ApplicationInfo.CATEGORY_IMAGE -> "IMAGE"; ApplicationInfo.CATEGORY_SOCIAL -> "SOCIAL"; ApplicationInfo.CATEGORY_NEWS -> "NEWS"
+        ApplicationInfo.CATEGORY_MAPS -> "MAPS"; ApplicationInfo.CATEGORY_PRODUCTIVITY -> "PRODUCTIVITY"; else -> null
+    }
+
+    /** 13.2: requested permissions that are currently granted (runtime ones only count once the user allowed them). */
+    private fun granted(p: android.content.pm.PackageInfo): List<String> {
+        val names = p.requestedPermissions ?: return emptyList()
+        val flags = p.requestedPermissionsFlags ?: return emptyList()
+        return names.indices.filter { flags[it] and android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED != 0 }
+            .map { names[it] }.sorted()
+    }
+
     fun audit(ctx: Context): List<Map<String, Any?>> {
         val pm = ctx.packageManager
         @Suppress("DEPRECATION")
@@ -71,7 +85,26 @@ object AppAuditor {
         val stale = NotifCounter.staleKeys(prefs.all.keys, installed)
         if (stale.isNotEmpty()) prefs.edit().apply { stale.forEach { remove(it) } }.apply()
 
-        return pkgs.filter { it.packageName != ctx.packageName }.map { p ->
+        return pkgs.filter { it.packageName != ctx.packageName }.map { p -> describe(ctx, pm, p, a11yOn, listenerOn, selfLaunches) }
+    }
+
+    /** 13.11: the same description for one freshly installed app (null when it is gone again). */
+    fun auditOne(ctx: Context, pkg: String): Map<String, Any?>? {
+        val pm = ctx.packageManager
+        @Suppress("DEPRECATION")
+        val flags = PackageManager.GET_PERMISSIONS or PackageManager.GET_SERVICES or
+            (if (Build.VERSION.SDK_INT >= 28) PackageManager.GET_SIGNING_CERTIFICATES else PackageManager.GET_SIGNATURES)
+        val p = try {
+            if (Build.VERSION.SDK_INT >= 33) pm.getPackageInfo(pkg, PackageManager.PackageInfoFlags.of(flags.toLong()))
+            else @Suppress("DEPRECATION") pm.getPackageInfo(pkg, flags)
+        } catch (e: PackageManager.NameNotFoundException) { return null }
+        return describe(ctx, pm, p, enabledPackages(ctx, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
+            enabledPackages(ctx, "enabled_notification_listeners"), emptyMap())
+    }
+
+    private fun describe(ctx: Context, pm: PackageManager, p: android.content.pm.PackageInfo, a11yOn: Set<String>,
+                         listenerOn: Set<String>, selfLaunches: Map<String, Int>): Map<String, Any?> {
+        return run {
             val ai = p.applicationInfo!!
             val perms = p.requestedPermissions?.toSet() ?: emptySet()
             val isSystem = (ai.flags and (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
@@ -90,7 +123,17 @@ object AppAuditor {
                 "selfLaunchCount" to (selfLaunches[p.packageName] ?: 0),
                 "certSha256" to certs(p),
                 "installer" to installer(pm, p.packageName),
-                "isSystem" to isSystem
+                "isSystem" to isSystem,
+                // 13.2 inventory: what it asks for, what it got, how it was installed, how old it is
+                "requestedPermissions" to perms.sorted(),
+                "grantedPermissions" to granted(p),
+                "targetSdk" to ai.targetSdkVersion,
+                "firstInstallTime" to p.firstInstallTime,
+                "lastUpdateTime" to p.lastUpdateTime,
+                "versionName" to p.versionName,
+                // 13.4: tracker SDK names (facts about the app, cached per version); system apps are not scanned
+                "trackers" to if (isSystem) emptyList<String>() else try { TrackerScanner.scan(ctx, p.packageName).map { it.name } } catch (e: Exception) { emptyList<String>() },
+                "appCategory" to (if (Build.VERSION.SDK_INT >= 26) categoryName(ai.category) else null),
             )
         }
     }

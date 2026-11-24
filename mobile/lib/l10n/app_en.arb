@@ -332,5 +332,543 @@
   "deleteAccountBody": "Removes your account and all data linked to it (threat history, devices, app checks) from our server. This cannot be undone.",
   "deleteAccountConfirm": "Delete everything",
   "cancel": "Cancel",
-  "accountSection": "Account and privacy"
+  "accountSection": "Account and privacy",
+  "contactSection": "Emergency contact (optional)",
+  "contactBody": "Someone you trust. On a critical alert you can tell them with one tap (your SMS app opens with the message ready). Saved only on this phone.",
+  "contactName": "Name",
+  "contactPhone": "Mobile number",
+  "contactSave": "Save contact",
+  "contactRemove": "Remove contact",
+  "contactInvalid": "Enter a name and a 10-digit mobile number",
+  "contactSaved": "Emergency contact: {name}",
+  "@contactSaved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tellContact": "Tell {name}",
+  "@tellContact": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contactMessage": "FraudShield alert on my phone: {title}. If anyone (even \"me\") asks you for an OTP, money or a code now, call me first on my number.",
+  "@contactMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "permFsiTitle": "Allow full-screen security alerts",
+  "permFsiBody": "Android 14 and newer only lets alarm and calling apps fill the screen. Allow it so a critical warning (call forwarding ON, account takeover) appears even on the lock screen. Without it you still get a notification.",
+  "fakeSiteTitle": "This looks like {brand} but is NOT {brand}",
+  "@fakeSiteTitle": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "fakeSiteThisLink": "This link",
+  "fakeSiteReal": "Real {brand}",
+  "@fakeSiteReal": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "fakeSiteWhy": "Why we think so",
+  "fakeSiteAdvice": "Do not enter your password, OTP, PIN or card details on this site. If you already did, call your bank and the cyber-crime helpline 1930 now.",
+  "fakeSiteGoReal": "Go to the real {brand} site",
+  "@fakeSiteGoReal": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "fakeSiteReport": "Report",
+  "fakeSiteReportCyber": "Report to Cyber Crime (1930)",
+  "fakeSiteWrong": "This warning is wrong",
+  "fakeSiteThanks": "Thank you - we will check it.",
+  "fakeSiteDiffLabel": "This link {seen} is different from the real address {real}",
+  "@fakeSiteDiffLabel": {
+    "placeholders": {
+      "seen": {
+        "type": "String"
+      },
+      "real": {
+        "type": "String"
+      }
+    }
+  },
+  "notifFakeSite": "Fake {brand} site!",
+  "@notifFakeSite": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "whyRisky": "Why is this risky?",
+  "vpnTitle": "Fake-website protection",
+  "vpnTileOn": "On - checks the sites every app opens",
+  "vpnTileOff": "Off - tap to block fake sites in every app",
+  "vpnConsentTitle": "Block fake websites in every app",
+  "vpnConsentIntro": "FraudShield sets up a small VPN that stays on your phone. When any app or browser looks up a website name, FraudShield checks the name first and blocks known fake sites.",
+  "vpnSeesTitle": "What FraudShield sees",
+  "vpnSees": "Only website names (like flipkart.com) and which app asked for them. Your internet traffic does not go through FraudShield.",
+  "vpnNotSeesTitle": "What it never sees",
+  "vpnNotSees": "Pages, messages, passwords, payments or full links. Nothing is recorded on our server.",
+  "vpnSentTitle": "What leaves your phone",
+  "vpnSent": "Only an unknown website name, to check if it is fake - never linked to you. In local-only mode nothing is sent.",
+  "vpnConsentNote": "Android will ask you to allow a VPN connection. A key icon appears at the top while protection is on.",
+  "vpnTurnOn": "Turn on protection",
+  "vpnTurnOff": "Turn off",
+  "vpnNotNow": "Not now",
+  "vpnStateOn": "Protection is on",
+  "vpnStateOff": "Protection is off",
+  "vpnStateOtherVpn": "Another VPN is connected",
+  "vpnStateOtherVpnBody": "Android allows only one VPN at a time. Turn the other VPN off in Android settings, then turn FraudShield on again.",
+  "vpnStatePrivateDns": "Private DNS is on",
+  "vpnStatePrivateDnsBody": "Your phone sends website names to {name} directly, so FraudShield cannot check them. Set Private DNS to \"Automatic\" or \"Off\".",
+  "@vpnStatePrivateDnsBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "vpnStateRevoked": "Protection was switched off",
+  "vpnStateRevokedBody": "It was turned off in Android settings or replaced by another VPN. Turn it on again to stay protected.",
+  "vpnStateNoConsent": "Allow the VPN prompt to turn protection on.",
+  "vpnOpenVpnSettings": "Open VPN settings",
+  "vpnOpenDnsSettings": "Open network settings",
+  "vpnStats": "{n} site names checked",
+  "@vpnStats": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "vpnBlockedCount": "{n} fake sites blocked",
+  "@vpnBlockedCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "vpnListSize": "{n} known fake sites on your phone",
+  "@vpnListSize": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "vpnRecent": "Recently blocked",
+  "vpnNoneBlocked": "Nothing blocked yet.",
+  "vpnLocalOnly": "Local-only mode",
+  "vpnLocalOnlyBody": "Use only the list on the phone; never ask the server about a website.",
+  "vpnBlockDoh": "Block hidden DNS services",
+  "vpnBlockDohBody": "Some browsers look up sites through their own encrypted DNS and skip the check. Blocking it makes them use the checked one.",
+  "vpnUpstream": "DNS provider",
+  "vpnUpstreamSystem": "Your network's (default)",
+  "vpnTopApps": "Which apps contact which sites",
+  "vpnTopAppsBody": "Last 30 days. Data use comes from Android's own counters (needs Usage Access).",
+  "vpnSitesCount": "{n} sites",
+  "@vpnSitesCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "vpnNoTraffic": "No data yet - turn protection on and use your phone for a while.",
+  "vpnKeepOnTitle": "Keep protection on after a restart",
+  "vpnKeepOnBody": "Your phone stops apps from starting by themselves. So that protection comes back after a restart or update: 1) in VPN settings tap FraudShield and turn on \"Always-on VPN\"; 2) allow Autostart for FraudShield.",
+  "vpnAlwaysOn": "Always-on VPN",
+  "vpnAutostart": "Allow Autostart",
+  "appDetailAccess": "What it can access",
+  "appDetailNothing": "No sensitive access granted.",
+  "appDetailTrackers": "Tracking code inside",
+  "appDetailNoTrackers": "No known tracking code found.",
+  "appDetailTalksTo": "Who it talked to (last 7 days)",
+  "appDetailTalksToBody": "From the fake-website protection on this phone. Site names never leave your phone.",
+  "appDetailNoNetwork": "No data - turn on fake-website protection to see this.",
+  "appDetailAdServers": "{n} advertising / tracking servers",
+  "@appDetailAdServers": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "appDetailMalware": "Talks to a known malware server!",
+  "appBlockInternet": "Block internet",
+  "appUnblockInternet": "Allow internet again",
+  "appBlockedNote": "Internet blocked for this app (while fake-website protection is on). Apps with fixed server addresses may still connect.",
+  "appRevoke": "Remove permissions",
+  "appFakeTitle": "This is NOT the real {name} app",
+  "@appFakeTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appIgnored": "You chose to ignore this app. FraudShield will not remind you.",
+  "msgTitle": "Check a message",
+  "msgIntro": "Paste an SMS or WhatsApp message. FraudShield checks it on your phone - the text does not leave your phone.",
+  "msgHint": "Paste the message here",
+  "msgCheck": "Check",
+  "msgSafe": "No scam signs found",
+  "msgScam": "Looks like a {name} - do not reply, click or pay",
+  "@msgScam": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "msgSuspicious": "Be careful: this may be a {name}",
+  "@msgSuspicious": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "msgCatKyc": "fake bank KYC / account-block scam",
+  "msgCatPrize": "fake prize / lottery scam",
+  "msgCatParcel": "fake parcel / courier scam",
+  "msgCatPower": "fake electricity-disconnection scam",
+  "msgCatJob": "fake job / task scam",
+  "msgCatLoan": "fake loan scam",
+  "msgCatArrest": "\"digital arrest\" scam",
+  "msgCatOtp": "OTP theft scam",
+  "msgCatUpi": "UPI refund / collect scam",
+  "msgCatInvest": "fake investment scam",
+  "msgCatGeneric": "scam",
+  "msgLinkFake": "Fake {name} website - do not open",
+  "@msgLinkFake": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "msgLinkBad": "Dangerous link - do not open",
+  "msgLinkOk": "No danger found in this link",
+  "msgLinkUnknown": "Could not check this link",
+  "msgAdvice": "Never share an OTP, PIN or password. If you already paid or shared, call your bank and the cyber-crime helpline 1930 now.",
+  "msgCloudButton": "Check with cloud AI",
+  "msgCloudTitle": "Send this message for a deeper check?",
+  "msgCloudFirst": "The message text is sent securely (HTTPS) to the FraudShield server for a deeper check. It is used only for this check: it is not stored, not logged and not linked to you. Links in it are checked too. You decide every time - nothing is ever sent without this tap.",
+  "msgCloudAgain": "This message will be sent to the FraudShield server for a deeper check (not stored, not logged).",
+  "msgCloudSend": "Send for check",
+  "msgCloudDone": "Includes the cloud check (message not stored).",
+  "msgCloudFailed": "Cloud check not available right now - the phone's own check above still applies.",
+  "msgDashTile": "Check a message",
+  "msgDashTileSub": "Paste an SMS / WhatsApp message to see if it is a scam",
+  "leftTile": "Leftover files",
+  "leftTileSub": "Find files that removed apps left on your phone",
+  "leftTilePending": "{count} removed app(s) left files - tap to review",
+  "@leftTilePending": {"placeholders": {"count": {"type": "int"}}},
+  "leftTitle": "Leftover files",
+  "leftTitleApp": "Leftovers of {name}",
+  "@leftTitleApp": {"placeholders": {"name": {"type": "String"}}},
+  "leftIntro": "Android removes each app's private data by itself. Apps can also save files in shared folders (Pictures, Download, their own folders) - those stay after uninstall. Nothing is removed until you choose and confirm.",
+  "leftPrivateNote": "FraudShield cannot see other apps' Android/data folders (Android does not allow it) - Android cleans those itself when an app is removed.",
+  "leftGroupInstaller": "App installers (.apk)",
+  "leftGroupCache": "Cache and temporary files",
+  "leftGroupMedia": "Photos, videos and audio",
+  "leftGroupDocument": "Documents",
+  "leftGroupOther": "Other files",
+  "leftWhatInstaller": "Installer file - not needed once the app is installed or removed.",
+  "leftWhatCache": "Temporary data the app made for itself - safe to remove.",
+  "leftWhatMedia": "Your photos, videos or audio saved by the app - check before removing.",
+  "leftWhatDocument": "Documents saved by the app - check before removing.",
+  "leftWhatOther": "Files the app saved - check before removing.",
+  "leftFolderInfo": "Folder, {files} files, {size}",
+  "@leftFolderInfo": {"placeholders": {"files": {"type": "int"}, "size": {"type": "String"}}},
+  "leftNothing": "Nothing left behind - all clean.",
+  "leftRemovedApps": "Removed apps",
+  "leftRemovedInfo": "{files} files, {size}",
+  "@leftRemovedInfo": {"placeholders": {"files": {"type": "int"}, "size": {"type": "String"}}},
+  "leftOrphans": "Folders of apps that are no longer installed",
+  "leftOrphanFrom": "From {name}",
+  "@leftOrphanFrom": {"placeholders": {"name": {"type": "String"}}},
+  "leftApks": "Old app installers in Download",
+  "leftApkSame": "The same version is installed - not needed",
+  "leftApkOlder": "Older than the installed app - not needed",
+  "leftApkNewer": "Newer than the installed app - an update you have not installed",
+  "leftApkNotInstalled": "This app is not installed",
+  "leftApkFlagged": "Flagged by file protection - remove it",
+  "leftApkUnreadable": "Could not read this installer",
+  "leftDelete": "Remove selected ({count}, {size})",
+  "@leftDelete": {"placeholders": {"count": {"type": "int"}, "size": {"type": "String"}}},
+  "leftConfirmTitle": "Remove {count} item(s)?",
+  "@leftConfirmTitle": {"placeholders": {"count": {"type": "int"}}},
+  "leftConfirmBody": "Photos, videos and audio go to the phone's trash - you can restore them for 30 days. Other files (installers, documents, cache) are deleted. Files of apps that are still installed are always left alone.",
+  "leftConfirmYes": "Remove",
+  "leftCancel": "Cancel",
+  "leftKeep": "Keep all",
+  "leftDone": "Moved {trashed} to trash, deleted {deleted}.",
+  "@leftDone": {"placeholders": {"trashed": {"type": "int"}, "deleted": {"type": "int"}}},
+  "leftRefused": "{count} item(s) left alone - they belong to an installed app or a protected folder.",
+  "@leftRefused": {"placeholders": {"count": {"type": "int"}}},
+  "leftCancelled": "Nothing was removed.",
+  "leftSettingsTitle": "Nothing left in Settings?",
+  "leftSetClear": "No longer listed",
+  "leftSetLeftover": "Still points to the removed app - open Settings and switch it off",
+  "leftSetUnknown": "Android does not let apps check this",
+  "leftKindAccessibility": "Accessibility",
+  "leftKindNotif": "Notification access",
+  "leftKindAdmin": "Device admin",
+  "leftKindVpn": "Always-on VPN",
+  "leftKindSms": "Default SMS app",
+  "leftKindDialer": "Default phone app",
+  "leftKindBrowser": "Default browser",
+  "leftKindHome": "Default home screen",
+  "leftNeedAccess": "Allow file access so FraudShield can find leftover files.",
+  "callTile": "Call guard",
+  "callTileOff": "Off - tap to block scam calls",
+  "callTileOn": "On - {blocked} calls stopped in 30 days",
+  "@callTileOn": {"placeholders": {"blocked": {"type": "int"}}},
+  "callTileUnsupported": "Needs Android 10 or newer",
+  "callTitle": "Call guard",
+  "callIntro": "FraudShield checks incoming calls from numbers that are not in your contacts - on your phone, without sending the number anywhere.",
+  "callUnsupported": "Call guard needs Android 10 or newer. You can still report a scam number below.",
+  "callRoleTitle": "Let FraudShield screen calls",
+  "callRoleBody": "Android will ask you to choose FraudShield as the \"Caller ID & spam\" app. Your phone app stays the same.",
+  "callRoleButton": "Allow",
+  "callRoleOn": "FraudShield is screening calls",
+  "callModeTitle": "What should happen to risky calls?",
+  "callMode1": "Only label calls",
+  "callMode1Sub": "Never cut a call - just tell me who it might be",
+  "callMode2": "Block known scam numbers (recommended)",
+  "callMode2Sub": "Numbers many people reported as fraud are rejected",
+  "callMode3": "Block scams, silence risky calls",
+  "callMode3Sub": "Foreign and unusual numbers ring silently; you still see them",
+  "callMode4": "Reject all unknown numbers",
+  "callMode4Sub": "Only contacts, numbers you called and your allow list can ring",
+  "callMode4WarnTitle": "Reject every unknown caller?",
+  "callMode4WarnBody": "Delivery agents, doctors, a new school number or a new bank office will NOT ring. They appear in Blocked calls, where you can allow them. Emergency numbers and official 1600 bank calls always ring.",
+  "callMode4Confirm": "Yes, reject unknown",
+  "callCancel": "Cancel",
+  "callContactsTitle": "Never block people you know",
+  "callContactsBody": "Let FraudShield check your contacts and the numbers you called, on this phone only. Nothing is uploaded.",
+  "callContactsButton": "Allow contacts and call history",
+  "callNotifTitle": "Allow notifications",
+  "callNotifBody": "So FraudShield can tell you who called and why a call was stopped.",
+  "callAllowTitle": "Always allow",
+  "callAllowHint": "Phone number",
+  "callAllowAdd": "Add",
+  "callAllowInvalid": "Not a valid phone number",
+  "callAllowEmpty": "No numbers yet",
+  "callRemove": "Remove",
+  "callBlockTitle": "Numbers you blocked",
+  "callListInfo": "Scam list on this phone: {count} numbers",
+  "@callListInfo": {"placeholders": {"count": {"type": "int"}}},
+  "callSync": "Update list",
+  "callSyncDone": "List updated",
+  "callSyncFailed": "Could not update now - the list on the phone still works",
+  "callBlockedTitle": "Blocked calls",
+  "callBlockedSub": "Last 30 days - kept only on this phone",
+  "callBlockedEmpty": "No screened calls in the last 30 days",
+  "callActionReject": "Rejected",
+  "callActionSilence": "Silenced",
+  "callActionAllow": "Rang, with a warning",
+  "callUndone": "Allowed by you",
+  "callNotSpam": "Not spam",
+  "callNotSpamDone": "OK - {number} is always allowed now",
+  "@callNotSpamDone": {"placeholders": {"number": {"type": "String"}}},
+  "callReport": "Report",
+  "callReportTitle": "Report a number",
+  "callReportIntro": "When many people report the same number it goes on the scam list for everyone. One report per number per person.",
+  "callReportNumber": "Phone number",
+  "callReportCategory": "What was it?",
+  "callCatScam": "Fraud / scam",
+  "callCatSpam": "Spam",
+  "callCatTele": "Telemarketing",
+  "callReportSend": "Report to FraudShield",
+  "callReportDone": "Reported - thank you",
+  "callReportProtected": "This is an official 1600 / 140 service number. TRAI does not allow these to be reported or blocked.",
+  "callReportLimit": "You have reported many numbers today - please try again tomorrow",
+  "callReportFailed": "Could not report now - check your internet and try again",
+  "callGovTitle": "Report to the government (Chakshu)",
+  "callGovBody": "Sanchar Saathi \"Chakshu\" is the Department of Telecommunications' free portal for reporting fraud calls and SMS. Copy the number, then paste it in the form.",
+  "callGovCopy": "Copy number",
+  "callGovCopied": "Number copied",
+  "callGovOpen": "Open Chakshu",
+  "callGovMoney": "Lost money? Call 1930 now or report at cybercrime.gov.in",
+  "blockTitleWeb": "Ad & tracker blocking",
+  "blockTitlePlay": "Tracker & malware blocking",
+  "blockIntroWeb": "Blocks ads, tracking and malware servers in every app and browser - on your phone, nothing is sent anywhere.",
+  "blockIntroPlay": "Blocks known tracking and malware servers in every app and browser - on your phone, nothing is sent anywhere.",
+  "blockAdsNotInPlay": "Ads are not blocked in this version: Google Play rules do not allow blocking other apps' ads. The version from our website can block ads.",
+  "blockNeedsVpn": "Works while Fake-website protection (the on-phone VPN) is on.",
+  "blockCatAds": "Ads",
+  "blockCatAdsSub": "Ad servers in apps and websites",
+  "blockCatTrackers": "Trackers",
+  "blockCatTrackersSub": "Analytics and tracking servers that follow what you do",
+  "blockCatMalware": "Malware & scam sites",
+  "blockCatMalwareSub": "Known malware, phishing and scam servers",
+  "blockList": "Block list: {count} sites",
+  "@blockList": {"placeholders": {"count": {"type": "int"}}},
+  "blockListNone": "Block list not downloaded yet",
+  "blockUpdate": "Update now",
+  "blockUpdated": "Block list is up to date",
+  "blockUpdateFailed": "Could not update the block list right now",
+  "blockPause5": "Pause blocking for 5 minutes",
+  "blockPausedUntil": "Paused until {time}",
+  "@blockPausedUntil": {"placeholders": {"time": {"type": "String"}}},
+  "blockResume": "Resume now",
+  "blockAllowedApps": "Apps not blocked",
+  "blockAllowedAppsNone": "None - blocking applies to every app",
+  "blockAllowApp": "Allow an app…",
+  "blockPickApp": "Choose the app",
+  "blockPickAppBody": "Apps seen by the VPN. \"Allow\" stops blocking for that app. \"This app broke\" does the same and keeps a note on this phone (nothing is sent).",
+  "blockAllow": "Allow",
+  "blockAppBroke": "This app broke",
+  "blockAppBrokeDone": "{app} is no longer blocked. The note stays on this phone.",
+  "@blockAppBrokeDone": {"placeholders": {"app": {"type": "String"}}},
+  "blockRemove": "Remove",
+  "blockAllowedSites": "Sites not blocked",
+  "blockAddSite": "Allow a site",
+  "blockSiteHint": "example.com",
+  "blockAdd": "Add",
+  "blockStats": "Blocking statistics",
+  "blockStatsTotal": "{count} requests blocked",
+  "@blockStatsTotal": {"placeholders": {"count": {"type": "int"}}},
+  "blockStatsSaved": "About {size} of data saved (estimate)",
+  "@blockStatsSaved": {"placeholders": {"size": {"type": "String"}}},
+  "blockStatsByCat": "By type",
+  "blockStatsByApp": "By app",
+  "blockStatsTop": "Most blocked sites",
+  "blockStatsDays": "Last {count} days",
+  "@blockStatsDays": {"placeholders": {"count": {"type": "int"}}},
+  "blockStatsLocal": "Counted on your phone; these numbers never leave it.",
+  "blockStatsEmpty": "Nothing blocked yet.",
+  "blockVpnCount": "{count} requests blocked since the VPN started",
+  "@blockVpnCount": {"placeholders": {"count": {"type": "int"}}},
+  "safeTileTitle": "Scam help",
+  "safeTileSub": "Live scam guard, check before you pay, recovery kit, drills",
+  "safeHubTitle": "Scam help",
+  "safeGuardTitle": "Live scam guard",
+  "safeGuardSub": "STOP warning when a scam call, a screen-sharing app and your bank app come together",
+  "safeUpiTitle": "Check before you pay",
+  "safeUpiSub": "UPI ID or the text of a UPI QR code",
+  "safeCareTitle": "Check a customer-care number",
+  "safeCareSub": "Fake helpline numbers are a common trap",
+  "safeRecoveryTitle": "I was scammed - what now?",
+  "safeRecoverySub": "First-hour steps, 1930, block your cards, evidence",
+  "safeGuardianTitle": "Guardian",
+  "safeGuardianSub": "A family member you can reach in one tap",
+  "safeDrillsTitle": "Scam drills",
+  "safeDrillsSub": "Practise spotting 5 common scams",
+  "safeGuardIntro": "Most bank scams follow one pattern: an unknown caller keeps you on the phone, asks you to open a screen-sharing app (AnyDesk, TeamViewer...), then to open your bank app or read out an OTP. When FraudShield sees these together it shows a STOP warning. Only the kind of signal is sent to FraudShield - never the number, the app name or the code.",
+  "safeGuardSwitch": "Live scam guard",
+  "safeOtpSwitch": "Warn me when an OTP arrives during a call",
+  "safeOtpSwitchSub": "Works on the phone only; the code is never stored",
+  "safePermsTitle": "What the guard needs",
+  "safePermPhone": "Phone: is a call going on",
+  "safePermCallLog": "Caller's number - checked against your contacts on the phone",
+  "safePermContacts": "Contacts",
+  "safePermUsage": "Usage access: which app is open",
+  "safePermNotif": "Notification access: an OTP arrived",
+  "safeAllow": "Allow",
+  "safeAllowed": "Allowed",
+  "safeTestStop": "Test the STOP warning",
+  "safeStopTitle": "STOP!",
+  "safeStopHeadline": "This looks like a scam happening right now",
+  "safeStopWarnHeadline": "Careful: this may be a scam",
+  "safeStopBody": "An unknown caller, a screen-sharing app and your bank app at the same time - this is how bank scams work.",
+  "safeStopStep1": "Hang up the call now.",
+  "safeStopStep2": "Do not share any OTP, PIN or password.",
+  "safeStopStep3": "Close and uninstall the screen-sharing app (AnyDesk, TeamViewer...).",
+  "safeStopStep4": "If you already paid or shared a code: call 1930 now.",
+  "safeStopSpeak": "Read aloud",
+  "safeNoVoice": "No voice for this language on this phone - please read the steps above.",
+  "safeCall1930": "Call 1930",
+  "safeOpenRecovery": "Open recovery kit",
+  "safeImSafe": "I am safe - close",
+  "safeCallGuardian": "Call {name}",
+  "@safeCallGuardian": {"placeholders": {"name": {"type": "String"}}},
+  "safeTellGuardian": "Message {name}",
+  "@safeTellGuardian": {"placeholders": {"name": {"type": "String"}}},
+  "safeGuardianSms": "FraudShield alert: I may be talking to a scammer right now. Please call me.",
+  "safeRecTitle": "Recovery kit",
+  "safeRecIntro": "Act within the first hour (the \"golden hour\"): the faster you report, the better the chance to freeze the money.",
+  "safeRecStart": "I was just scammed - start the clock",
+  "safeRecElapsed": "{time} since you started",
+  "@safeRecElapsed": {"placeholders": {"time": {"type": "String"}}},
+  "safeRecReset": "Reset",
+  "safeRec1930": "Call 1930 - National Cyber Crime Helpline",
+  "safeRecPortal": "Report at cybercrime.gov.in",
+  "safeRecBlockTitle": "Block your card / account",
+  "safeRecBlockSub": "Numbers read on each bank's own website (Nov 2026). Double-check on your card.",
+  "safeRecChecklist": "Checklist",
+  "safeRecStepCall1930": "Called 1930",
+  "safeRecStepBank": "Called my bank; blocked card / UPI",
+  "safeRecStepPasswords": "Changed UPI PIN, net-banking and email passwords",
+  "safeRecStepRemote": "Uninstalled screen-sharing apps",
+  "safeRecStepPortal": "Filed a complaint at cybercrime.gov.in",
+  "safeRecStepKeep": "Saved the complaint / acknowledgement number",
+  "safeRecEvidence": "Evidence pack",
+  "safeRecEvidenceSub": "Write down what happened. It stays on your phone until you share it.",
+  "safeRecEvWho": "Scammer's number / UPI ID / link",
+  "safeRecEvMoney": "Amount, date and time of each payment",
+  "safeRecEvApps": "Apps they asked you to install",
+  "safeRecEvNotes": "What happened",
+  "safeRecShare": "Share evidence",
+  "safeRecScreens": "Screenshots: open Gallery, select them and share them to your complaint or bank.",
+  "safeGuardianIntro": "Choose a family member. When FraudShield sees a scam happening, the STOP screen offers one tap to call or message them. Nothing is sent automatically and no message content is shared.",
+  "safeGuardianName": "Name",
+  "safeGuardianNumber": "Mobile number",
+  "safeGuardianSave": "Save guardian",
+  "safeGuardianRemove": "Remove guardian",
+  "safeGuardianSaved": "{name} is your guardian",
+  "@safeGuardianSaved": {"placeholders": {"name": {"type": "String"}}},
+  "safeGuardianInvalid": "Enter a name and a valid Indian mobile number",
+  "safeGuardianTest": "Send a test message",
+  "safeGuardianTestText": "FraudShield test: you are my guardian. If I am ever in a scam call, FraudShield will help me call or message you.",
+  "safeUpiHint": "UPI ID (name@bank) or QR text (upi://pay?...)",
+  "safeUpiQrNote": "To check a QR code: scan it with Google Lens or your camera, copy the text and paste it here.",
+  "safeCheck": "Check",
+  "safeVerdictSafe": "No warning signs found",
+  "safeVerdictSusp": "Be careful",
+  "safeVerdictBad": "Do not pay",
+  "safeUpiPayee": "Pays to: {vpa}",
+  "@safeUpiPayee": {"placeholders": {"vpa": {"type": "String"}}},
+  "safeReport": "Report as scam",
+  "safeReported": "Reported - thank you",
+  "safeReportFailed": "Could not report right now",
+  "safeCheckFailed": "Could not check right now - try again",
+  "safeCareHint": "Phone number",
+  "safeCareBrand": "Company (optional, e.g. SBI)",
+  "safeCareOfficial": "Official number",
+  "safeCareFake": "Fake customer-care number",
+  "safeCareSusp": "Not an official number",
+  "safeCareUnknown": "Not in our list - check on the company's own website",
+  "safeCareReal": "Real numbers",
+  "safeDrillsIntro": "Short practice rounds. Pick what you would do - there is no right or wrong in front of anyone, just learning.",
+  "safeDrillBest": "Best: {score}%",
+  "@safeDrillBest": {"placeholders": {"score": {"type": "int"}}},
+  "safeDrillNotPlayed": "Not played yet",
+  "safeDrillNext": "Next",
+  "safeDrillFinish": "Finish",
+  "safeDrillResult": "You scored {score}%",
+  "@safeDrillResult": {"placeholders": {"score": {"type": "int"}}},
+  "safeDrillSafe": "Safe choice",
+  "safeDrillRisky": "Risky choice"
 }

@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'api_client.dart';
 import 'carrier_classifier.dart';
 import 'ignored_apps.dart';
+import 'leftovers.dart' show FlaggedFiles;
 import 'native_bridge.dart';
 import 'push.dart';
 import '../l10n/l10n.dart';
+import '../screens/fake_site_screen.dart' show FakeSite;
 import 'settings_store.dart';
 import 'url_extractor.dart';
 
@@ -16,7 +18,11 @@ class Alert {
   final String body;
   final String severity; // CRITICAL / HIGH / MEDIUM
   final List<AlertAction> actions;
-  Alert(this.title, this.body, this.severity, this.actions);
+  /// 10.11: set when the link imitates a known brand - shown as the full fake-site screen instead of a dialog.
+  final FakeSite? fakeSite;
+  /// 11.10: server explanation {en, hi} shown as "Why is this risky?".
+  final Map<String, dynamic>? explanation;
+  Alert(this.title, this.body, this.severity, this.actions, {this.fakeSite, this.explanation});
 }
 
 class AlertAction {
@@ -31,7 +37,13 @@ class RiskyApp {
   final int score;
   final List<String> reasons;
   final bool isNew;
-  const RiskyApp(this.packageName, this.label, this.score, this.verdict, this.reasons, {this.isNew = false});
+  /// 13.7: server explanation {en, hi}, imitated brand (fake app), reason codes; [audit] = the phone's inventory.
+  final Map<String, dynamic>? explanation;
+  final String? impersonatedBrand;
+  final List<String> reasonCodes;
+  final Map<String, dynamic> audit;
+  const RiskyApp(this.packageName, this.label, this.score, this.verdict, this.reasons,
+      {this.isNew = false, this.explanation, this.impersonatedBrand, this.reasonCodes = const [], this.audit = const {}});
 }
 
 /// Orchestrates all checks. Runs while the app process is alive; the Kotlin listener keeps collecting
@@ -42,6 +54,10 @@ class ProtectionEngine {
   final PushClient push;
   StreamSubscription<PushAlert>? _pushSub;
   final alerts = StreamController<Alert>.broadcast();
+  /// 14.4: a shared message waiting to be shown in "Check a message" (the dashboard opens it).
+  final sharedMessage = ValueNotifier<String?>(null);
+  /// 15.3: live scam detected by the native guard ('CRITICAL' / 'WARNING'); the dashboard opens the STOP screen.
+  final liveScam = ValueNotifier<String?>(null);
   final status = ValueNotifier<Map<String, String>>({});
   Timer? _fast, _slow;
 
@@ -160,6 +176,8 @@ class ProtectionEngine {
               await _handleLoginCode(e['app']!);
             case 'NEW_DEVICE':
               await _handleNewDevice(e['app']!);
+            case 'LIVE_SCAM': // 15.2 / 15.3: signal kinds only - no number, app name or code ever reaches here
+              liveScam.value = e['level'] == 'CRITICAL' ? 'CRITICAL' : 'WARNING';
           }
         } catch (err) {
           debugPrint('event ${e['kind']} failed: $err');
@@ -269,9 +287,12 @@ class ProtectionEngine {
       return;
     }
     final bad = verdict == 'MALICIOUS';
-    await NativeBridge.showAlert(bad ? t.notifDangerous : t.alertSuspiciousLink, '$url\n$reasons', id: url.hashCode);
+    final fake = FakeSite.fromScan(url, r); // 10.11: "looks like Flipkart but is NOT Flipkart"
+    final notif = fake != null ? t.notifFakeSite(fake.brand) : (bad ? t.notifDangerous : t.alertSuspiciousLink);
+    await NativeBridge.showAlert(notif, '$url\n$reasons', id: url.hashCode);
     alerts.add(Alert(bad ? t.alertDangerous : t.alertSuspiciousLink, '$url\n\n$reasons',
-        bad ? 'CRITICAL' : 'MEDIUM', []));
+        bad ? 'CRITICAL' : 'MEDIUM', [], fakeSite: fake,
+        explanation: r['explanation'] is Map ? (r['explanation'] as Map).cast<String, dynamic>() : null));
   }
 
   /// Links that were captured while offline are scanned once the server answers again (4.10).
@@ -287,6 +308,13 @@ class ProtectionEngine {
   /// Returns how many links were checked (0 = no link in the text).
   Future<int> scanShared(String text) async {
     final urls = UrlExtractor.extract(text);
+    // 14.4: a whole message (not just a link) opens "Check a message" - it judges the text AND its links
+    var rest = text;
+    for (final u in urls) { rest = rest.replaceAll(u, ' '); }
+    if (rest.split(RegExp(r'\s+')).where((w) => w.length > 1).length >= 4) {
+      sharedMessage.value = text;
+      return urls.length;
+    }
     for (final u in urls.take(5)) {
       try {
         await _showVerdict(u, await api.scanUrl(u, 'share'), showSafe: true);
@@ -304,6 +332,7 @@ class ProtectionEngine {
     if (verdict == 'SAFE') return;
     final reasons = (r['reasons'] as List).join(', ');
     final path = f['path'] as String;
+    await FlaggedFiles.add(path); // 17.6: a flagged installer is pre-ticked in the leftover cleaner
     final t = currentL10n();
     await NativeBridge.showAlert(t.notifSuspiciousFile, '${f['fileName']}\n$reasons', id: path.hashCode);
     alerts.add(Alert(verdict == 'MALICIOUS' ? t.alertMaliciousFile : t.alertSuspiciousFile, '${f['fileName']}\n\n$reasons',
@@ -521,15 +550,9 @@ class ProtectionEngine {
           debugPrint('app audit ${jsonEncode({for (final k in _auditFields) k: a[k]})}');
         }
       }
-      // only send non-system apps that have at least one risky trait, keeps payload small
-      final risky = apps.where((a) =>
-          a['isSystem'] != true &&
-          ((a['notifPerHour'] as int) >= 4 ||
-              a['hasOverlayPermission'] == true ||
-              a['hasSmsPermission'] == true ||
-              a['hasAccessibility'] == true ||
-              a['hasNotificationListener'] == true ||
-              ((a['selfLaunchCount'] as int?) ?? 0) > 0)).take(300).toList();
+      // 13.x: every non-system app (privacy, fake-app and sideload checks need them all); install times stay on the phone
+      final risky = apps.where((a) => a['isSystem'] != true).take(300)
+          .map((a) => Map<String, dynamic>.from(a)..remove('firstInstallTime')..remove('lastUpdateTime')).toList();
       _deviceId ??= (await NativeBridge.deviceInfo())['deviceId'] as String?;
       final r = await api.scanApps(risky, deviceId: _deviceId);
       final labels = {for (final a in apps) a['packageName'] as String: a['label'] as String};
@@ -538,8 +561,13 @@ class ProtectionEngine {
         for (final x in (r['results'] as List).cast<Map>())
           if (x['verdict'] != 'SAFE' && !IgnoredApps.hides(ignoredNow, x['packageName'] as String, x['adAbuseScore'] as int))
             RiskyApp(x['packageName'] as String, labels[x['packageName']] ?? x['packageName'] as String,
-                x['adAbuseScore'] as int, x['verdict'] as String, (x['reasons'] as List).cast<String>(),
-                isNew: x['newSinceLastScan'] == true),
+                [(x['adAbuseScore'] as num?)?.toInt() ?? 0, (x['privacyScore'] as num?)?.toInt() ?? 0].reduce((a, b) => a > b ? a : b),
+                x['verdict'] as String, [...(x['reasons'] as List).cast<String>(), ...((x['privacyReasons'] as List?) ?? const []).cast<String>()],
+                isNew: x['newSinceLastScan'] == true,
+                explanation: x['explanation'] is Map ? (x['explanation'] as Map).cast<String, dynamic>() : null,
+                impersonatedBrand: x['impersonatedBrand'] as String?,
+                reasonCodes: ((x['reasonCodes'] as List?) ?? const []).cast<String>(),
+                audit: Map<String, dynamic>.from(_lastAudit[x['packageName']] ?? const {})),
       ]..sort((a, b) => b.score.compareTo(a.score));
       riskyApps.value = list;
       _set('apps', _appsStatus(list));

@@ -19,6 +19,10 @@ public class ThreatEvent {
     @Column(nullable = false)
     private String title;
     private String detail;
+    @Column(name = "explanation_en")
+    private String explanationEn;
+    @Column(name = "explanation_hi")
+    private String explanationHi;
     @Column(name = "source_app")
     private String sourceApp;
     @Column(nullable = false)
@@ -38,6 +42,9 @@ public class ThreatEvent {
     public Severity getSeverity() { return severity; }
     public String getTitle() { return title; }
     public String getDetail() { return detail; }
+    public String getExplanationEn() { return explanationEn; }
+    public String getExplanationHi() { return explanationHi; }
+    public void setExplanation(String en, String hi) { this.explanationEn = en; this.explanationHi = hi; }
     public String getSourceApp() { return sourceApp; }
     public String getStatus() { return status; }
     public void resolve() { this.status = "RESOLVED"; }

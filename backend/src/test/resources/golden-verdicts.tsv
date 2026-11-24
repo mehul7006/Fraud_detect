@@ -1,0 +1,35 @@
+# 11.5 golden verdicts: url <TAB> expected verdict. Change only on purpose (and say why in the commit).
+# official / restricted / popular sites
+https://www.flipkart.com/	SAFE
+http://www.sbi.co.in/login-verify-kyc-update	SAFE
+https://retail.onlinesbi.sbi/retail/login.htm	SAFE
+https://www.hdfcbank.com/personal/pay/cards	SAFE
+https://uidai.gov.in/en/my-aadhaar/update-aadhaar.html	SAFE
+https://incometax.gov.in/refund/claim/verify	SAFE
+https://www.google.com/search?q=sbi+kyc	SAFE
+https://en.wikipedia.org/wiki/Phishing	SAFE
+https://www.flickr.com/photos/	SAFE
+https://github.com/login	SAFE
+# ordinary unknown sites
+https://sharmahandicrafts.in/lamps	SAFE
+https://www.kumarsweets.co.in/menu	SAFE
+https://blog.example-travel.in/2026/11/goa-trip	SAFE
+# look-alikes and scams
+https://fleepkart.com/big-billion-days	MALICIOUS
+http://flipkart-sale.xyz/	MALICIOUS
+http://sbi-kyc-update.top/verify	MALICIOUS
+https://login.flipkart.com.evil.xyz/	MALICIOUS
+http://paytm-kyc-update.in/	MALICIOUS
+https://xn--mazon-3ve.com/	MALICIOUS
+http://incometax-refund.in/claim	MALICIOUS
+http://192.168.4.20/sbi-kyc-update/verify.apk	MALICIOUS
+https://www.sbi.co.in@kyc-update.xyz/	MALICIOUS
+https://whatsapp-web.cc/	MALICIOUS
+http://jio-recharge-offer.xyz/	MALICIOUS
+https://echallan-parivahan.in/pay	MALICIOUS
+http://indiapost-delivery.top/track	MALICIOUS
+# weaker signals
+https://amazno.in/	SUSPICIOUS
+https://random-shop.example/flipkart/sale	MALICIOUS
+https://tinyurl.com/indiapost-hold	SUSPICIOUS
+https://bit.ly/3xyzabc	SAFE

@@ -49,7 +49,9 @@ PYBIN=$(command -v python3 || command -v python)
 p = 'android/app/src/main/AndroidManifest.xml'
 m = open(p, encoding='utf-8').read()
 perms = ['INTERNET', 'POST_NOTIFICATIONS', 'USE_FULL_SCREEN_INTENT', 'CALL_PHONE', 'READ_PHONE_STATE',
-         'QUERY_ALL_PACKAGES', 'MANAGE_EXTERNAL_STORAGE', 'PACKAGE_USAGE_STATS', 'REQUEST_DELETE_PACKAGES']
+         'QUERY_ALL_PACKAGES', 'MANAGE_EXTERNAL_STORAGE', 'PACKAGE_USAGE_STATS', 'REQUEST_DELETE_PACKAGES',
+         'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_SYSTEM_EXEMPTED', 'RECEIVE_BOOT_COMPLETED',  # 12.x VPN
+         'READ_CONTACTS', 'READ_CALL_LOG']  # 16.x call guard: optional, never-block-known-people (Play call-log declaration)
 add = ''.join(f'    <uses-permission android:name="android.permission.{x}"/>\n' for x in perms
               if f'android.permission.{x}"' not in m)
 # 5.8: old storage permissions, Android 8-10 only
@@ -67,6 +69,28 @@ if 'AdNotificationListener' not in m:
            '            <intent-filter><action android:name="android.service.notification.NotificationListenerService"/></intent-filter>\n'
            '        </service>\n')
     m = m.replace('</application>', svc + '    </application>', 1)
+if 'FraudVpnService' not in m:  # Phase 12: DNS-only VPN + restart after reboot
+    vpn = ('        <service android:name=".FraudVpnService" android:exported="false" '
+           'android:permission="android.permission.BIND_VPN_SERVICE" android:foregroundServiceType="systemExempted">\n'
+           '            <intent-filter><action android:name="android.net.VpnService"/></intent-filter>\n'
+           '            <meta-data android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON" android:value="true"/>\n'
+           '        </service>\n'
+           '        <receiver android:name=".VpnBootReceiver" android:exported="false">\n'
+           '            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/>'
+           '<action android:name="android.intent.action.MY_PACKAGE_REPLACED"/></intent-filter>\n'
+           '        </receiver>\n')
+    m = m.replace('</application>', vpn + '    </application>', 1)
+if 'CallGuardService' not in m:  # Phase 16: call screening (role "Caller ID & spam", Android 10+) + notification buttons
+    cg = ('        <service android:name=".CallGuardService" android:exported="true" '
+          'android:permission="android.permission.BIND_SCREENING_SERVICE">\n'
+          '            <intent-filter><action android:name="android.telecom.CallScreeningService"/></intent-filter>\n'
+          '        </service>\n'
+          '        <receiver android:name=".CallActionReceiver" android:exported="false"/>\n')
+    m = m.replace('</application>', cg + '    </application>', 1)
+if 'DebugCommandReceiver' not in m:  # automated device tests: adb-only (DUMP permission), no-op in release builds
+    dbg = ('        <receiver android:name=".DebugCommandReceiver" android:exported="true" '
+           'android:permission="android.permission.DUMP"/>\n')
+    m = m.replace('</application>', dbg + '    </application>', 1)
 if 'android.intent.action.SEND' not in m:
     share = ('            <intent-filter><action android:name="android.intent.action.SEND"/>'
              '<category android:name="android.intent.category.DEFAULT"/><data android:mimeType="text/plain"/></intent-filter>\n')
@@ -91,6 +115,8 @@ PY
 "$PYBIN" tool/release_gradle.py
 # 7.3 + 9.6: Firebase (push alerts, crash reports) when android-native/google-services.json is present
 "$PYBIN" tool/firebase_gradle.py
+# 18.9: Play / website build flag (--dart-define=FS_FLAVOUR=play|web) -> BuildConfig.FS_FLAVOUR
+"$PYBIN" tool/flavour_gradle.py
 
 flutter pub get
 echo "Android setup complete."

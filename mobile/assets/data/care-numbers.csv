@@ -1,0 +1,65 @@
+# 15.9 official customer-care / helpline numbers. EVERY row was read on the brand's OWN website on 2026-11-24
+# (source_url = the page it is printed on). Brands whose page could not be loaded or printed no number
+# (Google Pay India, Amazon India, IRCTC, Paytm consumer care) are deliberately NOT listed - unverified numbers stay out.
+# Brand names must match seed/brands.csv (the 1930 helpline is the one exception: a government service, not a brand).
+# Re-check every row before each release: banks moved to *.bank.in in 2025-26 and numbers change.
+brand,number,purpose,source_url
+State Bank of India,1800 1234,toll-free customer care,https://sbi.bank.in/web/customer-care/contact-us
+State Bank of India,1800 2100,toll-free customer care,https://sbi.bank.in/web/customer-care/contact-us
+State Bank of India,1800 11 2211,toll-free customer care,https://sbi.bank.in/web/customer-care/contact-us
+State Bank of India,1800 425 3800,toll-free customer care,https://sbi.bank.in/web/customer-care/contact-us
+State Bank of India,080-26599990,customer care (paid call),https://sbi.bank.in/web/customer-care/contact-us
+State Bank of India,1800 11 1109,report an unauthorised electronic transaction,https://sbi.bank.in/web/customer-care/contact-us
+State Bank of India,94491 12211,report an unauthorised electronic transaction,https://sbi.bank.in/web/customer-care/contact-us
+State Bank of India,8008 20 20 20,SMS UNHAPPY for a complaint (SMS only),https://sbi.bank.in/web/customer-care/contact-us
+HDFC Bank,1800 1600,customer care,https://www.hdfc.bank.in/contact-us
+HDFC Bank,1800 2600,customer care and fraud reporting,https://www.hdfc.bank.in/contact-us
+HDFC Bank,044-61084900,credit-card complaints,https://www.hdfc.bank.in/contact-us
+ICICI Bank,1800 1080,toll-free customer care,https://www.icici.bank.in/contact-us
+ICICI Bank,1600313900,bank's own outgoing call: transaction confirmation,https://www.icici.bank.in/contact-us
+ICICI Bank,1600300900,bank's own outgoing call: transaction confirmation,https://www.icici.bank.in/contact-us
+ICICI Bank,1600317900,bank's own outgoing call: transaction confirmation,https://www.icici.bank.in/contact-us
+ICICI Bank,1600300800,bank's own outgoing call: dispute update,https://www.icici.bank.in/contact-us
+ICICI Bank,1600315800,bank's own outgoing call: dispute update,https://www.icici.bank.in/contact-us
+ICICI Bank,1600313800,bank's own outgoing call: dispute update,https://www.icici.bank.in/contact-us
+Axis Bank,1800 4030,toll-free customer care and lost cards,https://www.axis.bank.in/contact-us
+Axis Bank,1800 8911,toll-free customer care and lost cards,https://www.axis.bank.in/contact-us
+Axis Bank,080-6802-6802,lost credit / debit / prepaid card,https://www.axis.bank.in/contact-us
+Axis Bank,040-4886-8888,lost credit / debit / prepaid card,https://www.axis.bank.in/contact-us
+Axis Bank,+91 40 67174100,24-hour card-block line,https://www.axis.bank.in/contact-us
+Axis Bank,56161600,SMS BLOCKCARD to block a card (SMS only),https://www.axis.bank.in/contact-us
+Axis Bank,7036165000,WhatsApp banking,https://www.axis.bank.in/contact-us
+Kotak Mahindra Bank,1800 4100,24x7 toll-free customer care,https://www.kotak.bank.in/en/customer-service/contact-us.html
+Kotak Mahindra Bank,1800 209 0000,24x7 fraud reporting,https://www.kotak.bank.in/en/customer-service/contact-us.html
+Kotak Mahindra Bank,+91 22 6204 2001,customer care from outside India,https://www.kotak.bank.in/en/customer-service/contact-us.html
+Punjab National Bank,1800 1800,toll-free customer care,https://pnb.bank.in/contact-us.html
+Punjab National Bank,1800 2021,toll-free customer care,https://pnb.bank.in/contact-us.html
+Punjab National Bank,0120-2490000,customer care (paid call),https://pnb.bank.in/contact-us.html
+Punjab National Bank,1800 180 2345,credit-card helpline,https://pnb.bank.in/contact-us.html
+Punjab National Bank,0120-4616200,credit-card helpline,https://pnb.bank.in/contact-us.html
+Punjab National Bank,1800 180 2223,missed-call balance enquiry,https://pnb.bank.in/contact-us.html
+Punjab National Bank,9264092640,WhatsApp banking,https://pnb.bank.in/contact-us.html
+Bank of Baroda,1800 5700,24x7 toll-free customer care / fraud reporting / card block,https://bankofbaroda.bank.in/contact-us
+Bank of Baroda,1800 5000,24x7 toll-free customer care / fraud reporting / card block,https://bankofbaroda.bank.in/contact-us
+Bank of Baroda,+91 79-66296009,customer care from outside India,https://bankofbaroda.bank.in/contact-us
+Bank of Baroda,1800 102 5627,unauthorised gift / prepaid card transactions,https://bankofbaroda.bank.in/contact-us
+Bank of Baroda,1600318160,bank's own outgoing call: suspicious-transaction alert,https://bankofbaroda.bank.in/contact-us
+Bank of Baroda,1600304190,bank's own outgoing call: suspicious-transaction alert,https://bankofbaroda.bank.in/contact-us
+Paytm,0120-4440-440,merchant care (for shops - not consumer care),https://paytm.com/contact-us
+Paytm,+91-120-4770770,corporate office,https://paytm.com/contact-us
+PhonePe,080-68727374,customer support,https://www.phonepe.com/contact-us/
+PhonePe,022-68727374,customer support,https://www.phonepe.com/contact-us/
+PhonePe,080-68727105,nodal officer,https://www.phonepe.com/contact-us/
+Flipkart,044-45614700,registered office (Flipkart prints no customer-care number - use Help Centre in the app),https://www.flipkart.com/helpcentre
+Flipkart,044-67415800,registered office (Flipkart prints no customer-care number - use Help Centre in the app),https://www.flipkart.com/helpcentre
+Airtel,121,enquiries from an Airtel number,https://www.airtel.in/contact-us
+Airtel,198,complaints from an Airtel number,https://www.airtel.in/contact-us
+Airtel,9810012345,DTH help from a non-Airtel number,https://www.airtel.in/contact-us
+Airtel Payments Bank,1800-23400,Airtel Payments Bank queries,https://www.airtel.in/contact-us
+Reliance Jio,7000770007,WhatsApp mobile support,https://www.jio.com/help/contact-us
+Reliance Jio,7000570005,WhatsApp JioFiber / AirFiber support,https://www.jio.com/help/contact-us
+LIC,+91-022 6827 6827,24x7 call centre,https://licindia.in/contact-us
+LIC,8976862090,WhatsApp,https://licindia.in/contact-us
+LIC,9222492224,SMS LICHELP (SMS only),https://licindia.in/contact-us
+LIC,56767877,SMS LICHELP (SMS only),https://licindia.in/contact-us
+National Cyber Crime Helpline,1930,government helpline for online financial fraud,https://cybercrime.gov.in/

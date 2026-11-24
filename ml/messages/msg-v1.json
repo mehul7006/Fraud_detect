@@ -1,0 +1,22 @@
+{
+  "version": "msg-v1",
+  "classes": [
+    "BANK_KYC_BLOCK",
+    "COURIER_PARCEL",
+    "DIGITAL_ARREST",
+    "ELECTRICITY_DISCONNECT",
+    "GENUINE",
+    "INVESTMENT_TRADING",
+    "JOB_TASK",
+    "LOAN_INSTANT",
+    "LOTTERY_PRIZE",
+    "OTP_REQUEST",
+    "UPI_REFUND"
+  ],
+  "buckets": 65536,
+  "f1_scam_heldout": 0.9418,
+  "category_accuracy": 0.6426,
+  "test_messages": 490,
+  "train_messages": 1789,
+  "model_mb": 2.88
+}

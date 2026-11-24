@@ -25,6 +25,9 @@ jobs:
           cache: maven
       - name: mvn verify (4+ unit tests, 19 integration tests on real PostgreSQL)
         run: mvn -B -ntp clean verify
+      - name: Link model metrics (11.9 - ModelGateTest fails the build when they drop)
+        if: always()
+        run: cat target/model-metrics.md >> "$GITHUB_STEP_SUMMARY" || true
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4

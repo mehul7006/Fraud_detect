@@ -40,6 +40,7 @@ public class AppReputationService {
         AppReputation a = existing.orElseGet(() -> new AppReputation(p, l, v, source));
         a.update(l != null ? l : a.getLabel(), v, source);
         if (cert != null && !cert.isBlank()) a.setCertSha256(AppTrust.normalise(cert));
+        if (a.getCategory() == null) a.setCategory(CategoryRules.infer(a.getPackageName(), a.getLabel(), null).name()); // 13.1
         return repo.save(a);
     }
 

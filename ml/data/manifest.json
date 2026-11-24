@@ -1,0 +1,15 @@
+{
+  "seed": 20261123,
+  "rows": 56792,
+  "phish": 28396,
+  "benign": 28396,
+  "common_crawl": "CC-MAIN-2026-43",
+  "cc_blocks": 2600,
+  "inputs": {
+    "phishing-links-ACTIVE.txt": "be4a179b3ac92b7135595b459c2c9867fe681c12209489dd99517db8407a67c6",
+    "phishing-links-INACTIVE.txt": "e257a796515a69e6fec913abc30416f67a861ea3306de216ca3fa8439025d100",
+    "tranco-top-1m.csv.zip": "7591e81e3d9150b7cb72b53c9aa92d887f43c835dbbaeb8bc693d94eff172cbf",
+    "cc-cluster.idx": "5be2d43599aa978d252433007bf7843aae4d241584500e7d1cd1ccff71fe33fb"
+  },
+  "test_rows": 11480
+}

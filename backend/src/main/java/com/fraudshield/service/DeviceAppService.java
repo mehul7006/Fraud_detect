@@ -33,7 +33,7 @@ public class DeviceAppService {
             if (row == null) row = new DeviceApp(userId, deviceId, r.packageName());
             row.seen(r.adAbuseScore(), r.verdict().name());
             repo.save(row);
-            AppResult withFlag = new AppResult(r.packageName(), r.adAbuseScore(), r.verdict(), r.reasons(), isNew);
+            AppResult withFlag = r.withNewSinceLastScan(isNew);
             out.add(withFlag);
             if (r.verdict() == Verdict.MALICIOUS && !wasBad) newlyBad.add(withFlag);
         }
