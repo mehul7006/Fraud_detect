@@ -67,14 +67,14 @@ _Updated 2026-11-23. "3/4 (+1 🟡)" = 3 of 4 items done, 1 of the rest is built
 | 9 | Release | 1/2 | 1/5 (+3 🟡) | 2/7 (+3 🟡) | 🟡 in progress |
 | 10 | Look-alike website engine | 11/11 | 1/1 | 12/12 | ✅ complete |
 | 11 | AI classification and explanations | 8/9 (+1 🟡) | 1/1 | 9/10 (+1 🟡) | 🟡 in progress |
-| 12 | Local VPN core | 0/2 | 0/9 | 0/11 | ⬜ not started |
-| 13 | Leaky / fraud app protection | 4/6 (+2 🟡) | 0/8 | 4/14 (+2 🟡) | 🟡 in progress |
-| 14 | Fake message detection | 0/3 | 0/7 | 0/10 | ⬜ not started |
-| 15 | Public-safety extras | 0/4 | 0/6 | 0/10 | ⬜ not started |
-| 16 | Call guard | 0/6 | 0/8 | 0/14 | ⬜ not started |
-| 17 | Leftover cleaner after uninstall | – | 0/8 | 0/8 | ⬜ not started |
-| 18 | Ad and tracker blocking, phone-wide | 0/2 | 0/7 | 0/9 | ⬜ not started |
-| **All** | **19 phases** | **59/82 (+5 🟡)** | **44/105 (+5 🟡)** | **103/187 (+10 🟡)** | |
+| 12 | Local VPN core | 2/2 | 5/9 (+4 🟡) | 7/11 (+4 🟡) | 🟡 in progress |
+| 13 | Leaky / fraud app protection | 4/6 (+2 🟡) | 4/8 (+4 🟡) | 8/14 (+6 🟡) | 🟡 in progress |
+| 14 | Fake message detection | 3/3 | 5/7 (+2 🟡) | 8/10 (+2 🟡) | 🟡 in progress |
+| 15 | Public-safety extras | 4/4 | 2/6 (+4 🟡) | 6/10 (+4 🟡) | 🟡 in progress |
+| 16 | Call guard | 5/6 (+1 🟡) | 6/8 (+2 🟡) | 11/14 (+3 🟡) | 🟡 in progress |
+| 17 | Leftover cleaner after uninstall | – | 6/8 (+2 🟡) | 6/8 (+2 🟡) | 🟡 in progress |
+| 18 | Ad and tracker blocking, phone-wide | 1/2 (+1 🟡) | 3/7 (+2 🟡) | 4/9 (+3 🟡) | 🟡 in progress |
+| **All** | **19 phases** | **74/82 (+7 🟡)** | **75/105 (+25 🟡)** | **149/187 (+32 🟡)** | |
 
 ---
 
