@@ -17,8 +17,12 @@ class AdNotificationListener : NotificationListenerService() {
 
     override fun onListenerConnected() { // 13.10 / 13.11: this service runs all the time - a good host
         InstallWatcher.register(this)
-        try { WarnScheduler.tick(this) } catch (_: Exception) { }
-        try { ScamSignalCollector.ensure(this) } catch (_: Exception) { } // 15.2 live scam guard (opt-in)
+        // off the main thread: WarnScheduler walks the installed apps; on a slow / busy phone this used to take
+        // long enough for Android to report "FraudShield isn't responding" (seen on the emulator, 2026-11-24)
+        Thread({
+            try { WarnScheduler.tick(this) } catch (_: Exception) { }
+            try { ScamSignalCollector.ensure(this) } catch (_: Exception) { } // 15.2 live scam guard (opt-in; posts to its own handler)
+        }, "fs-listener-start").start()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {

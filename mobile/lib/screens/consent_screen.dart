@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/native_bridge.dart';
 import '../l10n/l10n.dart';
+import '../ui/components.dart';
+import '../ui/theme.dart';
 
 /// 9.4: shown once after login (again whenever [kConsentVersion] goes up), before any permission is requested.
 /// Mirrors docs/PRIVACY-POLICY.md in short. Google Play: prominent disclosure for notification / file access.
@@ -15,29 +17,49 @@ class ConsentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    Widget block(IconData i, String t, String b) => ListTile(
-          leading: Icon(i, color: const Color(0xFF0B6E4F)),
-          title: Text(t, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(b),
+    final t = Theme.of(context);
+    Widget block(IconData i, Feature f, String title, String b) => Card(
+          child: ListTile(
+            minVerticalPadding: 14,
+            leading: FeatureIcon(i, f),
+            title: Text(title),
+            subtitle: Text(b),
+          ),
         );
     return Scaffold(
       appBar: AppBar(title: Text(l.consentTitle), automaticallyImplyLeading: false),
       body: SafeArea(
-        child: ListView(padding: const EdgeInsets.all(16), children: [
-          Text(l.consentIntro, style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: 8),
-          block(Icons.cloud_upload_outlined, l.consentChecks, l.consentChecksBody),
-          block(Icons.lock_outline, l.consentNever, l.consentNeverBody),
-          block(Icons.groups_outlined, l.consentShared, l.consentSharedBody),
-          block(Icons.tune, l.consentDelete, l.consentDeleteBody),
-          TextButton.icon(
-            key: const Key('privacy-policy-link'),
-            icon: const Icon(Icons.open_in_new),
-            label: Text(l.readPrivacyPolicy),
-            onPressed: () => NativeBridge.openUrl(kPrivacyUrl),
+        child: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(gradient: AppColors.brandGradient, borderRadius: BorderRadius.circular(24)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(16)),
+                child: const Icon(Icons.privacy_tip_rounded, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Text(l.consentIntro, style: t.textTheme.bodyLarge?.copyWith(color: Colors.white))),
+            ]),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+          block(Icons.cloud_upload_rounded, Feature.web, l.consentChecks, l.consentChecksBody),
+          block(Icons.lock_rounded, Feature.account, l.consentNever, l.consentNeverBody),
+          block(Icons.groups_rounded, Feature.device, l.consentShared, l.consentSharedBody),
+          block(Icons.tune_rounded, Feature.apps, l.consentDelete, l.consentDeleteBody),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const Key('privacy-policy-link'),
+              icon: const Icon(Icons.open_in_new_rounded),
+              label: Text(l.readPrivacyPolicy),
+              onPressed: () => NativeBridge.openUrl(kPrivacyUrl),
+            ),
+          ),
+          const SizedBox(height: 12),
           FilledButton(key: const Key('consent-accept'), onPressed: onAccept, child: Text(l.agreeContinue)),
+          const SizedBox(height: 4),
           TextButton(key: const Key('consent-decline'), onPressed: onDecline, child: Text(l.logOut)),
         ]),
       ),

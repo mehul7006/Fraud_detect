@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fraudshield/core/protection_engine.dart';
 import 'package:fraudshield/screens/dashboard_screen.dart';
+import 'package:fraudshield/screens/permissions_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'helpers.dart';
 
@@ -31,20 +32,66 @@ void main() {
   });
   tearDown(() => native.remove());
 
-  group('7.10 full-screen alerts on Android 14+', () {
-    testWidgets('not allowed: a card explains it and opens the exact Settings page; allowed: no card', (t) async {
-      native.fullScreen = false;
-      await pumpDashboard(t);
-      expect(find.text('Allow full-screen security alerts'), findsOneWidget);
-      await t.tap(find.descendant(of: find.ancestor(of: find.text('Allow full-screen security alerts'), matching: find.byType(Card)),
-          matching: find.text('Allow')));
+  group('7.10 / 2.6 every permission in one place', () {
+    Future<void> openPermissions(WidgetTester t) async {
+      await t.tap(find.byKey(const Key('perm-summary')));
       await t.pumpAndSettle();
-      expect(native.count('openFullScreenAlertSettings'), 1);
-    });
-    testWidgets('allowed (or Android 13 and older): no card', (t) async {
-      native.fullScreen = true;
+      expect(find.byType(PermissionsScreen), findsOneWidget);
+    }
+
+    testWidgets('home shows ONE summary card with the count, not a card per permission', (t) async {
+      native..notifPermission = false..fullScreen = false;
       await pumpDashboard(t);
-      expect(find.text('Allow full-screen security alerts'), findsNothing);
+      expect(find.byKey(const Key('perm-summary')), findsOneWidget);
+      expect(find.textContaining('1 of 11 allowed'), findsOneWidget, reason: 'usage access is the only one on in the fake phone');
+      expect(find.text('10 need your OK - tap to allow'), findsOneWidget);
+      expect(find.text('Allow full-screen security alerts'), findsNothing, reason: 'no separate cards any more');
+    });
+
+    testWidgets('the permissions page lists every missing permission with a plain reason', (t) async {
+      native..notifPermission = false..fullScreen = false;
+      await pumpDashboard(t);
+      await openPermissions(t);
+      expect(find.byKey(const Key('perm-count')), findsOneWidget);
+      for (final name in ['Notifications', 'Full-screen alerts', 'Notification access', 'All files access', 'Phone',
+          'Fake-website protection (VPN)', 'Caller ID & spam', 'Contacts', 'Call history', 'Battery: no restrictions']) {
+        expect(find.text(name), findsOneWidget, reason: name);
+      }
+      expect(find.textContaining('Message text is never uploaded'), findsOneWidget, reason: 'consent text must promise no message upload');
+      expect(find.text('Usage access'), findsOneWidget, reason: 'allowed ones are listed too (in "Allowed")');
+    });
+
+    testWidgets('each Allow button opens that permission (the exact Settings page / dialog)', (t) async {
+      native..notifPermission = false..fullScreen = false;
+      await pumpDashboard(t);
+      await openPermissions(t);
+      for (final id in ['notifications', 'fullScreen', 'notificationAccess', 'allFiles', 'phone', 'callScreening', 'contacts', 'callLog', 'battery', 'autostart']) {
+        final b = find.byKey(Key('perm-open-$id'));
+        await t.ensureVisible(b);
+        await t.tap(b);
+        await t.pumpAndSettle();
+        expect(native.calls.where((c) => c.method == 'permOpen' && (c.arguments as Map)['id'] == id), hasLength(1), reason: id);
+      }
+    });
+
+    testWidgets('coming back from Settings shows the new state at once (page and home card)', (t) async {
+      native..notifPermission = false..fullScreen = false;
+      await pumpDashboard(t);
+      await openPermissions(t);
+      native..notifPermission = true..fullScreen = true..notifAccess = true..filesAccess = true..phone = true
+        ..permContacts = true..permCallLog = true..permBattery = true;
+      native.vpn = {...native.vpn, 'prepared': true, 'running': true};
+      native.callGuard = {...native.callGuard, 'roleHeld': true};
+      for (final s in [AppLifecycleState.inactive, AppLifecycleState.hidden, AppLifecycleState.paused, AppLifecycleState.hidden,
+          AppLifecycleState.inactive, AppLifecycleState.resumed]) {
+        t.binding.handleAppLifecycleStateChanged(s);
+      }
+      await t.pumpAndSettle();
+      expect(find.text('Everything FraudShield needs is allowed'), findsOneWidget);
+      expect(find.byKey(const Key('perm-open-notifications')), findsNothing);
+      await t.pageBack();
+      await t.pumpAndSettle();
+      expect(find.textContaining('11 of 11 allowed'), findsOneWidget);
     });
   });
 
@@ -58,62 +105,6 @@ void main() {
       expect(find.text("Can't reach the FraudShield server"), findsOneWidget);
       expect(find.text("Couldn't check right now - tap to retry"), findsOneWidget);
       expect(find.text('ERROR'), findsNothing);
-    });
-  });
-
-  group('2.6 permission onboarding', () {
-    testWidgets('every missing permission shows a plain-language card', (t) async {
-      native.notifPermission = false;
-      await pumpDashboard(t);
-      expect(find.text('Allow notifications'), findsOneWidget);
-      expect(find.text('Enable link & ad monitoring'), findsOneWidget);
-      expect(find.text('Enable file protection'), findsOneWidget);
-      expect(find.text('Phone permission'), findsOneWidget);
-      expect(find.textContaining('Message text is never uploaded'), findsOneWidget, reason: 'consent text must promise no message upload');
-    });
-
-    testWidgets('each card button opens the right system screen / permission request', (t) async {
-      native.notifPermission = false;
-      await pumpDashboard(t);
-      final cards = {
-        'Allow notifications': 'requestNotificationPermission',
-        'Enable link & ad monitoring': 'openNotificationAccessSettings',
-        'Enable file protection': 'openAllFilesAccessSettings',
-        'Phone permission': 'requestPhonePermission',
-      };
-      for (final e in cards.entries) {
-        final card = find.ancestor(of: find.text(e.key), matching: find.byType(Card));
-        await t.ensureVisible(card);
-        await t.tap(find.descendant(of: card, matching: find.byType(TextButton)));
-        await t.pump();
-        expect(native.count(e.value), 1, reason: '${e.key} should call ${e.value}');
-      }
-    });
-
-    testWidgets('cards disappear once permissions are granted and the app is resumed', (t) async {
-      native.notifPermission = false;
-      await pumpDashboard(t);
-      expect(find.text('Phone permission'), findsOneWidget);
-
-      native..notifAccess = true..filesAccess = true..phone = true..notifPermission = true;
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await t.pumpAndSettle();
-
-      expect(find.text('Allow notifications'), findsNothing);
-      expect(find.text('Enable link & ad monitoring'), findsNothing);
-      expect(find.text('Enable file protection'), findsNothing);
-      expect(find.text('Phone permission'), findsNothing);
-    });
-
-    testWidgets('notification-permission card is hidden when already allowed (pre-Android 13)', (t) async {
-      native.notifPermission = true;
-      await pumpDashboard(t);
-      expect(find.text('Allow notifications'), findsNothing);
     });
   });
 

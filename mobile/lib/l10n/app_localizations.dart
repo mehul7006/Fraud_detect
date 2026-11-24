@@ -3493,6 +3493,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Risky choice'**
   String get safeDrillRisky;
+
+  /// No description provided for @homeProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re protected'**
+  String get homeProtected;
+
+  /// No description provided for @homeNeedsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} protections need attention'**
+  String homeNeedsAttention(int n);
+
+  /// No description provided for @homeProtectedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'All shields are up. FraudShield keeps watching in the background.'**
+  String get homeProtectedDetail;
+
+  /// No description provided for @homeAttentionDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn them on below to stay fully safe.'**
+  String get homeAttentionDetail;
+
+  /// No description provided for @homeQuick.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick actions'**
+  String get homeQuick;
+
+  /// No description provided for @homeStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Protection status'**
+  String get homeStatus;
+
+  /// No description provided for @homeStatusSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a card to check again or turn it on'**
+  String get homeStatusSub;
+
+  /// No description provided for @homeTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools & help'**
+  String get homeTools;
+
+  /// No description provided for @homeAccountSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop account takeover and SMS theft'**
+  String get homeAccountSub;
+
+  /// No description provided for @homeScamHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Scam help'**
+  String get homeScamHelp;
+
+  /// No description provided for @homeCallGuard.
+  ///
+  /// In en, this message translates to:
+  /// **'Call guard'**
+  String get homeCallGuard;
+
+  /// No description provided for @homeCleaner.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean leftovers'**
+  String get homeCleaner;
+
+  /// No description provided for @homeScammed.
+  ///
+  /// In en, this message translates to:
+  /// **'I was scammed'**
+  String get homeScammed;
+
+  /// No description provided for @ui2LoginPromise.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops scams, fake sites and account theft - before they reach you.'**
+  String get ui2LoginPromise;
+
+  /// No description provided for @ui1VpnOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & DNS options'**
+  String get ui1VpnOptions;
+
+  /// No description provided for @homeGroupPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone & apps'**
+  String get homeGroupPhone;
+
+  /// No description provided for @homeGroupPhoneSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Risky apps, cloning and leftover files'**
+  String get homeGroupPhoneSub;
+
+  /// No description provided for @homeGroupCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls & messages'**
+  String get homeGroupCalls;
+
+  /// No description provided for @homeGroupCallsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Block scam calls, stop SMS theft'**
+  String get homeGroupCallsSub;
+
+  /// No description provided for @permTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions'**
+  String get permTitle;
+
+  /// No description provided for @permSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{allowed} of {total} allowed'**
+  String permSummary(int allowed, int total);
+
+  /// No description provided for @permPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} need your OK - tap to allow'**
+  String permPending(int n);
+
+  /// No description provided for @permAllDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything FraudShield needs is allowed'**
+  String get permAllDone;
+
+  /// No description provided for @permIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'FraudShield asks only for what a protection needs. Tap an item: the exact Android page opens - switch it on and come back.'**
+  String get permIntro;
+
+  /// No description provided for @permNeedsOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs your OK'**
+  String get permNeedsOk;
+
+  /// No description provided for @permAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed'**
+  String get permAllowed;
+
+  /// No description provided for @permByHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in phone settings'**
+  String get permByHand;
+
+  /// No description provided for @permOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get permOptional;
+
+  /// No description provided for @permAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get permAllow;
+
+  /// No description provided for @permOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get permOpen;
+
+  /// No description provided for @permOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get permOn;
+
+  /// No description provided for @permNameNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get permNameNotifications;
+
+  /// No description provided for @permWhyNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'So scam warnings can reach you.'**
+  String get permWhyNotifications;
+
+  /// No description provided for @permNameFullScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Full-screen alerts'**
+  String get permNameFullScreen;
+
+  /// No description provided for @permWhyFullScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical warnings show even on the lock screen.'**
+  String get permWhyFullScreen;
+
+  /// No description provided for @permNameNotifAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification access'**
+  String get permNameNotifAccess;
+
+  /// No description provided for @permWhyNotifAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks links in your messages and notifications. Message text is never uploaded.'**
+  String get permWhyNotifAccess;
+
+  /// No description provided for @permNameFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'All files access'**
+  String get permNameFiles;
+
+  /// No description provided for @permWhyFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Scans downloaded APK and PDF files for danger.'**
+  String get permWhyFiles;
+
+  /// No description provided for @permNamePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get permNamePhone;
+
+  /// No description provided for @permWhyPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks call forwarding and powers the scam alarm.'**
+  String get permWhyPhone;
+
+  /// No description provided for @permNameVpn.
+  ///
+  /// In en, this message translates to:
+  /// **'Fake-website protection (VPN)'**
+  String get permNameVpn;
+
+  /// No description provided for @permWhyVpn.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks fake and dangerous sites in every app.'**
+  String get permWhyVpn;
+
+  /// No description provided for @permNameCallScreening.
+  ///
+  /// In en, this message translates to:
+  /// **'Caller ID & spam'**
+  String get permNameCallScreening;
+
+  /// No description provided for @permWhyCallScreening.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets Call guard stop scam calls.'**
+  String get permWhyCallScreening;
+
+  /// No description provided for @permNameContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get permNameContacts;
+
+  /// No description provided for @permWhyContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Your saved contacts are never blocked.'**
+  String get permWhyContacts;
+
+  /// No description provided for @permNameCallLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Call history'**
+  String get permNameCallLog;
+
+  /// No description provided for @permWhyCallLog.
+  ///
+  /// In en, this message translates to:
+  /// **'People you called are never blocked.'**
+  String get permWhyCallLog;
+
+  /// No description provided for @permNameUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage access'**
+  String get permNameUsage;
+
+  /// No description provided for @permWhyUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Notices apps that open by themselves.'**
+  String get permWhyUsage;
+
+  /// No description provided for @permNameBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery: no restrictions'**
+  String get permNameBattery;
+
+  /// No description provided for @permWhyBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps protection running in the background.'**
+  String get permWhyBattery;
+
+  /// No description provided for @permNameAutostart.
+  ///
+  /// In en, this message translates to:
+  /// **'Autostart (phone maker setting)'**
+  String get permNameAutostart;
+
+  /// No description provided for @permWhyAutostart.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets protection start again after a restart. Android cannot show us this one - please check it.'**
+  String get permWhyAutostart;
 }
 
 class _AppLocalizationsDelegate

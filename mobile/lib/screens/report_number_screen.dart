@@ -7,6 +7,9 @@ import '../core/api_client.dart';
 import '../core/call_guard.dart';
 import '../core/native_bridge.dart';
 import '../l10n/l10n.dart';
+import '../ui/components.dart';
+import '../ui/screen_kit.dart';
+import '../ui/theme.dart';
 
 /// 16.5 / 16.12: report a number to FraudShield (crowd list) and to the government (DoT Sanchar Saathi "Chakshu":
 /// copy the number, open the portal). 1600 / 140 numbers are official service series and cannot be reported (TRAI).
@@ -62,65 +65,88 @@ class _ReportNumberScreenState extends State<ReportNumberScreen> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final t = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l.callReportTitle)),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text(l.callReportIntro),
-        const SizedBox(height: 12),
-        TextField(
-          key: const Key('report-number'),
-          controller: _num,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(border: const OutlineInputBorder(), labelText: l.callReportNumber),
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+        IntroBanner(icon: Icons.flag_rounded, feature: Feature.scam, text: l.callReportIntro),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              TextField(
+                key: const Key('report-number'),
+                controller: _num,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(labelText: l.callReportNumber, prefixIcon: const Icon(Icons.phone_rounded)),
+              ),
+              const SizedBox(height: 14),
+              Text(l.callReportCategory, style: t.textTheme.titleSmall),
+              const SizedBox(height: 6),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final (k, label) in [('SCAM', l.callCatScam), ('SPAM', l.callCatSpam), ('TELEMARKETING', l.callCatTele)])
+                  ChoiceChip(key: Key('report-cat-$k'), label: Text(label), selected: _cat == k, onSelected: (_) => setState(() => _cat = k)),
+              ]),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                key: const Key('report-send'),
+                onPressed: _busy || _ok ? null : _send,
+                icon: const Icon(Icons.flag_rounded),
+                label: Text(l.callReportSend),
+              ),
+              if (_busy) const Padding(padding: EdgeInsets.only(top: 10), child: LinearProgressIndicator()),
+              if (_msg != null)
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: (_ok ? Tone.safe : Tone.danger).bg(context), borderRadius: BorderRadius.circular(14)),
+                  child: Row(children: [
+                    Icon(_ok ? Icons.check_circle_rounded : Icons.error_outline_rounded, color: (_ok ? Tone.safe : Tone.danger).fg(context)),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(_msg!, key: const Key('report-result'),
+                        style: TextStyle(color: (_ok ? Tone.safe : Tone.danger).fg(context), fontWeight: FontWeight.w600))),
+                  ]),
+                ),
+            ]),
+          ),
         ),
-        const SizedBox(height: 12),
-        Text(l.callReportCategory, style: Theme.of(context).textTheme.titleSmall),
-        Wrap(spacing: 8, children: [
-          for (final (k, t) in [('SCAM', l.callCatScam), ('SPAM', l.callCatSpam), ('TELEMARKETING', l.callCatTele)])
-            ChoiceChip(key: Key('report-cat-$k'), label: Text(t), selected: _cat == k, onSelected: (_) => setState(() => _cat = k)),
-        ]),
-        const SizedBox(height: 12),
-        FilledButton.icon(
-          key: const Key('report-send'),
-          onPressed: _busy || _ok ? null : _send,
-          icon: const Icon(Icons.flag),
-          label: Text(l.callReportSend),
+        SectionTitle(l.callGovTitle),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const FeatureIcon(Icons.account_balance_rounded, Feature.web, size: 40),
+                const SizedBox(width: 12),
+                Expanded(child: Text(l.callGovBody)),
+              ]),
+              const SizedBox(height: 12),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                OutlinedButton.icon(
+                  key: const Key('gov-copy'),
+                  icon: const Icon(Icons.copy_rounded),
+                  label: Text(l.callGovCopy),
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: _num.text.trim()));
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.callGovCopied)));
+                  },
+                ),
+                FilledButton.tonalIcon(
+                  key: const Key('gov-open'),
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: Text(l.callGovOpen),
+                  onPressed: () async {
+                    // copy first (the portal form needs the number pasted), but never let the clipboard hold up opening it
+                    unawaited(Clipboard.setData(ClipboardData(text: _num.text.trim())));
+                    await NativeBridge.openUrl(kChakshuUrl);
+                  },
+                ),
+              ]),
+              const SizedBox(height: 12),
+              Text(l.callGovMoney, style: TextStyle(fontWeight: FontWeight.w600, color: Tone.warn.fg(context))),
+            ]),
+          ),
         ),
-        if (_busy) const Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
-        if (_msg != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(_msg!, key: const Key('report-result'),
-                style: TextStyle(color: _ok ? Colors.green.shade800 : Colors.red.shade800, fontWeight: FontWeight.w600)),
-          ),
-        const Divider(height: 32),
-        Text(l.callGovTitle, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
-        Text(l.callGovBody),
-        const SizedBox(height: 8),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          OutlinedButton.icon(
-            key: const Key('gov-copy'),
-            icon: const Icon(Icons.copy),
-            label: Text(l.callGovCopy),
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: _num.text.trim()));
-              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.callGovCopied)));
-            },
-          ),
-          FilledButton.tonalIcon(
-            key: const Key('gov-open'),
-            icon: const Icon(Icons.open_in_new),
-            label: Text(l.callGovOpen),
-            onPressed: () async {
-              // copy first (the portal form needs the number pasted), but never let the clipboard hold up opening it
-              unawaited(Clipboard.setData(ClipboardData(text: _num.text.trim())));
-              await NativeBridge.openUrl(kChakshuUrl);
-            },
-          ),
-        ]),
-        const SizedBox(height: 12),
-        Text(l.callGovMoney, style: const TextStyle(fontWeight: FontWeight.w600)),
       ]),
     );
   }

@@ -4,6 +4,8 @@ import '../core/api_client.dart';
 import '../core/native_bridge.dart';
 import '../l10n/l10n.dart';
 import 'why_panel.dart';
+import '../ui/components.dart';
+import '../ui/theme.dart';
 
 /// 10.11: what the server said about a link that imitates a brand (scan response fields).
 class FakeSite {
@@ -63,28 +65,44 @@ class FakeSiteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final t = Theme.of(context);
     final seen = FakeSite.host(site.url), real = FakeSite.host(site.officialUrl);
     final diff = differingLetters(seen, real);
-    final red = Colors.red.shade800;
+    final red = Tone.danger.fg(context);
+    final green = Tone.safe.fg(context);
     return Scaffold(
-      backgroundColor: Colors.red.shade50,
-      appBar: AppBar(backgroundColor: Colors.red.shade50, title: Text(l.alertDangerous)),
+      appBar: AppBar(title: Text(l.alertDangerous)),
       body: SafeArea(
-        child: ListView(padding: const EdgeInsets.all(20), children: [
-          Icon(Icons.gpp_bad, color: red, size: 64),
-          const SizedBox(height: 12),
-          Text(l.fakeSiteTitle(site.brand), key: const Key('fake-title'), textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: red, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
+        child: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+          // bold danger hero
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+            decoration: BoxDecoration(
+              gradient: AppColors.dangerGradient,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [BoxShadow(color: AppColors.danger.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 10))],
+            ),
+            child: Column(children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), shape: BoxShape.circle),
+                child: const Icon(Icons.gpp_bad_rounded, color: Colors.white, size: 52),
+              ),
+              const SizedBox(height: 14),
+              Text(l.fakeSiteTitle(site.brand), key: const Key('fake-title'), textAlign: TextAlign.center,
+                  style: t.textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700, height: 1.25)),
+            ]),
+          ),
+          const SizedBox(height: 16),
           Semantics(
             label: l.fakeSiteDiffLabel(seen, real),
             excludeSemantics: true,
             child: Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(l.fakeSiteThisLink, style: Theme.of(context).textTheme.labelLarge),
-                  const SizedBox(height: 4),
+                  Pill(l.fakeSiteThisLink, tone: Tone.danger, icon: Icons.link_off_rounded),
+                  const SizedBox(height: 10),
                   Text.rich(
                     key: const Key('fake-host'),
                     TextSpan(children: [
@@ -92,49 +110,60 @@ class FakeSiteScreen extends StatelessWidget {
                         TextSpan(
                           text: seen[i],
                           style: diff[i]
-                              ? TextStyle(color: Colors.white, backgroundColor: red, fontWeight: FontWeight.bold)
-                              : const TextStyle(color: Colors.black87),
+                              ? const TextStyle(color: Colors.white, backgroundColor: AppColors.danger, fontWeight: FontWeight.bold)
+                              : TextStyle(color: t.colorScheme.onSurface),
                         ),
                     ]),
                     style: const TextStyle(fontSize: 22, fontFamily: 'monospace'),
                   ),
-                  const Divider(height: 24),
-                  Text(l.fakeSiteReal(site.brand), style: Theme.of(context).textTheme.labelLarge),
-                  const SizedBox(height: 4),
+                  const Divider(height: 28),
+                  Pill(l.fakeSiteReal(site.brand), tone: Tone.safe, icon: Icons.verified_rounded),
+                  const SizedBox(height: 10),
                   Row(children: [
-                    Icon(Icons.verified, color: Colors.green.shade800),
-                    const SizedBox(width: 6),
+                    Icon(Icons.verified_rounded, color: green),
+                    const SizedBox(width: 8),
                     Flexible(
                       child: Text(real, key: const Key('real-host'),
-                          style: TextStyle(fontSize: 22, fontFamily: 'monospace', color: Colors.green.shade900)),
+                          style: TextStyle(fontSize: 22, fontFamily: 'monospace', color: green, fontWeight: FontWeight.w600)),
                     ),
                   ]),
                 ]),
               ),
             ),
           ),
-          const SizedBox(height: 8),
           if (WhyPanel.from(site.explanation) case final why?) why,
-          const SizedBox(height: 8),
-          Text(l.fakeSiteWhy, style: Theme.of(context).textTheme.titleMedium),
-          for (final r in site.reasons.take(6))
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('•  '),
-                Expanded(child: Text(r)),
+          SectionTitle(l.fakeSiteWhy),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+              child: Column(children: [
+                for (final r in site.reasons.take(6))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Icons.warning_amber_rounded, size: 20, color: red)),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(r)),
+                    ]),
+                  ),
               ]),
             ),
-          const SizedBox(height: 16),
-          Card(
-            color: Colors.amber.shade50,
-            child: Padding(padding: const EdgeInsets.all(12), child: Text(l.fakeSiteAdvice)),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Tone.warn.bg(context), borderRadius: BorderRadius.circular(20)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.tips_and_updates_rounded, color: Tone.warn.fg(context)),
+              const SizedBox(width: 12),
+              Expanded(child: Text(l.fakeSiteAdvice, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurface, fontWeight: FontWeight.w500))),
+            ]),
+          ),
+          const SizedBox(height: 16),
           FilledButton.icon(
             key: const Key('go-real'),
-            style: FilledButton.styleFrom(backgroundColor: Colors.green.shade800, minimumSize: const Size.fromHeight(52)),
-            icon: const Icon(Icons.open_in_new),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.safe, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(56)),
+            icon: const Icon(Icons.open_in_new_rounded),
             label: Text(l.fakeSiteGoReal(site.brand)),
             onPressed: () async {
               await NativeBridge.openUrl(site.officialUrl);
@@ -144,7 +173,7 @@ class FakeSiteScreen extends StatelessWidget {
           const SizedBox(height: 10),
           OutlinedButton.icon(
             key: const Key('report'),
-            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
             icon: const Icon(Icons.flag_outlined),
             label: Text(l.fakeSiteReport),
             onPressed: () => _report(context),

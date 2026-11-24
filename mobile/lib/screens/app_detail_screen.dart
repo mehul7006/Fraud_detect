@@ -4,6 +4,8 @@ import '../core/native_bridge.dart';
 import '../core/protection_engine.dart';
 import '../l10n/l10n.dart';
 import 'why_panel.dart';
+import '../ui/components.dart';
+import '../ui/theme.dart';
 
 /// 13.8: one risky app - what it can access, the tracking code inside it, who it talked to in the last 7 days
 /// (judged on the phone; site names never leave it), and four actions: Block internet (13.9), Remove permissions
@@ -66,64 +68,104 @@ class _AppDetailScreenState extends State<AppDetailScreen> {
     final bad = a.verdict == 'MALICIOUS';
     final net = _net;
     final domains = ((net?['domains'] as List?) ?? const []).cast<Map>();
+    final t = Theme.of(context);
+    Widget section(String title, List<Widget> children, {String? sub}) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          SectionTitle(title, subtitle: sub),
+          Card(child: Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children))),
+        ]);
     return Scaffold(
       appBar: AppBar(title: Text(a.label)),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Row(children: [
-          Icon(bad ? Icons.gpp_bad : Icons.warning_amber, color: bad ? Colors.red.shade800 : Colors.orange.shade800, size: 36),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(a.impersonatedBrand != null ? l.appFakeTitle(a.impersonatedBrand!) : a.label,
-                key: const Key('app-title'), style: Theme.of(context).textTheme.titleLarge),
-            Text(a.packageName, style: Theme.of(context).textTheme.bodySmall),
-          ])),
-          Text('${a.score}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: bad ? Colors.red.shade800 : Colors.orange.shade800)),
-        ]),
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 32), children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(gradient: bad ? AppColors.dangerGradient : Feature.apps.deepGradient, borderRadius: BorderRadius.circular(24)),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(16)),
+              child: Icon(bad ? Icons.gpp_bad_rounded : Icons.warning_amber_rounded, color: Colors.white, size: 32),
+            ),
+            const SizedBox(width: 14),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(a.impersonatedBrand != null ? l.appFakeTitle(a.impersonatedBrand!) : a.label,
+                  key: const Key('app-title'), style: t.textTheme.titleLarge?.copyWith(color: Colors.white)),
+              Text(a.packageName, style: t.textTheme.bodySmall?.copyWith(color: Colors.white)),
+            ])),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(14)),
+              child: Text('${a.score}', style: t.textTheme.titleLarge?.copyWith(color: Colors.white)),
+            ),
+          ]),
+        ),
         if (WhyPanel.from(a.explanation) case final why?) why,
-        for (final r in a.reasons) Padding(padding: const EdgeInsets.only(top: 4), child: Text('• $r')),
-        const Divider(height: 28),
-        Text(l.appDetailAccess, style: Theme.of(context).textTheme.titleMedium),
-        if (access.isEmpty) Text(l.appDetailNothing),
-        for (final x in access) ListTile(dense: true, leading: const Icon(Icons.lock_open, size: 20), title: Text(x)),
-        const Divider(height: 28),
-        Text(l.appDetailTrackers, style: Theme.of(context).textTheme.titleMedium),
-        if (_trackers == null) const LinearProgressIndicator()
-        else if (_trackers!.isEmpty) Text(l.appDetailNoTrackers)
-        else Wrap(spacing: 6, runSpacing: 4, children: [
-          for (final t in _trackers!) Chip(key: Key('tracker-${t['name']}'), label: Text('${t['name']}'), visualDensity: VisualDensity.compact),
+        if (a.reasons.isNotEmpty) Card(child: Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 14), child: Column(children: [
+          for (final r in a.reasons) Padding(padding: const EdgeInsets.only(top: 8), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Icons.error_outline_rounded, size: 20, color: (bad ? Tone.danger : Tone.warn).fg(context))),
+            const SizedBox(width: 10),
+            Expanded(child: Text(r)),
+          ])),
+        ]))),
+        section(l.appDetailAccess, [
+          if (access.isEmpty) Text(l.appDetailNothing),
+          for (final x in access) ListTile(dense: true, contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.lock_open_rounded, size: 20, color: Tone.warn.fg(context)), title: Text(x)),
         ]),
-        const Divider(height: 28),
-        Text(l.appDetailTalksTo, style: Theme.of(context).textTheme.titleMedium),
-        Text(l.appDetailTalksToBody, style: Theme.of(context).textTheme.bodySmall),
-        if (net == null) const LinearProgressIndicator()
-        else if (domains.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.appDetailNoNetwork))
-        else ...[
-          if (((net['malware'] as num?) ?? 0) > 0)
-            Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.appDetailMalware, style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.bold))),
-          Padding(padding: const EdgeInsets.only(top: 8),
-              child: Text(l.appDetailAdServers(((net['ads'] as num?) ?? 0).toInt() + ((net['trackers'] as num?) ?? 0).toInt()))),
-          for (final d in domains.take(15))
-            ListTile(dense: true, leading: Icon(d['category'] == 'malware' ? Icons.dangerous : d['category'] == null ? Icons.language : Icons.campaign, size: 18),
-                title: Text('${d['domain']}'), trailing: Text('${d['category'] ?? ''}')),
-        ],
-        const Divider(height: 28),
-        if (_blocked) Card(color: Colors.blueGrey.shade50, child: Padding(padding: const EdgeInsets.all(12), child: Text(l.appBlockedNote))),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          FilledButton.icon(key: const Key('app-block'), onPressed: _toggleBlock, icon: Icon(_blocked ? Icons.wifi : Icons.wifi_off),
-              label: Text(_blocked ? l.appUnblockInternet : l.appBlockInternet)),
-          OutlinedButton.icon(key: const Key('app-revoke'), onPressed: () => NativeBridge.openAppPermissions(a.packageName),
-              icon: const Icon(Icons.admin_panel_settings_outlined), label: Text(l.appRevoke)),
-          OutlinedButton.icon(key: const Key('app-uninstall'), onPressed: () => widget.engine.uninstall(a.packageName),
-              icon: const Icon(Icons.delete_outline), label: Text(l.uninstall)),
-          TextButton(key: const Key('app-ignore'), onPressed: () async {
-            await widget.engine.ignoreApp(a);
-            await NativeBridge.appIgnore(a.packageName);
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.appIgnored)));
-              Navigator.pop(context);
-            }
-          }, child: Text(l.ignore)),
+        section(l.appDetailTrackers, [
+          if (_trackers == null) const LinearProgressIndicator()
+          else if (_trackers!.isEmpty) Row(children: [Icon(Icons.check_circle_rounded, color: Tone.safe.fg(context)), const SizedBox(width: 8), Expanded(child: Text(l.appDetailNoTrackers))])
+          else Wrap(spacing: 6, runSpacing: 6, children: [
+            for (final tr in _trackers!) Chip(key: Key('tracker-${tr['name']}'), avatar: Icon(Icons.visibility_rounded, size: 16, color: Tone.danger.fg(context)),
+                label: Text('${tr['name']}'), visualDensity: VisualDensity.compact),
+          ]),
         ]),
+        section(l.appDetailTalksTo, sub: l.appDetailTalksToBody, [
+          if (net == null) const LinearProgressIndicator()
+          else if (domains.isEmpty) Text(l.appDetailNoNetwork)
+          else ...[
+            if (((net['malware'] as num?) ?? 0) > 0)
+              Padding(padding: const EdgeInsets.only(bottom: 8), child: Pill(l.appDetailMalware, tone: Tone.danger, icon: Icons.dangerous_rounded)),
+            Text(l.appDetailAdServers(((net['ads'] as num?) ?? 0).toInt() + ((net['trackers'] as num?) ?? 0).toInt())),
+            for (final d in domains.take(15))
+              ListTile(dense: true, contentPadding: EdgeInsets.zero,
+                  leading: Icon(d['category'] == 'malware' ? Icons.dangerous_rounded : d['category'] == null ? Icons.language_rounded : Icons.campaign_rounded, size: 18,
+                      color: d['category'] == 'malware' ? Tone.danger.fg(context) : null),
+                  title: Text('${d['domain']}'), trailing: d['category'] == null ? null : Pill('${d['category']}', tone: d['category'] == 'malware' ? Tone.danger : Tone.warn)),
+          ],
+        ]),
+        const SizedBox(height: 16),
+        if (_blocked) Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: Tone.info.bg(context), borderRadius: BorderRadius.circular(18)),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(Icons.wifi_off_rounded, color: Tone.info.fg(context)), const SizedBox(width: 10),
+            Expanded(child: Text(l.appBlockedNote, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurface))),
+          ]),
+        ),
+        FilledButton.icon(key: const Key('app-block'), onPressed: _toggleBlock, icon: Icon(_blocked ? Icons.wifi_rounded : Icons.wifi_off_rounded),
+            label: Text(_blocked ? l.appUnblockInternet : l.appBlockInternet)),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: OutlinedButton.icon(key: const Key('app-revoke'), onPressed: () => NativeBridge.openAppPermissions(a.packageName),
+              icon: const Icon(Icons.admin_panel_settings_outlined), label: Text(l.appRevoke))),
+          const SizedBox(width: 10),
+          Expanded(child: OutlinedButton.icon(key: const Key('app-uninstall'),
+              style: OutlinedButton.styleFrom(foregroundColor: Tone.danger.fg(context)),
+              onPressed: () => widget.engine.uninstall(a.packageName),
+              icon: const Icon(Icons.delete_outline_rounded), label: Text(l.uninstall))),
+        ]),
+        const SizedBox(height: 4),
+        TextButton(key: const Key('app-ignore'), onPressed: () async {
+          await widget.engine.ignoreApp(a);
+          await NativeBridge.appIgnore(a.packageName);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.appIgnored)));
+            Navigator.pop(context);
+          }
+        }, child: Text(l.ignore)),
       ]),
     );
   }

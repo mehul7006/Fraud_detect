@@ -582,10 +582,22 @@
   "leftTile": "Leftover files",
   "leftTileSub": "Find files that removed apps left on your phone",
   "leftTilePending": "{count} removed app(s) left files - tap to review",
-  "@leftTilePending": {"placeholders": {"count": {"type": "int"}}},
+  "@leftTilePending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "leftTitle": "Leftover files",
   "leftTitleApp": "Leftovers of {name}",
-  "@leftTitleApp": {"placeholders": {"name": {"type": "String"}}},
+  "@leftTitleApp": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "leftIntro": "Android removes each app's private data by itself. Apps can also save files in shared folders (Pictures, Download, their own folders) - those stay after uninstall. Nothing is removed until you choose and confirm.",
   "leftPrivateNote": "FraudShield cannot see other apps' Android/data folders (Android does not allow it) - Android cleans those itself when an app is removed.",
   "leftGroupInstaller": "App installers (.apk)",
@@ -599,14 +611,38 @@
   "leftWhatDocument": "Documents saved by the app - check before removing.",
   "leftWhatOther": "Files the app saved - check before removing.",
   "leftFolderInfo": "Folder, {files} files, {size}",
-  "@leftFolderInfo": {"placeholders": {"files": {"type": "int"}, "size": {"type": "String"}}},
+  "@leftFolderInfo": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "leftNothing": "Nothing left behind - all clean.",
   "leftRemovedApps": "Removed apps",
   "leftRemovedInfo": "{files} files, {size}",
-  "@leftRemovedInfo": {"placeholders": {"files": {"type": "int"}, "size": {"type": "String"}}},
+  "@leftRemovedInfo": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "leftOrphans": "Folders of apps that are no longer installed",
   "leftOrphanFrom": "From {name}",
-  "@leftOrphanFrom": {"placeholders": {"name": {"type": "String"}}},
+  "@leftOrphanFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "leftApks": "Old app installers in Download",
   "leftApkSame": "The same version is installed - not needed",
   "leftApkOlder": "Older than the installed app - not needed",
@@ -615,17 +651,47 @@
   "leftApkFlagged": "Flagged by file protection - remove it",
   "leftApkUnreadable": "Could not read this installer",
   "leftDelete": "Remove selected ({count}, {size})",
-  "@leftDelete": {"placeholders": {"count": {"type": "int"}, "size": {"type": "String"}}},
+  "@leftDelete": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "leftConfirmTitle": "Remove {count} item(s)?",
-  "@leftConfirmTitle": {"placeholders": {"count": {"type": "int"}}},
+  "@leftConfirmTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "leftConfirmBody": "Photos, videos and audio go to the phone's trash - you can restore them for 30 days. Other files (installers, documents, cache) are deleted. Files of apps that are still installed are always left alone.",
   "leftConfirmYes": "Remove",
   "leftCancel": "Cancel",
   "leftKeep": "Keep all",
   "leftDone": "Moved {trashed} to trash, deleted {deleted}.",
-  "@leftDone": {"placeholders": {"trashed": {"type": "int"}, "deleted": {"type": "int"}}},
+  "@leftDone": {
+    "placeholders": {
+      "trashed": {
+        "type": "int"
+      },
+      "deleted": {
+        "type": "int"
+      }
+    }
+  },
   "leftRefused": "{count} item(s) left alone - they belong to an installed app or a protected folder.",
-  "@leftRefused": {"placeholders": {"count": {"type": "int"}}},
+  "@leftRefused": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "leftCancelled": "Nothing was removed.",
   "leftSettingsTitle": "Nothing left in Settings?",
   "leftSetClear": "No longer listed",
@@ -643,7 +709,13 @@
   "callTile": "Call guard",
   "callTileOff": "Off - tap to block scam calls",
   "callTileOn": "On - {blocked} calls stopped in 30 days",
-  "@callTileOn": {"placeholders": {"blocked": {"type": "int"}}},
+  "@callTileOn": {
+    "placeholders": {
+      "blocked": {
+        "type": "int"
+      }
+    }
+  },
   "callTileUnsupported": "Needs Android 10 or newer",
   "callTitle": "Call guard",
   "callIntro": "FraudShield checks incoming calls from numbers that are not in your contacts - on your phone, without sending the number anywhere.",
@@ -678,7 +750,13 @@
   "callRemove": "Remove",
   "callBlockTitle": "Numbers you blocked",
   "callListInfo": "Scam list on this phone: {count} numbers",
-  "@callListInfo": {"placeholders": {"count": {"type": "int"}}},
+  "@callListInfo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "callSync": "Update list",
   "callSyncDone": "List updated",
   "callSyncFailed": "Could not update now - the list on the phone still works",
@@ -691,7 +769,13 @@
   "callUndone": "Allowed by you",
   "callNotSpam": "Not spam",
   "callNotSpamDone": "OK - {number} is always allowed now",
-  "@callNotSpamDone": {"placeholders": {"number": {"type": "String"}}},
+  "@callNotSpamDone": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
   "callReport": "Report",
   "callReportTitle": "Report a number",
   "callReportIntro": "When many people report the same number it goes on the scam list for everyone. One report per number per person.",
@@ -724,14 +808,26 @@
   "blockCatMalware": "Malware & scam sites",
   "blockCatMalwareSub": "Known malware, phishing and scam servers",
   "blockList": "Block list: {count} sites",
-  "@blockList": {"placeholders": {"count": {"type": "int"}}},
+  "@blockList": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "blockListNone": "Block list not downloaded yet",
   "blockUpdate": "Update now",
   "blockUpdated": "Block list is up to date",
   "blockUpdateFailed": "Could not update the block list right now",
   "blockPause5": "Pause blocking for 5 minutes",
   "blockPausedUntil": "Paused until {time}",
-  "@blockPausedUntil": {"placeholders": {"time": {"type": "String"}}},
+  "@blockPausedUntil": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "blockResume": "Resume now",
   "blockAllowedApps": "Apps not blocked",
   "blockAllowedAppsNone": "None - blocking applies to every app",
@@ -741,7 +837,13 @@
   "blockAllow": "Allow",
   "blockAppBroke": "This app broke",
   "blockAppBrokeDone": "{app} is no longer blocked. The note stays on this phone.",
-  "@blockAppBrokeDone": {"placeholders": {"app": {"type": "String"}}},
+  "@blockAppBrokeDone": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
   "blockRemove": "Remove",
   "blockAllowedSites": "Sites not blocked",
   "blockAddSite": "Allow a site",
@@ -749,18 +851,42 @@
   "blockAdd": "Add",
   "blockStats": "Blocking statistics",
   "blockStatsTotal": "{count} requests blocked",
-  "@blockStatsTotal": {"placeholders": {"count": {"type": "int"}}},
+  "@blockStatsTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "blockStatsSaved": "About {size} of data saved (estimate)",
-  "@blockStatsSaved": {"placeholders": {"size": {"type": "String"}}},
+  "@blockStatsSaved": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "blockStatsByCat": "By type",
   "blockStatsByApp": "By app",
   "blockStatsTop": "Most blocked sites",
   "blockStatsDays": "Last {count} days",
-  "@blockStatsDays": {"placeholders": {"count": {"type": "int"}}},
+  "@blockStatsDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "blockStatsLocal": "Counted on your phone; these numbers never leave it.",
   "blockStatsEmpty": "Nothing blocked yet.",
   "blockVpnCount": "{count} requests blocked since the VPN started",
-  "@blockVpnCount": {"placeholders": {"count": {"type": "int"}}},
+  "@blockVpnCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "safeTileTitle": "Scam help",
   "safeTileSub": "Live scam guard, check before you pay, recovery kit, drills",
   "safeHubTitle": "Scam help",
@@ -803,15 +929,33 @@
   "safeOpenRecovery": "Open recovery kit",
   "safeImSafe": "I am safe - close",
   "safeCallGuardian": "Call {name}",
-  "@safeCallGuardian": {"placeholders": {"name": {"type": "String"}}},
+  "@safeCallGuardian": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "safeTellGuardian": "Message {name}",
-  "@safeTellGuardian": {"placeholders": {"name": {"type": "String"}}},
+  "@safeTellGuardian": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "safeGuardianSms": "FraudShield alert: I may be talking to a scammer right now. Please call me.",
   "safeRecTitle": "Recovery kit",
   "safeRecIntro": "Act within the first hour (the \"golden hour\"): the faster you report, the better the chance to freeze the money.",
   "safeRecStart": "I was just scammed - start the clock",
   "safeRecElapsed": "{time} since you started",
-  "@safeRecElapsed": {"placeholders": {"time": {"type": "String"}}},
+  "@safeRecElapsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "safeRecReset": "Reset",
   "safeRec1930": "Call 1930 - National Cyber Crime Helpline",
   "safeRecPortal": "Report at cybercrime.gov.in",
@@ -838,7 +982,13 @@
   "safeGuardianSave": "Save guardian",
   "safeGuardianRemove": "Remove guardian",
   "safeGuardianSaved": "{name} is your guardian",
-  "@safeGuardianSaved": {"placeholders": {"name": {"type": "String"}}},
+  "@safeGuardianSaved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "safeGuardianInvalid": "Enter a name and a valid Indian mobile number",
   "safeGuardianTest": "Send a test message",
   "safeGuardianTestText": "FraudShield test: you are my guardian. If I am ever in a scam call, FraudShield will help me call or message you.",
@@ -849,7 +999,13 @@
   "safeVerdictSusp": "Be careful",
   "safeVerdictBad": "Do not pay",
   "safeUpiPayee": "Pays to: {vpa}",
-  "@safeUpiPayee": {"placeholders": {"vpa": {"type": "String"}}},
+  "@safeUpiPayee": {
+    "placeholders": {
+      "vpa": {
+        "type": "String"
+      }
+    }
+  },
   "safeReport": "Report as scam",
   "safeReported": "Reported - thank you",
   "safeReportFailed": "Could not report right now",
@@ -863,12 +1019,103 @@
   "safeCareReal": "Real numbers",
   "safeDrillsIntro": "Short practice rounds. Pick what you would do - there is no right or wrong in front of anyone, just learning.",
   "safeDrillBest": "Best: {score}%",
-  "@safeDrillBest": {"placeholders": {"score": {"type": "int"}}},
+  "@safeDrillBest": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
   "safeDrillNotPlayed": "Not played yet",
   "safeDrillNext": "Next",
   "safeDrillFinish": "Finish",
   "safeDrillResult": "You scored {score}%",
-  "@safeDrillResult": {"placeholders": {"score": {"type": "int"}}},
+  "@safeDrillResult": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
   "safeDrillSafe": "Safe choice",
-  "safeDrillRisky": "Risky choice"
+  "safeDrillRisky": "Risky choice",
+  "homeProtected": "You're protected",
+  "homeNeedsAttention": "{n} protections need attention",
+  "@homeNeedsAttention": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "homeProtectedDetail": "All shields are up. FraudShield keeps watching in the background.",
+  "homeAttentionDetail": "Turn them on below to stay fully safe.",
+  "homeQuick": "Quick actions",
+  "homeStatus": "Protection status",
+  "homeStatusSub": "Tap a card to check again or turn it on",
+  "homeTools": "Tools & help",
+  "homeAccountSub": "Stop account takeover and SMS theft",
+  "homeScamHelp": "Scam help",
+  "homeCallGuard": "Call guard",
+  "homeCleaner": "Clean leftovers",
+  "homeScammed": "I was scammed",
+  "ui2LoginPromise": "Stops scams, fake sites and account theft - before they reach you.",
+  "ui1VpnOptions": "Privacy & DNS options",
+  "homeGroupPhone": "Your phone & apps",
+  "homeGroupPhoneSub": "Risky apps, cloning and leftover files",
+  "homeGroupCalls": "Calls & messages",
+  "homeGroupCallsSub": "Block scam calls, stop SMS theft",
+  "permTitle": "Permissions",
+  "permSummary": "{allowed} of {total} allowed",
+  "@permSummary": {
+    "placeholders": {
+      "allowed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "permPending": "{n} need your OK - tap to allow",
+  "@permPending": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "permAllDone": "Everything FraudShield needs is allowed",
+  "permIntro": "FraudShield asks only for what a protection needs. Tap an item: the exact Android page opens - switch it on and come back.",
+  "permNeedsOk": "Needs your OK",
+  "permAllowed": "Allowed",
+  "permByHand": "Check in phone settings",
+  "permOptional": "Optional",
+  "permAllow": "Allow",
+  "permOpen": "Open",
+  "permOn": "On",
+  "permNameNotifications": "Notifications",
+  "permWhyNotifications": "So scam warnings can reach you.",
+  "permNameFullScreen": "Full-screen alerts",
+  "permWhyFullScreen": "Critical warnings show even on the lock screen.",
+  "permNameNotifAccess": "Notification access",
+  "permWhyNotifAccess": "Checks links in your messages and notifications. Message text is never uploaded.",
+  "permNameFiles": "All files access",
+  "permWhyFiles": "Scans downloaded APK and PDF files for danger.",
+  "permNamePhone": "Phone",
+  "permWhyPhone": "Checks call forwarding and powers the scam alarm.",
+  "permNameVpn": "Fake-website protection (VPN)",
+  "permWhyVpn": "Blocks fake and dangerous sites in every app.",
+  "permNameCallScreening": "Caller ID & spam",
+  "permWhyCallScreening": "Lets Call guard stop scam calls.",
+  "permNameContacts": "Contacts",
+  "permWhyContacts": "Your saved contacts are never blocked.",
+  "permNameCallLog": "Call history",
+  "permWhyCallLog": "People you called are never blocked.",
+  "permNameUsage": "Usage access",
+  "permWhyUsage": "Notices apps that open by themselves.",
+  "permNameBattery": "Battery: no restrictions",
+  "permWhyBattery": "Keeps protection running in the background.",
+  "permNameAutostart": "Autostart (phone maker setting)",
+  "permWhyAutostart": "Lets protection start again after a restart. Android cannot show us this one - please check it."
 }

@@ -4,6 +4,7 @@ import '../core/native_bridge.dart';
 import '../core/safety.dart';
 import '../core/settings_store.dart';
 import '../l10n/l10n.dart';
+import '../ui/theme.dart';
 import 'recovery_kit_screen.dart';
 
 /// 15.3: full-screen STOP warning (live scam in progress). Plain words, big buttons, read aloud in the app's language.
@@ -62,43 +63,81 @@ class _ScamStopScreenState extends State<ScamStopScreen> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final red = Colors.red.shade800;
+    final t = Theme.of(context);
+    final danger = Tone.danger.fg(context);
     final g = _guardian;
-    Widget step(String t) => Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(Icons.do_not_disturb_on, color: red, size: 26),
-            const SizedBox(width: 10),
-            Expanded(child: Text(t, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600))),
-          ]),
-        );
+    var n = 0;
+    Widget step(String text) {
+      n++;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 32, height: 32, alignment: Alignment.center,
+            decoration: const BoxDecoration(gradient: AppColors.dangerGradient, shape: BoxShape.circle),
+            child: Text('$n', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Text(text, style: t.textTheme.titleMedium?.copyWith(fontSize: 18, fontWeight: FontWeight.w600)),
+          )),
+        ]),
+      );
+    }
+
     return PopScope(
       canPop: true,
       child: Scaffold(
-        backgroundColor: Colors.red.shade50,
-        body: SafeArea(
-          child: ListView(padding: const EdgeInsets.all(20), children: [
-            Icon(Icons.pan_tool, color: red, size: 72, semanticLabel: l.safeStopTitle),
-            Text(l.safeStopTitle, key: const Key('stop-title'), textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: red)),
-            const SizedBox(height: 4),
-            Text(widget.critical ? l.safeStopHeadline : l.safeStopWarnHeadline, textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: red)),
-            const SizedBox(height: 12),
-            Text(l.safeStopBody, style: const TextStyle(fontSize: 17)),
-            const SizedBox(height: 16),
-            step(l.safeStopStep1),
-            step(l.safeStopStep2),
-            step(l.safeStopStep3),
-            step(l.safeStopStep4),
-            if (_noVoice) Text(l.safeNoVoice, key: const Key('stop-novoice'), style: const TextStyle(fontStyle: FontStyle.italic)),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              key: const Key('stop-1930'),
-              style: FilledButton.styleFrom(backgroundColor: red, minimumSize: const Size.fromHeight(56)),
-              onPressed: () => SafetyNative.dial('1930'),
-              icon: const Icon(Icons.call), label: Text(l.safeCall1930, style: const TextStyle(fontSize: 18)),
+        body: ListView(padding: EdgeInsets.zero, children: [
+          // unmistakable, calm: deep red hero, huge STOP
+          Container(
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 20, 20, 28),
+            decoration: const BoxDecoration(
+              gradient: AppColors.dangerGradient,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
             ),
+            child: Column(children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), shape: BoxShape.circle),
+                child: Icon(Icons.pan_tool_rounded, color: Colors.white, size: 56, semanticLabel: l.safeStopTitle),
+              ),
+              const SizedBox(height: 8),
+              Text(l.safeStopTitle, key: const Key('stop-title'), textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 52, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 2, height: 1.1)),
+              const SizedBox(height: 6),
+              Text(widget.critical ? l.safeStopHeadline : l.safeStopWarnHeadline, textAlign: TextAlign.center,
+                  style: t.textTheme.titleLarge?.copyWith(color: Colors.white)),
+            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(l.safeStopBody, style: t.textTheme.bodyLarge),
+                    const SizedBox(height: 16),
+                    step(l.safeStopStep1),
+                    step(l.safeStopStep2),
+                    step(l.safeStopStep3),
+                    step(l.safeStopStep4),
+                    if (_noVoice)
+                      Text(l.safeNoVoice, key: const Key('stop-novoice'),
+                          style: t.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic, color: t.colorScheme.onSurfaceVariant)),
+                  ]),
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: const Key('stop-1930'),
+                style: FilledButton.styleFrom(backgroundColor: danger, foregroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.ink : Colors.white,
+                    minimumSize: const Size.fromHeight(60)),
+                onPressed: () => SafetyNative.dial('1930'),
+                icon: const Icon(Icons.call_rounded), label: Text(l.safeCall1930, style: const TextStyle(fontSize: 18)),
+              ),
             if (g != null) ...[
               const SizedBox(height: 8),
               FilledButton.tonalIcon(
@@ -114,16 +153,19 @@ class _ScamStopScreenState extends State<ScamStopScreen> {
                 icon: const Icon(Icons.sms_outlined), label: Text(l.safeTellGuardian(g.name)),
               ),
             ],
-            const SizedBox(height: 8),
-            OutlinedButton.icon(key: const Key('stop-speak'), onPressed: _speak, icon: const Icon(Icons.volume_up), label: Text(l.safeStopSpeak)),
-            OutlinedButton.icon(
-              key: const Key('stop-recovery'),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecoveryKitScreen())),
-              icon: const Icon(Icons.healing), label: Text(l.safeOpenRecovery),
-            ),
-            TextButton(key: const Key('stop-close'), onPressed: () => Navigator.pop(context), child: Text(l.safeImSafe)),
-          ]),
-        ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(key: const Key('stop-speak'), onPressed: _speak, icon: const Icon(Icons.volume_up_rounded), label: Text(l.safeStopSpeak)),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const Key('stop-recovery'),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecoveryKitScreen())),
+                icon: const Icon(Icons.healing_rounded), label: Text(l.safeOpenRecovery),
+              ),
+              const SizedBox(height: 6),
+              TextButton(key: const Key('stop-close'), onPressed: () => Navigator.pop(context), child: Text(l.safeImSafe)),
+            ]),
+          ),
+        ]),
       ),
     );
   }

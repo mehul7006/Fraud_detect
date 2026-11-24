@@ -1953,4 +1953,182 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get safeDrillRisky => 'Risky choice';
+
+  @override
+  String get homeProtected => 'You\'re protected';
+
+  @override
+  String homeNeedsAttention(int n) {
+    return '$n protections need attention';
+  }
+
+  @override
+  String get homeProtectedDetail =>
+      'All shields are up. FraudShield keeps watching in the background.';
+
+  @override
+  String get homeAttentionDetail => 'Turn them on below to stay fully safe.';
+
+  @override
+  String get homeQuick => 'Quick actions';
+
+  @override
+  String get homeStatus => 'Protection status';
+
+  @override
+  String get homeStatusSub => 'Tap a card to check again or turn it on';
+
+  @override
+  String get homeTools => 'Tools & help';
+
+  @override
+  String get homeAccountSub => 'Stop account takeover and SMS theft';
+
+  @override
+  String get homeScamHelp => 'Scam help';
+
+  @override
+  String get homeCallGuard => 'Call guard';
+
+  @override
+  String get homeCleaner => 'Clean leftovers';
+
+  @override
+  String get homeScammed => 'I was scammed';
+
+  @override
+  String get ui2LoginPromise =>
+      'Stops scams, fake sites and account theft - before they reach you.';
+
+  @override
+  String get ui1VpnOptions => 'Privacy & DNS options';
+
+  @override
+  String get homeGroupPhone => 'Your phone & apps';
+
+  @override
+  String get homeGroupPhoneSub => 'Risky apps, cloning and leftover files';
+
+  @override
+  String get homeGroupCalls => 'Calls & messages';
+
+  @override
+  String get homeGroupCallsSub => 'Block scam calls, stop SMS theft';
+
+  @override
+  String get permTitle => 'Permissions';
+
+  @override
+  String permSummary(int allowed, int total) {
+    return '$allowed of $total allowed';
+  }
+
+  @override
+  String permPending(int n) {
+    return '$n need your OK - tap to allow';
+  }
+
+  @override
+  String get permAllDone => 'Everything FraudShield needs is allowed';
+
+  @override
+  String get permIntro =>
+      'FraudShield asks only for what a protection needs. Tap an item: the exact Android page opens - switch it on and come back.';
+
+  @override
+  String get permNeedsOk => 'Needs your OK';
+
+  @override
+  String get permAllowed => 'Allowed';
+
+  @override
+  String get permByHand => 'Check in phone settings';
+
+  @override
+  String get permOptional => 'Optional';
+
+  @override
+  String get permAllow => 'Allow';
+
+  @override
+  String get permOpen => 'Open';
+
+  @override
+  String get permOn => 'On';
+
+  @override
+  String get permNameNotifications => 'Notifications';
+
+  @override
+  String get permWhyNotifications => 'So scam warnings can reach you.';
+
+  @override
+  String get permNameFullScreen => 'Full-screen alerts';
+
+  @override
+  String get permWhyFullScreen =>
+      'Critical warnings show even on the lock screen.';
+
+  @override
+  String get permNameNotifAccess => 'Notification access';
+
+  @override
+  String get permWhyNotifAccess =>
+      'Checks links in your messages and notifications. Message text is never uploaded.';
+
+  @override
+  String get permNameFiles => 'All files access';
+
+  @override
+  String get permWhyFiles => 'Scans downloaded APK and PDF files for danger.';
+
+  @override
+  String get permNamePhone => 'Phone';
+
+  @override
+  String get permWhyPhone =>
+      'Checks call forwarding and powers the scam alarm.';
+
+  @override
+  String get permNameVpn => 'Fake-website protection (VPN)';
+
+  @override
+  String get permWhyVpn => 'Blocks fake and dangerous sites in every app.';
+
+  @override
+  String get permNameCallScreening => 'Caller ID & spam';
+
+  @override
+  String get permWhyCallScreening => 'Lets Call guard stop scam calls.';
+
+  @override
+  String get permNameContacts => 'Contacts';
+
+  @override
+  String get permWhyContacts => 'Your saved contacts are never blocked.';
+
+  @override
+  String get permNameCallLog => 'Call history';
+
+  @override
+  String get permWhyCallLog => 'People you called are never blocked.';
+
+  @override
+  String get permNameUsage => 'Usage access';
+
+  @override
+  String get permWhyUsage => 'Notices apps that open by themselves.';
+
+  @override
+  String get permNameBattery => 'Battery: no restrictions';
+
+  @override
+  String get permWhyBattery => 'Keeps protection running in the background.';
+
+  @override
+  String get permNameAutostart => 'Autostart (phone maker setting)';
+
+  @override
+  String get permWhyAutostart =>
+      'Lets protection start again after a restart. Android cannot show us this one - please check it.';
 }

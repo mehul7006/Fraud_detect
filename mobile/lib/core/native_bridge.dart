@@ -105,6 +105,13 @@ class NativeBridge {
   static Future<bool> composeSms(String number, String body) async =>
       (await _ch.invokeMethod<bool>('composeSms', {'number': number, 'body': body})) ?? false;
   /// 7.10: Android 14+ only grants full-screen alerts to some apps; true on older Android.
+  // ---- all permissions in one place (PermissionsChannel.kt)
+  static Future<Map<String, Map<String, dynamic>>> permStatus() async {
+    final r = await _ch.invokeMethod<Map>('permStatus') ?? const {};
+    return {for (final e in r.entries) e.key as String: Map<String, dynamic>.from(e.value as Map)};
+  }
+  static Future<String?> permOpen(String id) => _ch.invokeMethod<String>('permOpen', {'id': id});
+
   static Future<bool> canUseFullScreenAlerts() async => (await _ch.invokeMethod<bool>('canUseFullScreenAlerts')) ?? true;
   static Future<void> openFullScreenAlertSettings() => _ch.invokeMethod('openFullScreenAlertSettings');
   static Future<void> uninstallApp(String pkg) => _ch.invokeMethod('uninstallApp', {'package': pkg});

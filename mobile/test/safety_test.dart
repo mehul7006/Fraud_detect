@@ -33,7 +33,7 @@ void main() {
   tearDown(() => native.remove());
 
   Future<void> pump(WidgetTester t, Widget w) async {
-    t.view.physicalSize = const Size(1080, 3200);
+    t.view.physicalSize = const Size(1080, 6000);
     t.view.devicePixelRatio = 2.5;
     addTearDown(t.view.reset);
     await t.pumpWidget(MaterialApp(home: w));

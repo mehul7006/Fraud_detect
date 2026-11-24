@@ -10,6 +10,21 @@ spring:
 logging:
   pattern:
     level: "%5p [%X{requestId}]"
+# 9.1 health for Docker / reverse proxy / uptime monitor. Only health + info are exposed over HTTP; health shows
+# UP/DOWN only (no details such as DB host). Metrics stay off the public port.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: false
 server:
   port: ${PORT:8080}
   error:

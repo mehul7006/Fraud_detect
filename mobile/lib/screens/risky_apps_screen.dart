@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/protection_engine.dart';
 import '../l10n/l10n.dart';
 import 'app_detail_screen.dart';
+import '../ui/components.dart';
+import '../ui/theme.dart';
 
 /// 6.8: every flagged app with its reasons, highest risk first. Uninstall / Ignore per app (6.7).
 class RiskyAppsScreen extends StatefulWidget {
@@ -37,31 +39,33 @@ class _RiskyAppsScreenState extends State<RiskyAppsScreen> {
     final status = widget.engine.status;
     final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.riskyTitle)),
+      appBar: AppBar(), // the banner below carries the title
       body: ValueListenableBuilder<List<RiskyApp>>(
         valueListenable: widget.engine.riskyApps,
         builder: (c, apps, _) {
           final failed = status.value['apps'] == 'ERROR';
           return RefreshIndicator(
             onRefresh: _refresh,
-            child: ListView(padding: const EdgeInsets.all(12), children: [
-              if (_loading) const LinearProgressIndicator(),
+            child: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 32), children: [
+              ScreenBanner(icon: Icons.ads_click_rounded, feature: Feature.apps, title: l.riskyTitle),
+              if (_loading) const Padding(padding: EdgeInsets.only(bottom: 8), child: LinearProgressIndicator(minHeight: 6, borderRadius: BorderRadius.all(Radius.circular(6)))),
               if (failed)
-                _Info(Icons.cloud_off, l.riskyFailedTitle, l.riskyFailedBody)
+                _Info(Icons.cloud_off_rounded, l.riskyFailedTitle, l.riskyFailedBody, Tone.info)
               else if (status.value['apps'] == null)
-                _Info(Icons.hourglass_empty, l.riskyCheckingTitle, l.riskyCheckingBody)
+                _Info(Icons.hourglass_top_rounded, l.riskyCheckingTitle, l.riskyCheckingBody, Tone.neutral)
               else if (apps.isEmpty)
-                _Info(Icons.verified_user, l.riskyNoneTitle, l.riskyNoneBody),
+                _Info(Icons.verified_user_rounded, l.riskyNoneTitle, l.riskyNoneBody, Tone.safe),
               for (final a in apps) _AppCard(app: a, engine: widget.engine),
-              const Divider(height: 24),
+              const SizedBox(height: 12),
               // 6.1: opt-in, off by default
-              SwitchListTile(
+              Card(child: SwitchListTile(
                 key: const Key('share-app-labels'),
                 value: _share,
                 onChanged: _setShare,
+                secondary: const FeatureIcon(Icons.share_rounded, Feature.device, size: 40),
                 title: Text(l.riskyShareTitle),
                 subtitle: Text(l.riskyShareBody),
-              ),
+              )),
             ]),
           );
         },
@@ -73,17 +77,24 @@ class _RiskyAppsScreenState extends State<RiskyAppsScreen> {
 class _Info extends StatelessWidget {
   final IconData icon;
   final String title, body;
-  const _Info(this.icon, this.title, this.body);
+  final Tone tone;
+  const _Info(this.icon, this.title, this.body, this.tone);
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 48),
-        child: Column(children: [
-          Icon(icon, size: 48, color: Colors.grey),
-          const SizedBox(height: 12),
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text(body, textAlign: TextAlign.center),
-        ]),
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+          child: Column(children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: tone.bg(context), shape: BoxShape.circle),
+              child: Icon(icon, size: 40, color: tone.fg(context)),
+            ),
+            const SizedBox(height: 14),
+            Text(title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 6),
+            Text(body, textAlign: TextAlign.center),
+          ]),
+        ),
       );
 }
 
@@ -102,19 +113,21 @@ class _AppCard extends StatelessWidget {
         // 13.8: details - what it can access, who it talks to, block internet / permissions / uninstall / ignore
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AppDetailScreen(app: app, engine: engine))),
         child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Icon(bad ? Icons.gpp_bad : Icons.warning_amber, color: bad ? Colors.red : Colors.orange),
-            const SizedBox(width: 8),
-            Expanded(child: Text(app.label, style: Theme.of(context).textTheme.titleMedium)),
-            if (app.isNew) Chip(label: Text(context.l10n.newBadge)),
-            const SizedBox(width: 4),
-            Text('${app.score}', style: TextStyle(fontWeight: FontWeight.bold, color: bad ? Colors.red : Colors.orange)),
+            FeatureIcon(bad ? Icons.gpp_bad_rounded : Icons.warning_amber_rounded, bad ? Feature.scam : Feature.apps),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(app.label, style: Theme.of(context).textTheme.titleMedium),
+              Text(app.packageName, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ])),
+            if (app.isNew) Padding(padding: const EdgeInsets.only(right: 6), child: Pill(context.l10n.newBadge, tone: Tone.info)),
+            Pill('${app.score}', tone: bad ? Tone.danger : Tone.warn),
           ]),
-          Text(app.packageName, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 8),
-          Wrap(spacing: 6, runSpacing: 4, children: [for (final r in app.reasons) Chip(label: Text(r), visualDensity: VisualDensity.compact)]),
+          const SizedBox(height: 10),
+          Wrap(spacing: 6, runSpacing: 6, children: [for (final r in app.reasons) Pill(r, tone: bad ? Tone.danger : Tone.warn, icon: Icons.error_outline_rounded)]),
+          const SizedBox(height: 6),
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             TextButton(onPressed: () => engine.ignoreApp(app), child: Text(context.l10n.ignore)),
             const SizedBox(width: 8),

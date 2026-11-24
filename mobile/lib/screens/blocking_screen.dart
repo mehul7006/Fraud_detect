@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/flavour.dart';
 import '../core/native_bridge.dart';
 import '../l10n/l10n.dart';
+import '../ui/components.dart';
+import '../ui/theme.dart';
 
 /// 18.3 / 18.4: phone-wide blocking settings - category switches (the Play build has NO ads switch), pause,
 /// apps and sites that are never blocked, "this app broke". Everything is stored and applied on the phone.
@@ -83,95 +85,114 @@ class _BlockingScreenState extends State<BlockingScreen> {
     final cats = _list('categories').toSet();
     final paused = ((s?['pausedUntil'] as num?) ?? 0).toInt();
     final size = ((s?['listSize'] as num?) ?? 0).toInt();
-    Widget sw(String cat, String title, String sub, IconData icon) => SwitchListTile(
+    final t = Theme.of(context);
+    Widget sw(String cat, String title, String sub, IconData icon, Feature f) => SwitchListTile(
           key: Key('block-cat-$cat'),
-          secondary: Icon(icon),
+          secondary: FeatureIcon(icon, f, size: 40),
           title: Text(title),
           subtitle: Text(sub),
           value: cats.contains(cat),
           onChanged: (v) async => _apply(await NativeBridge.blockSetCategory(cat, v)),
         );
+    Widget small(String text, {Key? key}) => Padding(padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        child: Text(text, key: key, style: t.textTheme.bodySmall?.copyWith(color: t.colorScheme.onSurfaceVariant)));
     return Scaffold(
-      appBar: AppBar(title: Text(_ads ? l.blockTitleWeb : l.blockTitlePlay)),
+      appBar: AppBar(), // the banner below carries the title
       body: s == null
           ? const Center(child: CircularProgressIndicator())
-          : ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
-              Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 4), child: Text(_ads ? l.blockIntroWeb : l.blockIntroPlay)),
-              Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 8), child: Text(l.blockNeedsVpn, style: Theme.of(context).textTheme.bodySmall)),
-              ListTile(
+          : ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 32), children: [
+              ScreenBanner(icon: Icons.shield_rounded, feature: Feature.web,
+                  title: _ads ? l.blockTitleWeb : l.blockTitlePlay, subtitle: _ads ? l.blockIntroWeb : l.blockIntroPlay),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: Tone.info.bg(context), borderRadius: BorderRadius.circular(18)),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.info_outline_rounded, color: Tone.info.fg(context), size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(l.blockNeedsVpn, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurface))),
+                ]),
+              ),
+              const SizedBox(height: 8),
+              Card(child: ListTile(
                 key: const Key('block-list'),
-                leading: const Icon(Icons.list_alt),
+                leading: const FeatureIcon(Icons.list_alt_rounded, Feature.device, size: 40),
                 title: Text(size > 0 ? l.blockList(size) : l.blockListNone),
                 trailing: _busy ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                     : TextButton(key: const Key('block-update'), onPressed: _update, child: Text(l.blockUpdate)),
-              ),
-              const Divider(),
-              if (_ads) sw('ads', l.blockCatAds, l.blockCatAdsSub, Icons.ad_units_outlined),
-              sw('trackers', l.blockCatTrackers, l.blockCatTrackersSub, Icons.visibility_off_outlined),
-              sw('malware', l.blockCatMalware, l.blockCatMalwareSub, Icons.gpp_bad_outlined),
-              if (!_ads) Padding(padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                  child: Text(l.blockAdsNotInPlay, key: const Key('block-no-ads'), style: Theme.of(context).textTheme.bodySmall)),
-              const Divider(),
-              if (paused > DateTime.now().millisecondsSinceEpoch)
+              )),
+              Card(child: Column(children: [
+                if (_ads) sw('ads', l.blockCatAds, l.blockCatAdsSub, Icons.ad_units_rounded, Feature.apps),
+                sw('trackers', l.blockCatTrackers, l.blockCatTrackersSub, Icons.visibility_off_rounded, Feature.message),
+                sw('malware', l.blockCatMalware, l.blockCatMalwareSub, Icons.gpp_bad_rounded, Feature.scam),
+                if (!_ads) small(l.blockAdsNotInPlay, key: const Key('block-no-ads')),
+              ])),
+              Card(child: Column(children: [
+                if (paused > DateTime.now().millisecondsSinceEpoch)
+                  ListTile(
+                    key: const Key('block-paused'),
+                    leading: const FeatureIcon(Icons.pause_rounded, Feature.cleaner, size: 40),
+                    title: Text(l.blockPausedUntil(TimeOfDay.fromDateTime(DateTime.fromMillisecondsSinceEpoch(paused)).format(context))),
+                    trailing: TextButton(key: const Key('block-resume'), onPressed: () async => _apply(await NativeBridge.blockPause(0)), child: Text(l.blockResume)),
+                  )
+                else
+                  ListTile(
+                    key: const Key('block-pause'),
+                    leading: const FeatureIcon(Icons.pause_rounded, Feature.cleaner, size: 40),
+                    title: Text(l.blockPause5),
+                    onTap: () async => _apply(await NativeBridge.blockPause(5)),
+                  ),
                 ListTile(
-                  key: const Key('block-paused'),
-                  leading: const Icon(Icons.pause_circle_outline),
-                  title: Text(l.blockPausedUntil(TimeOfDay.fromDateTime(DateTime.fromMillisecondsSinceEpoch(paused)).format(context))),
-                  trailing: TextButton(key: const Key('block-resume'), onPressed: () async => _apply(await NativeBridge.blockPause(0)), child: Text(l.blockResume)),
-                )
-              else
-                ListTile(
-                  key: const Key('block-pause'),
-                  leading: const Icon(Icons.pause_circle_outline),
-                  title: Text(l.blockPause5),
-                  onTap: () async => _apply(await NativeBridge.blockPause(5)),
+                  key: const Key('block-stats'),
+                  leading: const FeatureIcon(Icons.bar_chart_rounded, Feature.web, size: 40),
+                  title: Text(l.blockStats),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BlockingStatsScreen())),
                 ),
-              ListTile(
-                key: const Key('block-stats'),
-                leading: const Icon(Icons.bar_chart),
-                title: Text(l.blockStats),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BlockingStatsScreen())),
-              ),
-              const Divider(),
-              ListTile(title: Text(l.blockAllowedApps, style: const TextStyle(fontWeight: FontWeight.w600))),
-              if (_list('allowedApps').isEmpty) ListTile(dense: true, title: Text(l.blockAllowedAppsNone)),
-              for (final p in _list('allowedApps'))
-                ListTile(
-                  key: Key('allowed-app-$p'),
-                  dense: true,
-                  leading: const Icon(Icons.android),
-                  title: Text(p),
-                  trailing: IconButton(tooltip: l.blockRemove, icon: const Icon(Icons.close),
-                      onPressed: () async => _apply(await NativeBridge.blockAllowApp(p, false))),
-                ),
-              ListTile(key: const Key('block-allow-app'), leading: const Icon(Icons.add), title: Text(l.blockAllowApp), onTap: _pickApp),
-              const Divider(),
-              ListTile(title: Text(l.blockAllowedSites, style: const TextStyle(fontWeight: FontWeight.w600))),
-              for (final d in _list('allowedSites'))
-                ListTile(
-                  key: Key('allowed-site-$d'),
-                  dense: true,
-                  leading: const Icon(Icons.language),
-                  title: Text(d),
-                  trailing: IconButton(tooltip: l.blockRemove, icon: const Icon(Icons.close),
-                      onPressed: () async => _apply(await NativeBridge.blockAllowSite(d, false))),
-                ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(children: [
-                  Expanded(child: TextField(key: const Key('block-site-input'), controller: _site,
-                      decoration: InputDecoration(labelText: l.blockAddSite, hintText: l.blockSiteHint))),
-                  const SizedBox(width: 8),
-                  FilledButton(key: const Key('block-site-add'), onPressed: () async {
-                    final d = _site.text.trim();
-                    if (d.isEmpty) return;
-                    _site.clear();
-                    _apply(await NativeBridge.blockAllowSite(d, true));
-                  }, child: Text(l.blockAdd)),
+              ])),
+              SectionTitle(l.blockAllowedApps),
+              Card(child: Column(children: [
+                if (_list('allowedApps').isEmpty) ListTile(dense: true, title: Text(l.blockAllowedAppsNone)),
+                for (final p in _list('allowedApps'))
+                  ListTile(
+                    key: Key('allowed-app-$p'),
+                    dense: true,
+                    leading: const Icon(Icons.android_rounded),
+                    title: Text(p),
+                    trailing: IconButton(tooltip: l.blockRemove, icon: const Icon(Icons.close),
+                        onPressed: () async => _apply(await NativeBridge.blockAllowApp(p, false))),
+                  ),
+                ListTile(key: const Key('block-allow-app'), leading: Icon(Icons.add_circle_rounded, color: t.colorScheme.primary),
+                    title: Text(l.blockAllowApp, style: TextStyle(color: t.colorScheme.primary, fontWeight: FontWeight.w600)), onTap: _pickApp),
+              ])),
+              SectionTitle(l.blockAllowedSites),
+              Card(child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: Column(children: [
+                  for (final d in _list('allowedSites'))
+                    ListTile(
+                      key: Key('allowed-site-$d'),
+                      dense: true,
+                      leading: const Icon(Icons.language_rounded),
+                      title: Text(d),
+                      trailing: IconButton(tooltip: l.blockRemove, icon: const Icon(Icons.close),
+                          onPressed: () async => _apply(await NativeBridge.blockAllowSite(d, false))),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                    child: Row(children: [
+                      Expanded(child: TextField(key: const Key('block-site-input'), controller: _site,
+                          decoration: InputDecoration(labelText: l.blockAddSite, hintText: l.blockSiteHint))),
+                      const SizedBox(width: 8),
+                      FilledButton(key: const Key('block-site-add'), onPressed: () async {
+                        final d = _site.text.trim();
+                        if (d.isEmpty) return;
+                        _site.clear();
+                        _apply(await NativeBridge.blockAllowSite(d, true));
+                      }, child: Text(l.blockAdd)),
+                    ]),
+                  ),
                 ]),
-              ),
-              const SizedBox(height: 24),
+              )),
             ]),
     );
   }
@@ -209,31 +230,52 @@ class _BlockingStatsScreenState extends State<BlockingStatsScreen> {
           final byCat = Map<String, dynamic>.from((s['byCategory'] as Map?) ?? const {});
           final apps = ((s['byApp'] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
           final top = ((s['topDomains'] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
-          return ListView(padding: const EdgeInsets.all(8), children: [
-            Wrap(spacing: 8, children: [
-              for (final d in const [1, 7, 30])
-                ChoiceChip(key: Key('days-$d'), label: Text(l.blockStatsDays(d)), selected: _days == d, onSelected: (_) => setState(() => _days = d)),
-            ]),
-            ListTile(
-              key: const Key('stats-total'),
-              leading: const Icon(Icons.block),
-              title: Text(l.blockStatsTotal(total), style: Theme.of(context).textTheme.titleMedium),
-              subtitle: Text(l.blockStatsSaved(size((s['estimatedBytesSaved'] as num?) ?? 0))),
+          final t = Theme.of(context);
+          Widget head(String text) => SectionTitle(text);
+          return ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 32), children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(gradient: Feature.web.deepGradient, borderRadius: BorderRadius.circular(24)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Wrap(spacing: 8, runSpacing: 8, children: [
+                  for (final d in const [1, 7, 30])
+                    ChoiceChip(key: Key('days-$d'), label: Text(l.blockStatsDays(d)), selected: _days == d, onSelected: (_) => setState(() => _days = d)),
+                ]),
+                const SizedBox(height: 8),
+                ListTile(
+                  key: const Key('stats-total'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.block_rounded, color: Colors.white, size: 32),
+                  title: Text(l.blockStatsTotal(total), style: t.textTheme.titleLarge?.copyWith(color: Colors.white)),
+                  subtitle: Text(l.blockStatsSaved(size((s['estimatedBytesSaved'] as num?) ?? 0)), style: t.textTheme.bodyMedium?.copyWith(color: Colors.white)),
+                ),
+              ]),
             ),
-            Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(l.blockStatsLocal, style: Theme.of(context).textTheme.bodySmall)),
-            if (total == 0) Padding(padding: const EdgeInsets.all(16), child: Text(l.blockStatsEmpty)),
+            Padding(padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
+                child: Row(children: [
+                  Icon(Icons.lock_rounded, size: 16, color: t.colorScheme.onSurfaceVariant), const SizedBox(width: 6),
+                  Expanded(child: Text(l.blockStatsLocal, style: t.textTheme.bodySmall?.copyWith(color: t.colorScheme.onSurfaceVariant))),
+                ])),
+            if (total == 0) Card(margin: const EdgeInsets.only(top: 16), child: ListTile(leading: Icon(Icons.check_circle_rounded, color: Tone.safe.fg(context)), title: Text(l.blockStatsEmpty))),
             if (total > 0) ...[
-              ListTile(title: Text(l.blockStatsByCat, style: const TextStyle(fontWeight: FontWeight.w600))),
-              for (final e in byCat.entries.where((e) => (e.value as num) > 0))
-                ListTile(key: Key('stats-cat-${e.key}'), dense: true, title: Text(catName[e.key] ?? e.key), trailing: Text('${e.value}')),
-              ListTile(title: Text(l.blockStatsByApp, style: const TextStyle(fontWeight: FontWeight.w600))),
-              for (final a in apps.take(20))
-                ListTile(key: Key('stats-app-${a['package'] ?? a['uid']}'), dense: true, leading: const Icon(Icons.android),
-                    title: Text('${a['label']}'), trailing: Text('${a['count']}')),
-              ListTile(title: Text(l.blockStatsTop, style: const TextStyle(fontWeight: FontWeight.w600))),
-              for (final d in top)
-                ListTile(dense: true, leading: const Icon(Icons.language, size: 18), title: Text('${d['domain']}'),
-                    subtitle: Text(catName['${d['category']}'] ?? ''), trailing: Text('${d['count']}')),
+              head(l.blockStatsByCat),
+              Card(child: Column(children: [
+                for (final e in byCat.entries.where((e) => (e.value as num) > 0))
+                  ListTile(key: Key('stats-cat-${e.key}'), dense: true, title: Text(catName[e.key] ?? e.key),
+                      trailing: Pill('${e.value}', tone: e.key == 'malware' ? Tone.danger : e.key == 'ads' ? Tone.warn : Tone.info)),
+              ])),
+              head(l.blockStatsByApp),
+              Card(child: Column(children: [
+                for (final a in apps.take(20))
+                  ListTile(key: Key('stats-app-${a['package'] ?? a['uid']}'), dense: true, leading: const Icon(Icons.android_rounded),
+                      title: Text('${a['label']}'), trailing: Pill('${a['count']}')),
+              ])),
+              head(l.blockStatsTop),
+              Card(child: Column(children: [
+                for (final d in top)
+                  ListTile(dense: true, leading: const Icon(Icons.language_rounded, size: 18), title: Text('${d['domain']}'),
+                      subtitle: Text(catName['${d['category']}'] ?? ''), trailing: Pill('${d['count']}')),
+              ])),
             ],
           ]);
         },

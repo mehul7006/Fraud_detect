@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import '../core/native_bridge.dart';
 import '../core/safety.dart';
 import '../l10n/l10n.dart';
+import '../ui/components.dart';
+import '../ui/screen_kit.dart';
+import '../ui/theme.dart';
 
 /// 15.6: after a scam. Golden-hour timer, one-tap 1930 + cybercrime.gov.in, bank block numbers (from the verified
 /// directory - each read on the bank's own website), checklist, evidence pack that stays on the phone until shared.
@@ -76,85 +79,110 @@ class _RecoveryKitScreenState extends State<RecoveryKitScreen> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final t = Theme.of(context);
     final golden = _start != null && DateTime.now().difference(_start!).inMinutes < 60;
+    final timerTone = golden ? Tone.warn : Tone.danger;
     return Scaffold(
       appBar: AppBar(title: Text(l.safeRecTitle)),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text(l.safeRecIntro),
-        const SizedBox(height: 12),
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 32), children: [
+        IntroBanner(icon: Icons.healing_rounded, feature: Feature.scam, text: l.safeRecIntro),
         if (_start == null)
           FilledButton.icon(
             key: const Key('rec-start'),
             onPressed: () async { final s = await RecoveryState.start(); setState(() { _start = s; _done = {}; }); },
-            icon: const Icon(Icons.timer), label: Text(l.safeRecStart))
+            icon: const Icon(Icons.timer_rounded), label: Text(l.safeRecStart))
         else
           Card(
-            color: golden ? Colors.orange.shade50 : Colors.red.shade50,
+            color: timerTone.bg(context),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: timerTone.fg(context).withValues(alpha: 0.3))),
             child: ListTile(
               key: const Key('rec-timer'),
-              leading: const Icon(Icons.timer),
-              title: Text(l.safeRecElapsed(_elapsed()), style: const TextStyle(fontWeight: FontWeight.bold)),
+              leading: Icon(Icons.timer_rounded, color: timerTone.fg(context), size: 30),
+              title: Text(l.safeRecElapsed(_elapsed()), style: TextStyle(fontWeight: FontWeight.w700, color: timerTone.fg(context))),
               trailing: TextButton(onPressed: () async { await RecoveryState.reset(); setState(() { _start = null; _done = {}; }); }, child: Text(l.safeRecReset)),
             ),
           ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         FilledButton.icon(
           key: const Key('rec-1930'),
-          style: FilledButton.styleFrom(backgroundColor: Colors.red.shade800, minimumSize: const Size.fromHeight(52)),
+          style: FilledButton.styleFrom(backgroundColor: Tone.danger.fg(context),
+              foregroundColor: t.brightness == Brightness.dark ? AppColors.ink : Colors.white, minimumSize: const Size.fromHeight(56)),
           onPressed: () => SafetyNative.dial('1930'),
-          icon: const Icon(Icons.call), label: Text(l.safeRec1930)),
-        const SizedBox(height: 8),
+          icon: const Icon(Icons.call_rounded), label: Text(l.safeRec1930)),
+        const SizedBox(height: 10),
         OutlinedButton.icon(
           key: const Key('rec-portal'),
           onPressed: () => NativeBridge.openUrl(portal),
-          icon: const Icon(Icons.open_in_new), label: Text(l.safeRecPortal)),
-        const SizedBox(height: 16),
-        Text(l.safeRecChecklist, style: Theme.of(context).textTheme.titleMedium),
-        for (final s in steps)
-          CheckboxListTile(
-            key: Key('rec-step-$s'),
-            contentPadding: EdgeInsets.zero,
-            value: _done.contains(s),
-            title: Text(_label(context, s)),
-            onChanged: (v) async { await RecoveryState.setDone(s, v == true); setState(() => v == true ? _done.add(s) : _done.remove(s)); },
-          ),
-        const SizedBox(height: 8),
-        Text(l.safeRecBlockTitle, style: Theme.of(context).textTheme.titleMedium),
-        Text(l.safeRecBlockSub, style: Theme.of(context).textTheme.bodySmall),
-        for (final e in _banks.entries)
-          ExpansionTile(
-            key: Key('rec-bank-${e.key}'),
-            tilePadding: EdgeInsets.zero,
-            title: Text(e.key),
-            children: [
-              for (final n in e.value)
-                ListTile(
-                  dense: true,
-                  title: Text(n.number),
-                  subtitle: Text(n.purpose),
-                  trailing: const Icon(Icons.call),
-                  onTap: () => SafetyNative.dial(n.number.replaceAll(RegExp(r'[^0-9+]'), '')),
+          icon: const Icon(Icons.open_in_new_rounded), label: Text(l.safeRecPortal)),
+
+        SectionTitle(l.safeRecChecklist),
+        Card(
+          child: Column(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+              child: Row(children: [
+                Expanded(child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(value: _done.length / steps.length, minHeight: 8),
+                )),
+                const SizedBox(width: 12),
+                Pill('${_done.length}/${steps.length}', tone: _done.length == steps.length ? Tone.safe : Tone.info),
+              ]),
+            ),
+            for (final s in steps)
+              CheckboxListTile(
+                key: Key('rec-step-$s'),
+                value: _done.contains(s),
+                title: Text(_label(context, s)),
+                onChanged: (v) async { await RecoveryState.setDone(s, v == true); setState(() => v == true ? _done.add(s) : _done.remove(s)); },
+              ),
+          ]),
+        ),
+
+        SectionTitle(l.safeRecBlockTitle, subtitle: l.safeRecBlockSub),
+        Card(
+          child: Column(children: [
+            for (final e in _banks.entries)
+              ExpansionTile(
+                key: Key('rec-bank-${e.key}'),
+                leading: const FeatureIcon(Icons.account_balance_rounded, Feature.web, size: 38),
+                title: Text(e.key),
+                shape: const Border(),
+                children: [
+                  for (final n in e.value)
+                    ListTile(
+                      title: Text(n.number),
+                      subtitle: Text(n.purpose),
+                      trailing: Icon(Icons.call_rounded, color: Tone.safe.fg(context)),
+                      onTap: () => SafetyNative.dial(n.number.replaceAll(RegExp(r'[^0-9+]'), '')),
+                    ),
+                ],
+              ),
+          ]),
+        ),
+
+        SectionTitle(l.safeRecEvidence, subtitle: l.safeRecEvidenceSub),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              for (final (key, c, label, lines) in [('ev-who', _who, l.safeRecEvWho, 1), ('ev-money', _money, l.safeRecEvMoney, 2),
+                ('ev-apps', _apps, l.safeRecEvApps, 1), ('ev-notes', _notes, l.safeRecEvNotes, 4)])
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: TextField(key: Key(key), controller: c, minLines: lines, maxLines: lines + 2,
+                      decoration: InputDecoration(labelText: label)),
                 ),
-            ],
+              const SizedBox(height: 10),
+              Text(l.safeRecScreens, style: t.textTheme.bodySmall?.copyWith(color: t.colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                key: const Key('rec-share'),
+                onPressed: () => SafetyNative.shareText(_evidence(context), subject: 'FraudShield evidence'),
+                icon: const Icon(Icons.share_rounded), label: Text(l.safeRecShare)),
+            ]),
           ),
-        const SizedBox(height: 16),
-        Text(l.safeRecEvidence, style: Theme.of(context).textTheme.titleMedium),
-        Text(l.safeRecEvidenceSub, style: Theme.of(context).textTheme.bodySmall),
-        for (final (key, c, label, lines) in [('ev-who', _who, l.safeRecEvWho, 1), ('ev-money', _money, l.safeRecEvMoney, 2),
-          ('ev-apps', _apps, l.safeRecEvApps, 1), ('ev-notes', _notes, l.safeRecEvNotes, 4)])
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: TextField(key: Key(key), controller: c, minLines: lines, maxLines: lines + 2,
-                decoration: InputDecoration(labelText: label, border: const OutlineInputBorder())),
-          ),
-        const SizedBox(height: 8),
-        Text(l.safeRecScreens, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 8),
-        FilledButton.tonalIcon(
-          key: const Key('rec-share'),
-          onPressed: () => SafetyNative.shareText(_evidence(context), subject: 'FraudShield evidence'),
-          icon: const Icon(Icons.share), label: Text(l.safeRecShare)),
-        const SizedBox(height: 24),
+        ),
       ]),
     );
   }

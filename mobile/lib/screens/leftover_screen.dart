@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../ui/components.dart';
+import '../ui/screen_kit.dart';
+import '../ui/theme.dart';
+
 import '../core/leftovers.dart';
 import '../core/native_bridge.dart';
 import '../l10n/l10n.dart';
@@ -122,17 +126,27 @@ class _LeftoverScreenState extends State<LeftoverScreen> {
     return Card(
       key: const Key('left-settings'),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(l.leftSettingsTitle, style: Theme.of(context).textTheme.titleSmall),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(children: [
+              const FeatureIcon(Icons.settings_suggest_rounded, Feature.device, size: 36),
+              const SizedBox(width: 10),
+              Expanded(child: Text(l.leftSettingsTitle, style: Theme.of(context).textTheme.titleSmall)),
+            ]),
+          ),
           for (final s in _settings)
-            ListTile(
-              dense: true, contentPadding: EdgeInsets.zero,
-              leading: Icon(s.state == 'CLEAR' ? Icons.check_circle : s.state == 'LEFTOVER' ? Icons.warning_amber : Icons.help_outline,
-                  color: s.state == 'CLEAR' ? Colors.green.shade700 : s.state == 'LEFTOVER' ? Colors.red.shade700 : Colors.grey.shade700),
-              title: Text(kind(s.kind)),
-              subtitle: Text(s.state == 'CLEAR' ? l.leftSetClear : s.state == 'LEFTOVER' ? l.leftSetLeftover : l.leftSetUnknown),
-            ),
+            Builder(builder: (context) {
+              final tone = s.state == 'CLEAR' ? Tone.safe : s.state == 'LEFTOVER' ? Tone.danger : Tone.neutral;
+              return ListTile(
+                leading: Icon(s.state == 'CLEAR' ? Icons.check_circle_rounded : s.state == 'LEFTOVER' ? Icons.warning_amber_rounded : Icons.help_outline_rounded,
+                    color: tone.fg(context)),
+                title: Text(kind(s.kind)),
+                subtitle: Text(s.state == 'CLEAR' ? l.leftSetClear : s.state == 'LEFTOVER' ? l.leftSetLeftover : l.leftSetUnknown,
+                    style: TextStyle(color: tone.fg(context))),
+              );
+            }),
         ]),
       ),
     );
@@ -149,71 +163,78 @@ class _LeftoverScreenState extends State<LeftoverScreen> {
           ? null
           : SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: FilledButton.icon(
                   key: const Key('left-remove'),
                   onPressed: _busy ? null : _remove,
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(Icons.delete_sweep_rounded),
                   label: Text(l.leftDelete(sel.length, humanSize(selBytes))),
                 ),
               ),
             ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(padding: const EdgeInsets.all(16), children: [
-              Text(l.leftIntro),
-              const SizedBox(height: 8),
-              Text(l.leftPrivateNote, style: Theme.of(context).textTheme.bodySmall),
+          : ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+              IntroBanner(
+                icon: Icons.cleaning_services_rounded, feature: Feature.cleaner, text: l.leftIntro,
+                footer: Text(l.leftPrivateNote, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white)),
+              ),
               if (!_access)
                 Card(
                   key: const Key('left-need-access'),
+                  color: Tone.warn.bg(context),
                   child: ListTile(
-                    leading: const Icon(Icons.folder_off_outlined),
+                    leading: Icon(Icons.folder_off_rounded, color: Tone.warn.fg(context)),
                     title: Text(l.leftNeedAccess),
                     trailing: TextButton(onPressed: () async { await NativeBridge.openAllFilesAccessSettings(); }, child: Text(l.allow)),
                   ),
                 ),
               if (widget.package != null && _settings.isNotEmpty) _settingsCard(l),
               if (widget.package == null && _removed.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(l.leftRemovedApps, style: Theme.of(context).textTheme.titleMedium),
+                SectionTitle(l.leftRemovedApps),
                 for (final r in _removed)
-                  Card(
-                    child: ListTile(
-                      key: Key('left-removed-${r.package}'),
-                      leading: const Icon(Icons.auto_delete_outlined),
-                      title: Text(r.label),
-                      subtitle: Text(l.leftRemovedInfo(r.files, humanSize(r.bytes))),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () async {
-                        await Navigator.push(context, MaterialPageRoute(builder: (_) => LeftoverScreen(package: r.package)));
-                        _load();
-                      },
-                    ),
+                  FeatureTile(
+                    tileKey: Key('left-removed-${r.package}'),
+                    icon: Icons.auto_delete_rounded, feature: Feature.cleaner,
+                    title: r.label,
+                    status: l.leftRemovedInfo(r.files, humanSize(r.bytes)),
+                    tone: Tone.warn,
+                    trailingIcon: Icons.chevron_right_rounded,
+                    onTap: () async {
+                      await Navigator.push(context, MaterialPageRoute(builder: (_) => LeftoverScreen(package: r.package)));
+                      _load();
+                    },
                   ),
               ],
               if (_access && _sections.isEmpty && _removed.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 24),
-                  child: Row(children: [
-                    Icon(Icons.verified, color: Colors.green.shade700),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(l.leftNothing, key: const Key('left-nothing'))),
-                  ]),
+                Card(
+                  color: Tone.safe.bg(context),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(children: [
+                      Icon(Icons.verified_rounded, color: Tone.safe.fg(context), size: 30),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(l.leftNothing, key: const Key('left-nothing'),
+                          style: TextStyle(color: Tone.safe.fg(context), fontWeight: FontWeight.w600))),
+                    ]),
+                  ),
                 ),
               for (final s in _sections.entries) ...[
-                const SizedBox(height: 12),
-                Text(s.key, style: Theme.of(context).textTheme.titleMedium),
-                for (final e in s.value)
-                  CheckboxListTile(
-                    key: Key('left-item-${e.path}'),
-                    value: e.ticked,
-                    onChanged: _busy ? null : (v) => setState(() => e.ticked = v ?? false),
-                    title: Text(e.title, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    subtitle: Text(e.subtitle),
-                    isThreeLine: true,
-                    controlAffinity: ListTileControlAffinity.leading,
-                  ),
+                SectionTitle(s.key),
+                Card(
+                  child: Column(children: [
+                    for (final e in s.value)
+                      CheckboxListTile(
+                        key: Key('left-item-${e.path}'),
+                        value: e.ticked,
+                        onChanged: _busy ? null : (v) => setState(() => e.ticked = v ?? false),
+                        title: Text(e.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text(e.subtitle),
+                        isThreeLine: true,
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+                  ]),
+                ),
               ],
               if (widget.package != null && _sections.isNotEmpty)
                 Padding(
@@ -275,18 +296,17 @@ class _LeftoverTileState extends State<LeftoverTile> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Card(
-      child: ListTile(
-        key: const Key('left-tile'),
-        leading: Icon(Icons.cleaning_services_outlined, color: _pending > 0 ? Colors.orange.shade800 : Colors.green),
-        title: Text(l.leftTile),
-        subtitle: Text(_pending > 0 ? l.leftTilePending(_pending) : l.leftTileSub),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () async {
-          await Navigator.push(context, MaterialPageRoute(builder: (_) => const LeftoverScreen()));
-          _refresh();
-        },
-      ),
+    return FeatureTile(
+      tileKey: const Key('left-tile'),
+      icon: Icons.cleaning_services_rounded, feature: Feature.cleaner,
+      title: l.leftTile,
+      status: _pending > 0 ? l.leftTilePending(_pending) : l.leftTileSub,
+      tone: _pending > 0 ? Tone.warn : Tone.neutral,
+      trailingIcon: Icons.chevron_right_rounded,
+      onTap: () async {
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => const LeftoverScreen()));
+        _refresh();
+      },
     );
   }
 }

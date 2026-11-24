@@ -23,12 +23,25 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:   # 9.x end-to-end journey on a real phone / emulator (integration_test/)
+    sdk: flutter
   flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true
   generate: true # 8.11: lib/l10n/app_*.arb -> AppLocalizations
   assets:
+    - assets/fonts/OFL-Poppins.txt
     - assets/models/msg-v1.bin   # 14.3 on-device scam-message model
     - assets/data/care-numbers.csv   # 15.6 / 15.9 official numbers read on each brand's own site (copy of backend seed)
     - assets/leftovers/known-folders.json   # 17.5 folders of popular apps (read natively by OrphanScanner)
+  fonts:
+    - family: Poppins   # OFL-1.1 (assets/fonts/OFL-Poppins.txt) - Latin + Devanagari
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700

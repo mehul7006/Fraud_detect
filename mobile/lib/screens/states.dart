@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../core/api_client.dart';
 import '../l10n/l10n.dart';
+import '../ui/theme.dart';
 
 /// 8.10: one wording for every failure, in plain language. Offline never sounds like "your phone is unprotected":
 /// links found while offline are queued and checked later (4.10).
@@ -28,18 +29,33 @@ class ErrorState extends StatelessWidget {
   const ErrorState({super.key, required this.error, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(error is SocketException || error is http.ClientException || error is TimeoutException
-                ? Icons.wifi_off : Icons.error_outline, size: 48, color: Colors.grey),
-            const SizedBox(height: 12),
-            Text(friendlyError(error, context.l10n), textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh), label: Text(context.l10n.tryAgain)),
-          ]),
-        ),
+  Widget build(BuildContext context) {
+    final offline = error is SocketException || error is http.ClientException || error is TimeoutException;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          _StateBadge(icon: offline ? Icons.wifi_off_rounded : Icons.error_outline_rounded, tone: offline ? Tone.info : Tone.warn),
+          const SizedBox(height: 16),
+          Text(friendlyError(error, context.l10n), textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+          const SizedBox(height: 16),
+          FilledButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh_rounded), label: Text(context.l10n.tryAgain)),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Soft tinted circle with an icon (empty / error states).
+class _StateBadge extends StatelessWidget {
+  final IconData icon;
+  final Tone tone;
+  const _StateBadge({required this.icon, required this.tone});
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(color: tone.bg(context), shape: BoxShape.circle),
+        child: Icon(icon, size: 44, color: tone.fg(context)),
       );
 }
 
@@ -54,9 +70,9 @@ class EmptyState extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 48, color: Colors.green),
-            const SizedBox(height: 12),
-            Text(text, textAlign: TextAlign.center),
+            _StateBadge(icon: icon, tone: Tone.safe),
+            const SizedBox(height: 16),
+            Text(text, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
           ]),
         ),
       );

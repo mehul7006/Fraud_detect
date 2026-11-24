@@ -208,12 +208,32 @@ def main():
             kinds.setdefault(n, set()).add(kind)
             srcs.setdefault(n, []).append(f.rsplit(".", 1)[0])
 
-    dropped = {"never_block": 0, "popular_malware": 0}
+    # 18.7 compatibility: under an OFFICIAL brand domain (banks, UPI, shopping, OTT ... from the Phase 10 registry) an
+    # entry is kept only when its own labels say ads / tracking (ads., analytics., smetrics., sentry. ...). Anything
+    # else there is a working part of that app (youtubei.youtube.com = the YouTube app's API, m.navi.com, dl.purplle.com
+    # deep links, devicebind.ebay.com = login) and is never blocked; each such entry goes to allow-defaults.json.
+    brand_of = {}
+    with open(BRANDS, encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            for d in (row.get("official_domains") or "").split("|"):
+                d = d.strip().lower()
+                if "." in d: brand_of[d] = row.get("name", "")
+    allow_defaults = []
+
+    dropped = {"never_block": 0, "popular_malware": 0, "brand_functional": 0}
     final = {}
     for n, k in kinds.items():
         if any(p in NEVER_BLOCK for p in parents(n)) or n in NEVER_BLOCK:
             dropped["never_block"] += 1
             continue
+        brand_dom = next((p for p in parents(n) if p in brand_of), None)
+        if brand_dom and n != brand_dom:
+            below = n[: -len(brand_dom) - 1]  # the labels in front of the brand's own domain
+            if not (TRACKER_LABEL.search(below) or AD_LABEL.search(below)):
+                dropped["brand_functional"] += 1
+                allow_defaults.append({"domain": n, "brand": brand_of[brand_dom], "listedAs": sorted(k),
+                                       "reason": "official brand domain, name is not an ad/tracking host"})
+                continue
         c = category_of(n, k)
         # a phishing / risk entry must never take down a popular site (or one of its subdomains via a parent entry)
         # blocking n also blocks everything below it: n must not be a popular site, a parent of one, or a
@@ -244,6 +264,12 @@ def main():
                 "files": {f: sha256_file(os.path.join(a.out, f)) for f in ("blocklists-web.bin", "blocklists-play.bin")}}
     with open(os.path.join(a.out, "manifest.json"), "w", encoding="utf-8") as fh:
         json.dump(manifest, fh, indent=2)
+    # 18.7: the entries never blocked because they are working parts of an official brand's app (reviewable)
+    allow_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "allow-defaults.json")
+    with open(allow_path, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump({"version": a.version, "rule": "official brand domain + no ad/tracking word in the host name",
+                   "count": len(allow_defaults), "entries": sorted(allow_defaults, key=lambda e: (e["brand"], e["domain"]))},
+                  fh, indent=1, ensure_ascii=False)
     print(json.dumps(manifest["domains"]), json.dumps(dropped))
 
 

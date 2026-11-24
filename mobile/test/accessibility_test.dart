@@ -4,6 +4,7 @@ import 'package:fraudshield/core/protection_engine.dart';
 import 'package:fraudshield/l10n/l10n.dart';
 import 'package:fraudshield/screens/app_detail_screen.dart';
 import 'package:fraudshield/screens/check_message_screen.dart';
+import 'package:fraudshield/screens/permissions_screen.dart';
 import 'package:fraudshield/screens/dashboard_screen.dart';
 import 'package:fraudshield/screens/drills_screen.dart';
 import 'package:fraudshield/screens/guardian_screen.dart';
@@ -63,6 +64,7 @@ void main() {
     'sms forwarding': () => const SmsForwardingScreen(),
     'whatsapp wizard': () => const TakeoverWizardScreen(app: 'whatsapp'),
     'vpn consent (12.1)': () => const VpnConsentScreen(),
+    'permissions (all in one place)': () => const PermissionsScreen(),
     'scam STOP (15.3)': () => const ScamStopScreen(speakOnOpen: false),
     'recovery kit (15.6)': () => const RecoveryKitScreen(),
     'scam help hub (15.x)': () => const SafetyScreen(),

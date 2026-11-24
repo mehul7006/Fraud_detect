@@ -9,6 +9,9 @@ import 'drills_screen.dart';
 import 'guardian_screen.dart';
 import 'recovery_kit_screen.dart';
 import 'scam_stop_screen.dart';
+import '../ui/components.dart';
+import '../ui/screen_kit.dart';
+import '../ui/theme.dart';
 
 /// Phase 15 hub: live scam guard, check before you pay (UPI / QR), customer-care number, recovery kit, guardian, drills.
 class SafetyScreen extends StatelessWidget {
@@ -18,20 +21,20 @@ class SafetyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    Widget tile(Key k, IconData i, String t, String s, Widget Function() page) => Card(
-          child: ListTile(key: k, leading: Icon(i, color: Colors.indigo), title: Text(t), subtitle: Text(s),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => page()))),
+    Widget tile(Key k, IconData i, Feature f, String t, String s, Widget Function() page) => FeatureTile(
+          tileKey: k, icon: i, feature: f, title: t, status: s, trailingIcon: Icons.chevron_right_rounded,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => page())),
         );
     return Scaffold(
       appBar: AppBar(title: Text(l.safeHubTitle)),
-      body: ListView(padding: const EdgeInsets.all(12), children: [
-        tile(const Key('safe-guard'), Icons.shield_moon_outlined, l.safeGuardTitle, l.safeGuardSub, () => const ScamGuardScreen()),
-        tile(const Key('safe-upi'), Icons.qr_code_2, l.safeUpiTitle, l.safeUpiSub, () => UpiCheckScreen(api: api)),
-        tile(const Key('safe-care'), Icons.support_agent, l.safeCareTitle, l.safeCareSub, () => CareNumberScreen(api: api)),
-        tile(const Key('safe-recovery'), Icons.healing, l.safeRecoveryTitle, l.safeRecoverySub, () => const RecoveryKitScreen()),
-        tile(const Key('safe-guardian'), Icons.family_restroom, l.safeGuardianTitle, l.safeGuardianSub, () => const GuardianScreen()),
-        tile(const Key('safe-drills'), Icons.school_outlined, l.safeDrillsTitle, l.safeDrillsSub, () => const DrillsScreen()),
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+        IntroBanner(icon: Icons.health_and_safety_rounded, feature: Feature.scam, text: l.safeTileSub),
+        tile(const Key('safe-guard'), Icons.shield_moon_rounded, Feature.scam, l.safeGuardTitle, l.safeGuardSub, () => const ScamGuardScreen()),
+        tile(const Key('safe-upi'), Icons.qr_code_2_rounded, Feature.web, l.safeUpiTitle, l.safeUpiSub, () => UpiCheckScreen(api: api)),
+        tile(const Key('safe-care'), Icons.support_agent_rounded, Feature.call, l.safeCareTitle, l.safeCareSub, () => CareNumberScreen(api: api)),
+        tile(const Key('safe-recovery'), Icons.healing_rounded, Feature.account, l.safeRecoveryTitle, l.safeRecoverySub, () => const RecoveryKitScreen()),
+        tile(const Key('safe-guardian'), Icons.family_restroom_rounded, Feature.message, l.safeGuardianTitle, l.safeGuardianSub, () => const GuardianScreen()),
+        tile(const Key('safe-drills'), Icons.school_rounded, Feature.device, l.safeDrillsTitle, l.safeDrillsSub, () => const DrillsScreen()),
       ]),
     );
   }
@@ -74,19 +77,19 @@ class _ScamGuardScreenState extends State<ScamGuardScreen> with WidgetsBindingOb
     final l = context.l10n;
     Widget perm(String key, String label, bool ok, VoidCallback grant) => ListTile(
           key: Key('perm-$key'),
-          contentPadding: EdgeInsets.zero,
-          leading: Icon(ok ? Icons.check_circle : Icons.radio_button_unchecked, color: ok ? Colors.green : Colors.orange),
+          leading: Icon(ok ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+              color: (ok ? Tone.safe : Tone.warn).fg(context)),
           title: Text(label),
-          trailing: ok ? Text(l.safeAllowed) : TextButton(onPressed: grant, child: Text(l.safeAllow)),
+          trailing: ok ? Pill(l.safeAllowed, tone: Tone.safe) : TextButton(onPressed: grant, child: Text(l.safeAllow)),
         );
     return Scaffold(
       appBar: AppBar(title: Text(l.safeGuardTitle)),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text(l.safeGuardIntro),
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+        IntroBanner(icon: Icons.shield_moon_rounded, feature: Feature.scam, text: l.safeGuardIntro),
+        Card(child: Column(children: [
         SwitchListTile(
           key: const Key('guard-switch'),
-          contentPadding: EdgeInsets.zero,
-          title: Text(l.safeGuardSwitch, style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(l.safeGuardSwitch, style: const TextStyle(fontWeight: FontWeight.w700)),
           value: _b('enabled'),
           onChanged: (v) async {
             if (v && !_b('phoneState')) await SafetyNative.requestPermissions();
@@ -96,21 +99,22 @@ class _ScamGuardScreenState extends State<ScamGuardScreen> with WidgetsBindingOb
         ),
         SwitchListTile(
           key: const Key('otp-switch'),
-          contentPadding: EdgeInsets.zero,
           title: Text(l.safeOtpSwitch),
           subtitle: Text(l.safeOtpSwitchSub),
           value: _s['otpGuard'] != false,
           onChanged: (v) async { await SafetyNative.setOtpGuard(v); _refresh(); },
         ),
-        const Divider(),
-        Text(l.safePermsTitle, style: Theme.of(context).textTheme.titleMedium),
-        perm('phone', l.safePermPhone, _b('phoneState'), SafetyNative.requestPermissions),
-        perm('calllog', l.safePermCallLog, _b('callLog'), SafetyNative.requestPermissions),
-        perm('contacts', l.safePermContacts, _b('contacts'), SafetyNative.requestPermissions),
-        perm('usage', l.safePermUsage, _b('usageAccess'), NativeBridge.openUsageAccessSettings),
-        perm('notif', l.safePermNotif, _b('notificationAccess'), NativeBridge.openNotificationAccessSettings),
+        ])),
+        SectionTitle(l.safePermsTitle),
+        Card(child: Column(children: [
+          perm('phone', l.safePermPhone, _b('phoneState'), SafetyNative.requestPermissions),
+          perm('calllog', l.safePermCallLog, _b('callLog'), SafetyNative.requestPermissions),
+          perm('contacts', l.safePermContacts, _b('contacts'), SafetyNative.requestPermissions),
+          perm('usage', l.safePermUsage, _b('usageAccess'), NativeBridge.openUsageAccessSettings),
+          perm('notif', l.safePermNotif, _b('notificationAccess'), NativeBridge.openNotificationAccessSettings),
+        ])),
         if (kDebugMode) ...[
-          const Divider(),
+          const SizedBox(height: 16),
           OutlinedButton.icon(
             key: const Key('guard-test'),
             onPressed: () async {
@@ -123,12 +127,6 @@ class _ScamGuardScreenState extends State<ScamGuardScreen> with WidgetsBindingOb
     );
   }
 }
-
-Color _verdictColor(String? v) => switch (v) {
-      'MALICIOUS' || 'FAKE' => Colors.red.shade800,
-      'SUSPICIOUS' || 'UNKNOWN' => Colors.orange.shade900,
-      _ => Colors.green.shade800,
-    };
 
 List<String> _reasons(BuildContext c, Map<String, dynamic> r) {
   final hi = Localizations.localeOf(c).languageCode == 'hi';
@@ -187,32 +185,30 @@ class _UpiCheckScreenState extends State<UpiCheckScreen> {
     final payee = (r?['payee'] as Map?)?['vpa'] as String?;
     return Scaffold(
       appBar: AppBar(title: Text(l.safeUpiTitle)),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+        IntroBanner(icon: Icons.qr_code_2_rounded, feature: Feature.web, text: l.safeUpiSub),
         TextField(key: const Key('upi-input'), controller: _in, minLines: 1, maxLines: 4,
-            decoration: InputDecoration(hintText: l.safeUpiHint, border: const OutlineInputBorder())),
-        Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(l.safeUpiQrNote, style: Theme.of(context).textTheme.bodySmall)),
-        FilledButton.icon(key: const Key('upi-check'), onPressed: _busy ? null : _check, icon: const Icon(Icons.search), label: Text(l.safeCheck)),
+            decoration: InputDecoration(hintText: l.safeUpiHint, prefixIcon: const Icon(Icons.account_balance_wallet_outlined))),
+        Padding(padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
+            child: Text(l.safeUpiQrNote, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))),
+        FilledButton.icon(key: const Key('upi-check'), onPressed: _busy ? null : _check, icon: const Icon(Icons.search_rounded), label: Text(l.safeCheck)),
         if (_busy) const Padding(padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator()),
         if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!)),
         if (r != null)
-          Card(
+          VerdictCard(
             key: Key('upi-verdict-$v'),
-            margin: const EdgeInsets.only(top: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(v == 'MALICIOUS' ? l.safeVerdictBad : v == 'SUSPICIOUS' ? l.safeVerdictSusp : l.safeVerdictSafe,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(color: _verdictColor(v), fontWeight: FontWeight.bold)),
-                if (payee != null) Text(l.safeUpiPayee(payee)),
-                for (final reason in _reasons(context, r)) Padding(padding: const EdgeInsets.only(top: 6), child: Text('• $reason')),
-                if (v != 'SAFE' && payee != null) ...[
-                  const SizedBox(height: 8),
-                  _reported
-                      ? Text(l.safeReported, key: const Key('upi-reported'))
-                      : OutlinedButton.icon(key: const Key('upi-report'), onPressed: _report, icon: const Icon(Icons.flag_outlined), label: Text(l.safeReport)),
-                ],
-              ]),
-            ),
+            tone: toneOfVerdict(v),
+            headline: v == 'MALICIOUS' ? l.safeVerdictBad : v == 'SUSPICIOUS' ? l.safeVerdictSusp : l.safeVerdictSafe,
+            children: [
+              if (payee != null) Text(l.safeUpiPayee(payee), style: const TextStyle(fontWeight: FontWeight.w600)),
+              for (final reason in _reasons(context, r)) Padding(padding: const EdgeInsets.only(top: 6), child: Text('• $reason')),
+              if (v != 'SAFE' && payee != null) ...[
+                const SizedBox(height: 12),
+                _reported
+                    ? Pill(l.safeReported, key: const Key('upi-reported'), tone: Tone.safe, icon: Icons.check_rounded)
+                    : OutlinedButton.icon(key: const Key('upi-report'), onPressed: _report, icon: const Icon(Icons.flag_outlined), label: Text(l.safeReport)),
+              ],
+            ],
           ),
       ]),
     );
@@ -257,36 +253,34 @@ class _CareNumberScreenState extends State<CareNumberScreen> {
     final official = (r?['officialNumbers'] as List?) ?? const [];
     return Scaffold(
       appBar: AppBar(title: Text(l.safeCareTitle)),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+        IntroBanner(icon: Icons.support_agent_rounded, feature: Feature.call, text: l.safeCareSub),
         TextField(key: const Key('care-number'), controller: _num, keyboardType: TextInputType.phone,
-            decoration: InputDecoration(labelText: l.safeCareHint, border: const OutlineInputBorder())),
-        const SizedBox(height: 8),
+            decoration: InputDecoration(labelText: l.safeCareHint, prefixIcon: const Icon(Icons.phone_rounded))),
+        const SizedBox(height: 12),
         TextField(key: const Key('care-brand'), controller: _brand,
-            decoration: InputDecoration(labelText: l.safeCareBrand, border: const OutlineInputBorder())),
-        const SizedBox(height: 8),
-        FilledButton.icon(key: const Key('care-check'), onPressed: _busy ? null : _check, icon: const Icon(Icons.search), label: Text(l.safeCheck)),
+            decoration: InputDecoration(labelText: l.safeCareBrand, prefixIcon: const Icon(Icons.storefront_rounded))),
+        const SizedBox(height: 14),
+        FilledButton.icon(key: const Key('care-check'), onPressed: _busy ? null : _check, icon: const Icon(Icons.search_rounded), label: Text(l.safeCheck)),
         if (_busy) const Padding(padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator()),
         if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!)),
         if (r != null)
-          Card(
+          VerdictCard(
             key: Key('care-verdict-$v'),
-            margin: const EdgeInsets.only(top: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(switch (v) { 'OFFICIAL' => l.safeCareOfficial, 'FAKE' => l.safeCareFake, 'SUSPICIOUS' => l.safeCareSusp, _ => l.safeCareUnknown },
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(color: _verdictColor(v), fontWeight: FontWeight.bold)),
-                if (r['brand'] != null) Text('${r['brand']}'),
-                for (final reason in _reasons(context, r)) Padding(padding: const EdgeInsets.only(top: 6), child: Text('• $reason')),
-                if (official.isNotEmpty && v != 'OFFICIAL') ...[
-                  const SizedBox(height: 8),
-                  Text(l.safeCareReal, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  for (final o in official.whereType<Map>())
-                    ListTile(dense: true, contentPadding: EdgeInsets.zero, title: Text('${o['number']}'), subtitle: Text('${o['purpose'] ?? ''}'),
-                        trailing: const Icon(Icons.call), onTap: () => SafetyNative.dial('${o['number']}'.replaceAll(RegExp(r'[^0-9+]'), ''))),
-                ],
-              ]),
-            ),
+            tone: v == 'OFFICIAL' ? Tone.safe : toneOfVerdict(v),
+            headline: switch (v) { 'OFFICIAL' => l.safeCareOfficial, 'FAKE' => l.safeCareFake, 'SUSPICIOUS' => l.safeCareSusp, _ => l.safeCareUnknown },
+            children: [
+              if (r['brand'] != null) Text('${r['brand']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              for (final reason in _reasons(context, r)) Padding(padding: const EdgeInsets.only(top: 6), child: Text('• $reason')),
+              if (official.isNotEmpty && v != 'OFFICIAL') ...[
+                const SizedBox(height: 12),
+                Text(l.safeCareReal, style: const TextStyle(fontWeight: FontWeight.w700)),
+                for (final o in official.whereType<Map>())
+                  ListTile(contentPadding: EdgeInsets.zero, leading: const FeatureIcon(Icons.call_rounded, Feature.call, size: 36),
+                      title: Text('${o['number']}'), subtitle: Text('${o['purpose'] ?? ''}'),
+                      onTap: () => SafetyNative.dial('${o['number']}'.replaceAll(RegExp(r'[^0-9+]'), ''))),
+              ],
+            ],
           ),
       ]),
     );

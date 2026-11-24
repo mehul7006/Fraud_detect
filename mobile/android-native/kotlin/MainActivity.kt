@@ -116,12 +116,13 @@ class MainActivity : FlutterActivity() {
                         runOnUiThread { result.success(ok) }
                     }.start()
                     in BlockChannel.METHODS -> BlockChannel.handle(this, call, result) // 18.4 / 18.5 ad & tracker blocking
+                    in PermissionsChannel.METHODS -> PermissionsChannel.handle(this, call, result) // all permissions in one place
                     "openVpnSettings" -> { startActivity(Intent(Settings.ACTION_VPN_SETTINGS)); result.success(true) }
                     "openAutostartSettings" -> { VpnState.openAutostart(this); result.success(true) }
                     "openPrivateDnsSettings" -> { startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS)); result.success(true) }
                     "hasNotificationAccess" -> result.success(AdNotificationListener.isEnabled(this))
                     "openNotificationAccessSettings" -> {
-                        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)); result.success(true)
+                        PermissionsChannel.open(this, "notificationAccess"); result.success(true) // FraudShield's own toggle page
                     }
                     "hasAllFilesAccess" -> result.success(hasStorageAccess())
                     "openAllFilesAccessSettings" -> { requestStorageAccess(); result.success(true) }

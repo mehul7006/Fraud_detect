@@ -16,6 +16,7 @@ class FakeNative {
   static const channel = MethodChannel('com.fraudshield.app/native');
 
   bool notifAccess = false, filesAccess = false, phone = false, notifPermission = true, usageAccess = true, fullScreen = true;
+  bool permContacts = false, permCallLog = false, permBattery = false, permAutostartRow = true;
   /// 12.x VPN: what vpnStatus returns; vpnStart flips running (as Android does after the prompt).
   Map<String, dynamic> vpn = {'running': false, 'prepared': false, 'state': 'OFF', 'blockDoh': true, 'localOnly': false,
     'upstream': 'system', 'blocklistSize': 0, 'queries': 0, 'blocked': 0, 'recentBlocks': '[]'};
@@ -101,6 +102,24 @@ class FakeNative {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       switch (call.method) {
+        case 'permStatus':
+          Map<String, dynamic> e(bool g, bool req, String kind) => {'granted': g, 'required': req, 'kind': kind};
+          return {
+            'notifications': e(notifPermission, true, 'dialog'),
+            'fullScreen': e(fullScreen, true, 'page'),
+            'notificationAccess': e(notifAccess, true, 'page'),
+            'allFiles': e(filesAccess, true, 'page'),
+            'phone': e(phone, true, 'dialog'),
+            'vpn': e(vpn['prepared'] == true && vpn['running'] == true, true, 'screen'),
+            'callScreening': e(callGuard['roleHeld'] == true, false, 'dialog'),
+            'contacts': e(permContacts, false, 'dialog'),
+            'callLog': e(permCallLog, false, 'dialog'),
+            'usage': e(usageAccess, false, 'page'),
+            'battery': e(permBattery, false, 'page'),
+            if (permAutostartRow) 'autostart': {'granted': false, 'required': false, 'kind': 'page', 'unknown': true},
+          };
+        case 'permOpen':
+          return 'page';
         case 'hasNotificationAccess':
           return notifAccess;
         case 'hasAllFilesAccess':

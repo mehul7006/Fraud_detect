@@ -4,6 +4,8 @@ import '../core/api_client.dart';
 import '../core/call_guard.dart';
 import '../l10n/l10n.dart';
 import 'report_number_screen.dart';
+import '../ui/screen_kit.dart';
+import '../ui/theme.dart';
 
 /// 16.10: screened calls of the last 30 days (local database on the phone). One-tap undo: "Not spam" puts the number
 /// on the allow list so it always rings. No number leaves the phone unless the user taps Report.
@@ -50,9 +52,18 @@ class _BlockedCallsScreenState extends State<BlockedCallsScreen> {
       body: rows == null
           ? const Center(child: CircularProgressIndicator())
           : rows.isEmpty
-              ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(l.callBlockedEmpty, key: const Key('calls-empty'))))
-              : ListView(children: [
-                  Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 4), child: Text(l.callBlockedSub)),
+              ? Center(child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Container(padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(color: Tone.safe.bg(context), shape: BoxShape.circle),
+                        child: Icon(Icons.phone_enabled_rounded, size: 44, color: Tone.safe.fg(context))),
+                    const SizedBox(height: 16),
+                    Text(l.callBlockedEmpty, key: const Key('calls-empty'), textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+                  ]),
+                ))
+              : ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+                  IntroBanner(icon: Icons.history_rounded, feature: Feature.call, text: l.callBlockedSub),
                   for (final r in rows) _row(context, r),
                 ]),
     );
@@ -68,22 +79,27 @@ class _BlockedCallsScreenState extends State<BlockedCallsScreen> {
     final outcome = undone
         ? l.callUndone
         : action == 'REJECT' ? l.callActionReject : action == 'SILENCE' ? l.callActionSilence : l.callActionAllow;
-    final color = undone ? Colors.green.shade800 : action == 'REJECT' ? Colors.red.shade800 : Colors.orange.shade900;
+    final tone = undone ? Tone.safe : action == 'REJECT' ? Tone.danger : action == 'SILENCE' ? Tone.warn : Tone.info;
+    final color = tone.fg(context);
     return Card(
       key: Key('call-row-${r['id']}'),
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 8, 4),
+        padding: const EdgeInsets.fromLTRB(14, 12, 8, 4),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(action == 'REJECT' ? Icons.call_end : Icons.phone_callback, color: color),
-            const SizedBox(width: 8),
-            Expanded(child: Text(r['label'] as String? ?? number, style: const TextStyle(fontWeight: FontWeight.w600))),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(color: tone.bg(context), borderRadius: BorderRadius.circular(14)),
+              child: Icon(action == 'REJECT' ? Icons.call_end_rounded : action == 'SILENCE' ? Icons.volume_off_rounded : Icons.phone_callback_rounded,
+                  color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(r['label'] as String? ?? number, style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text('$number · ${_when(context, (r['at'] as num).toInt())} · $outcome', style: TextStyle(color: color)),
+            ])),
           ]),
-          Padding(
-            padding: const EdgeInsets.only(left: 32, top: 2),
-            child: Text('$number · ${_when(context, (r['at'] as num).toInt())} · $outcome', style: TextStyle(color: color)),
-          ),
           if (dialable && !protected)
             OverflowBar(alignment: MainAxisAlignment.end, children: [
               if (!undone)

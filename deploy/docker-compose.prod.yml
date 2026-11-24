@@ -1,0 +1,72 @@
+# FraudShield production stack (roadmap 9.1): api + Caddy (automatic HTTPS) [+ local Postgres profile]
+#
+#   cp deploy/.env.prod.example deploy/.env.prod   # fill in (never commit it)
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod up -d --build              # managed Postgres
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod --profile localdb up -d --build  # Postgres on the same server
+#
+# Only Caddy publishes ports (80 -> redirect, 443 HTTPS). The API is reachable only inside the compose network.
+name: ${COMPOSE_PROJECT_NAME:-fraudshield}
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }
+
+services:
+  api:
+    build:
+      context: ../backend
+      dockerfile: ../deploy/Dockerfile
+    image: ${API_IMAGE:-fraudshield-api:latest}
+    restart: unless-stopped
+    env_file: [ "${APP_ENV_FILE:-.env.prod}" ]
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      BLOCKLIST_SIGNING_KEY_FILE: ${BLOCKLIST_SIGNING_KEY_FILE:-/keys/blocklist-signing-key.pem}
+      FIREBASE_CREDENTIALS_FILE: ${FIREBASE_CREDENTIALS_FILE:-}
+    volumes:
+      - ${KEYS_DIR:-./keys}:/keys:ro                    # blocklist signing key, Firebase service account
+      - ${BLOCKLISTS_DIR:-./blocklists}:/app/blocklists:ro   # Phase 18 signed block lists (ml/blocklists build)
+    depends_on:
+      db: { condition: service_healthy, required: false }
+    mem_limit: ${API_MEM_LIMIT:-1200m}
+    logging: *logging
+
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN (e.g. api.example.in)}
+    volumes:
+      - ./caddy/${CADDYFILE:-Caddyfile}:/etc/caddy/Caddyfile:ro
+      - ./caddy/common.caddy:/etc/caddy/common.caddy:ro
+      - caddy_data:/data          # certificates - keep this volume
+      - caddy_config:/config
+    depends_on: [ api ]
+    mem_limit: 128m
+    logging: *logging
+
+  # Postgres on the same server - only with `--profile localdb`. With a managed Postgres leave it off and set DB_URL.
+  db:
+    image: postgres:16
+    profiles: [ localdb ]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fraudshield}
+      POSTGRES_USER: ${DB_USER:?set DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+    volumes: [ "pgdata:/var/lib/postgresql/data" ]
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    logging: *logging
+
+volumes:
+  caddy_data:
+  caddy_config:
+  pgdata:

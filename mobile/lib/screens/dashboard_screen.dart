@@ -12,6 +12,12 @@ import 'leftover_screen.dart' show LeftoverTile;
 import 'fake_site_screen.dart';
 import 'vpn_state_screen.dart';
 import 'why_panel.dart';
+import 'permissions_screen.dart';
+import '../core/permissions.dart';
+import 'drills_screen.dart';
+import 'recovery_kit_screen.dart';
+import '../ui/components.dart';
+import '../ui/theme.dart';
 import 'risky_apps_screen.dart';
 import 'safety_screen.dart';
 import 'scam_stop_screen.dart';
@@ -34,8 +40,9 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   late final ProtectionEngine engine = widget.engine ?? ProtectionEngine();
   StreamSubscription<Alert>? _sub;
-  bool _notifAccess = false, _filesAccess = false, _phoneAccess = false, _notifPermission = true, _usageAccess = true, _fullScreen = true, _vpnOn = false;
+  bool _notifAccess = false, _filesAccess = false, _vpnOn = false;
   bool _dialogOpen = false;
+  List<PermItem>? _perms; // all permissions (summary card)
   final _queue = <Alert>[];
 
   @override
@@ -73,13 +80,11 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   Future<void> _refreshPerms() async {
     final n = await NativeBridge.hasNotificationAccess();
     final f = await NativeBridge.hasAllFilesAccess();
-    final p = await NativeBridge.hasPhonePermission();
-    final np = await NativeBridge.hasNotificationPermission();
-    final u = await NativeBridge.hasUsageAccess();
-    final fs = await NativeBridge.canUseFullScreenAlerts().catchError((_) => true); // 7.10
     bool vpn = false;
     try { vpn = (await NativeBridge.vpnStatus())['running'] == true; } catch (_) {} // 12.x
-    if (mounted) setState(() { _notifAccess = n; _filesAccess = f; _phoneAccess = p; _notifPermission = np; _usageAccess = u; _fullScreen = fs; _vpnOn = vpn; });
+    List<PermItem>? perms;
+    try { perms = await Permissions.load(); } catch (_) {}
+    if (mounted) setState(() { _notifAccess = n; _filesAccess = f; _vpnOn = vpn; _perms = perms; });
   }
 
   // ---- blocking popup, one at a time ----
@@ -156,79 +161,128 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   }
 
   void _openWizard(String app) => Navigator.push(context, MaterialPageRoute(builder: (_) => TakeoverWizardScreen(app: app)));
-  void _open(Widget w) => Navigator.push(context, MaterialPageRoute(builder: (_) => w));
+  Future<void> _open(Widget w) => Navigator.push(context, MaterialPageRoute(builder: (_) => w));
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     return Scaffold(
-        appBar: AppBar(title: Text(l.appTitle), actions: [
-          IconButton(icon: const Icon(Icons.history), tooltip: l.threatHistory, onPressed: () => _open(ThreatsScreen(api: widget.api))),
-          IconButton(icon: const Icon(Icons.tune), tooltip: l.linkSettings, onPressed: () => _open(SettingsScreen(engine: engine))),
-          IconButton(icon: const Icon(Icons.logout), tooltip: l.logOut, onPressed: () async { await (widget.api ?? ApiClient.instance).logout(); await NativeBridge.clearBackgroundSession().catchError((_) {}); widget.onLogout(); }),
-        ]),
-        body: ValueListenableBuilder<Map<String, String>>(
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light, // white status-bar icons on the gradient hero
+        child: Stack(children: [ValueListenableBuilder<Map<String, String>>(
           valueListenable: engine.status,
-          builder: (c, st, _) => ListView(padding: const EdgeInsets.all(16), children: [
-            if (!_notifPermission)
-              _permCard(l.permNotifTitle, l.permNotifBody, l.allow, () => NativeBridge.requestNotificationPermission()),
-            if (!_fullScreen)
-              _permCard(l.permFsiTitle, l.permFsiBody, l.allow, () => NativeBridge.openFullScreenAlertSettings()),
-            if (!_notifAccess)
-              _permCard(l.permLinkTitle, l.permLinkBody, l.grantAccess, () => NativeBridge.openNotificationAccessSettings()),
-            if (!_filesAccess)
-              _permCard(l.permFilesTitle, l.permFilesBody, l.grantAccess, () => NativeBridge.openAllFilesAccessSettings()),
-            if (!_phoneAccess)
-              _permCard(l.permPhoneTitle, l.permPhoneBody, l.allow, () => NativeBridge.requestPhonePermission()),
-            if (st.values.contains('ERROR'))
-              Card(
-                key: const Key('offline-banner'),
-                color: Colors.amber.shade50,
-                child: ListTile(
-                  leading: const Icon(Icons.cloud_off, color: Colors.orange),
-                  title: Text(l.offlineTitle),
-                  subtitle: Text(l.offlineBody),
-                ),
+          builder: (c, st, _) {
+            // the six shields the user can see at a glance (hero ring)
+            final checks = <bool>[
+              st['forwarding'] == 'OFF',
+              _vpnOn,
+              _notifAccess,
+              _filesAccess,
+              st['clone'] == 'OK',
+              st['apps'] == 'OK',
+            ];
+            final on = checks.where((x) => x).length;
+            final alert = st['forwarding'] == 'ACTIVE' || (st['clone'] ?? '').startsWith('RISK');
+            final white = IconButton.styleFrom(foregroundColor: Colors.white, minimumSize: const Size(48, 48));
+            final dark = Theme.of(context).brightness == Brightness.dark;
+            return DecoratedBox(
+              decoration: BoxDecoration(gradient: dark ? AppColors.canvasGradientDark : AppColors.canvasGradient),
+              child: ListView(padding: EdgeInsets.zero, children: [
+              HeroHeader(
+                title: l.appTitle,
+                on: on, total: checks.length, alert: alert,
+                headline: on == checks.length ? l.homeProtected : l.homeNeedsAttention(checks.length - on),
+                detail: on == checks.length ? l.homeProtectedDetail : l.homeAttentionDetail,
+                actions: [
+                  IconButton(style: white, icon: const Icon(Icons.history), tooltip: l.threatHistory, onPressed: () => _open(ThreatsScreen(api: widget.api))),
+                  IconButton(style: white, icon: const Icon(Icons.tune), tooltip: l.linkSettings, onPressed: () => _open(SettingsScreen(engine: engine))),
+                  IconButton(style: white, icon: const Icon(Icons.logout), tooltip: l.logOut, onPressed: () async { await (widget.api ?? ApiClient.instance).logout(); await NativeBridge.clearBackgroundSession().catchError((_) {}); widget.onLogout(); }),
+                ],
               ),
-            const SizedBox(height: 8),
-            _forwardingTile(st['forwarding']),
-            _tile(_vpnOn ? Icons.vpn_lock : Icons.vpn_lock_outlined, l.vpnTitle, _vpnOn ? l.vpnTileOn : l.vpnTileOff,
-                bad: !_vpnOn, onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const VpnStateScreen())); _refreshPerms(); }),
-            _tile(Icons.sms_failed_outlined, l.msgDashTile, l.msgDashTileSub,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CheckMessageScreen(api: widget.api)))),
-            Card(child: ListTile( // 15.x scam help hub
-              key: const Key('safe-tile'),
-              leading: const Icon(Icons.health_and_safety_outlined, color: Colors.indigo),
-              title: Text(l.safeTileTitle), subtitle: Text(l.safeTileSub), trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SafetyScreen(api: widget.api))))),
-            const LeftoverTile(), // 17.x
-            CallGuardTile(api: widget.api), // 16.x
-            _tile(Icons.phonelink_lock, l.cloneRemote, _cloneText(st['clone']), onTap: engine.checkDevice,
-                bad: (st['clone'] ?? '').startsWith('RISK')),
-            if (!_usageAccess)
-              _permCard(l.permUsageTitle, l.permUsageBody, l.allow, () => NativeBridge.openUsageAccessSettings()),
-            Card(
-              child: ListTile(
-                leading: Icon(Icons.ads_click, color: (st['apps'] ?? '').contains('risky') ? Colors.red : Colors.green),
-                title: Text(l.riskyApps),
-                subtitle: Text(_appsText(st['apps'])),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _open(RiskyAppsScreen(engine: engine)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  // every permission in one place: count + one tap to the permissions page
+                  if (_perms != null)
+                    PermissionSummaryCard(
+                      allowed: Permissions.count(_perms!).allowed, total: Permissions.count(_perms!).total,
+                      onTap: () async { await _open(const PermissionsScreen()); _refreshPerms(); },
+                    ),
+                  if (st.values.contains('ERROR'))
+                    NoticeCard(cardKey: const Key('offline-banner'), icon: Icons.cloud_off_rounded, tone: Tone.info,
+                        title: l.offlineTitle, body: l.offlineBody),
+
+
+                  SectionTitle(l.homeQuick),
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(child: QuickAction(icon: Icons.mark_chat_read_rounded, feature: Feature.message, label: l.msgDashTile,
+                        onTap: () => _open(CheckMessageScreen(api: widget.api)))),
+                    const SizedBox(width: 12),
+                    Expanded(child: QuickAction(actionKey: const Key('safe-tile'), icon: Icons.health_and_safety_rounded, feature: Feature.scam,
+                        label: l.safeTileTitle, onTap: () => _open(SafetyScreen(api: widget.api)))),
+                  ]),
+                  const SizedBox(height: 12),
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(child: QuickAction(icon: Icons.healing_rounded, feature: Feature.account, label: l.homeScammed,
+                        onTap: () => _open(const RecoveryKitScreen()))),
+                    const SizedBox(width: 12),
+                    Expanded(child: QuickAction(icon: Icons.school_rounded, feature: Feature.device, label: l.safeDrillsTitle,
+                        onTap: () => _open(const DrillsScreen()))),
+                  ]),
+
+                  // ---- group 1: the shields that run all the time
+                  GroupCard(icon: Icons.shield_rounded, feature: Feature.web, title: l.homeStatus, subtitle: l.homeStatusSub, children: [
+                    _forwardingTile(st['forwarding']),
+                    FeatureTile(
+                      icon: _vpnOn ? Icons.vpn_lock_rounded : Icons.vpn_lock_outlined, feature: Feature.web,
+                      title: l.vpnTitle, status: _vpnOn ? l.vpnTileOn : l.vpnTileOff, tone: _vpnOn ? Tone.safe : Tone.danger,
+                      trailingIcon: Icons.chevron_right_rounded,
+                      onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const VpnStateScreen())); _refreshPerms(); },
+                    ),
+                    _tile(Icons.link_rounded, Feature.web, l.linkProtection, _notifAccess ? l.statusOn : l.statusOff, bad: !_notifAccess),
+                    _tile(Icons.insert_drive_file_rounded, Feature.files, l.fileProtection, _filesAccess ? l.statusOn : l.statusOff, bad: !_filesAccess),
+                  ]),
+
+                  // ---- group 2: the phone itself
+                  GroupCard(icon: Icons.smartphone_rounded, feature: Feature.apps, title: l.homeGroupPhone, subtitle: l.homeGroupPhoneSub, children: [
+                    FeatureTile(
+                      icon: Icons.ads_click_rounded, feature: Feature.apps, title: l.riskyApps, status: _appsText(st['apps']),
+                      tone: (st['apps'] ?? '').contains('risky') ? Tone.danger : st['apps'] == 'OK' ? Tone.safe : Tone.neutral,
+                      trailingIcon: Icons.chevron_right_rounded,
+                      onTap: () => _open(RiskyAppsScreen(engine: engine)),
+                    ),
+                    _tile(Icons.phonelink_lock_rounded, Feature.device, l.cloneRemote, _cloneText(st['clone']), onTap: engine.checkDevice,
+                        bad: (st['clone'] ?? '').startsWith('RISK')),
+                    const LeftoverTile(), // 17.x
+                  ]),
+
+                  // ---- group 3: calls and SMS
+                  GroupCard(icon: Icons.call_rounded, feature: Feature.call, title: l.homeGroupCalls, subtitle: l.homeGroupCallsSub, children: [
+                    CallGuardTile(api: widget.api), // 16.x
+                    FeatureTile(icon: Icons.forward_to_inbox_rounded, feature: Feature.message, title: l.smsForwarding, status: l.smsForwardingSub,
+                        trailingIcon: Icons.chevron_right_rounded, onTap: () => _open(const SmsForwardingScreen())),
+                    FeatureTile(icon: Icons.manage_search_rounded, feature: Feature.history, title: l.smsReaders, status: l.smsReadersSub,
+                        trailingIcon: Icons.chevron_right_rounded, onTap: () => _open(const SmsAuditScreen())),
+                  ]),
+
+                  // ---- group 4: accounts
+                  GroupCard(icon: Icons.lock_person_rounded, feature: Feature.account, title: l.accountSecurity, subtitle: l.homeAccountSub, children: [
+                    FeatureTile(icon: Icons.chat_rounded, feature: Feature.account, title: l.secureWhatsApp, status: l.secureWhatsAppSub,
+                        trailingIcon: Icons.chevron_right_rounded, onTap: () => _openWizard('whatsapp')),
+                    FeatureTile(icon: Icons.send_rounded, feature: Feature.web, title: l.secureTelegram, status: l.secureTelegramSub,
+                        trailingIcon: Icons.chevron_right_rounded, onTap: () => _openWizard('telegram')),
+                  ]),
+                ]),
               ),
-            ),
-            _tile(Icons.link, l.linkProtection, _notifAccess ? l.statusOn : l.statusOff, bad: !_notifAccess),
-            _tile(Icons.insert_drive_file, l.fileProtection, _filesAccess ? l.statusOn : l.statusOff, bad: !_filesAccess),
-            const Divider(height: 32),
-            Text(l.accountSecurity, style: Theme.of(context).textTheme.titleMedium),
-            ListTile(leading: const Icon(Icons.chat), title: Text(l.secureWhatsApp), subtitle: Text(l.secureWhatsAppSub), onTap: () => _openWizard('whatsapp')),
-            ListTile(leading: const Icon(Icons.send), title: Text(l.secureTelegram), subtitle: Text(l.secureTelegramSub), onTap: () => _openWizard('telegram')),
-            ListTile(leading: const Icon(Icons.sms_failed), title: Text(l.smsForwarding), subtitle: Text(l.smsForwardingSub),
-                onTap: () => _open(const SmsForwardingScreen())),
-            ListTile(leading: const Icon(Icons.manage_search), title: Text(l.smsReaders), subtitle: Text(l.smsReadersSub),
-                onTap: () => _open(const SmsAuditScreen())),
-          ]),
+            ]));
+          },
         ),
-      );
+          // brand strip behind the status bar: scrolled cards never show through it (white icons stay readable)
+          Positioned(top: 0, left: 0, right: 0, height: MediaQuery.paddingOf(context).top,
+              child: const IgnorePointer(child: DecoratedBox(decoration: BoxDecoration(gradient: AppColors.brandGradient)))),
+        ]),
+      ),
+    );
   }
 
   String _appsText(String? s) {
@@ -249,18 +303,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     return s;
   }
 
-  Widget _permCard(String t, String d, String btn, VoidCallback onTap) => Card(
-        color: Colors.amber.shade50,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(t, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4), Text(d),
-            Align(alignment: Alignment.centerRight, child: TextButton(onPressed: onTap, child: Text(btn))),
-          ]),
-        ),
-      );
-
   /// Call-forwarding tile. When the app cannot query the carrier (or cannot understand the answer) it offers
   /// to open the dialer with the check code so the user can look themselves (3.6).
   Widget _forwardingTile(String? s) {
@@ -274,22 +316,23 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       'OFF' => l.statusOff,
       _ => v,
     };
-    return Card(
-      child: ListTile(
-        leading: Icon(Icons.phone_forwarded, color: v == 'ACTIVE' ? Colors.red : (canFallback ? Colors.orange : Colors.green)),
-        title: Text(l.callForwarding),
-        // 8.12: the fallback button goes under the text (not in `trailing`) so large text / Hindi never squeezes it
-        subtitle: canFallback
-            ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(subtitle),
-                Align(alignment: Alignment.centerRight,
-                    child: TextButton(onPressed: engine.dialForwardingCheck, child: Text(l.checkManually))),
-              ])
-            : Text(subtitle),
-        onTap: engine.checkCallForwarding,
-        onLongPress: _captureReplies,
-        trailing: canFallback ? null : const Icon(Icons.refresh),
-      ),
+    final tone = v == 'ACTIVE' ? Tone.danger : v == 'OFF' ? Tone.safe : (canFallback ? Tone.warn : Tone.neutral);
+    final t = Theme.of(context);
+    final style = t.textTheme.bodyMedium?.copyWith(color: tone.fg(context), fontWeight: FontWeight.w500);
+    return FeatureTile(
+      icon: Icons.phone_forwarded_rounded, feature: Feature.call,
+      title: l.callForwarding, tone: tone,
+      // 8.12: the fallback button goes under the text (not in `trailing`) so large text / Hindi never squeezes it
+      statusWidget: canFallback
+          ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(subtitle, style: style),
+              Align(alignment: Alignment.centerRight,
+                  child: TextButton(onPressed: engine.dialForwardingCheck, child: Text(l.checkManually))),
+            ])
+          : Text(subtitle, style: style),
+      onTap: engine.checkCallForwarding,
+      onLongPress: _captureReplies,
+      trailingIcon: canFallback ? null : Icons.refresh_rounded,
     );
   }
 
@@ -318,14 +361,13 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     return context.l10n.fwdCarrierSaid(shown);
   }
 
-  Widget _tile(IconData i, String t, String? s, {VoidCallback? onTap, bool bad = false}) {
+  Widget _tile(IconData i, Feature f, String t, String? s, {VoidCallback? onTap, bool bad = false}) {
     final v = s == 'ERROR' ? context.l10n.couldntCheck : s ?? context.l10n.checking;
-    return Card(
-      child: ListTile(
-        leading: Icon(i, color: bad ? Colors.red : Colors.green),
-        title: Text(t), subtitle: Text(v), onTap: onTap,
-        trailing: onTap == null ? null : const Icon(Icons.refresh),
-      ),
+    final known = s != null && s != 'ERROR';
+    return FeatureTile(
+      icon: i, feature: f, title: t, status: v,
+      tone: !known ? Tone.neutral : (bad ? Tone.danger : Tone.safe),
+      onTap: onTap, trailingIcon: onTap == null ? null : Icons.refresh_rounded,
     );
   }
 }

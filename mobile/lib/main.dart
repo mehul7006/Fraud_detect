@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'core/api_client.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'core/push.dart';
 import 'core/settings_store.dart';
 import 'l10n/l10n.dart';
@@ -10,9 +11,13 @@ import 'core/native_bridge.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/consent_screen.dart';
 import 'screens/login_screen.dart';
+import 'ui/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  LicenseRegistry.addLicense(() async* { // Poppins font (OFL-1.1) shown on the licences page
+    yield LicenseEntryWithLineBreaks(['Poppins font'], await rootBundle.loadString('assets/fonts/OFL-Poppins.txt'));
+  });
   appLocale.value = localeFromSetting(await SettingsStore().language()); // 8.11: the user's language choice
   // 7.3 push + 9.6 crash reports. Without Firebase configured the app runs normally, just without both.
   final firebase = await FirebasePushClient.init();
@@ -43,7 +48,8 @@ class FraudShieldApp extends StatelessWidget {
         builder: (c, locale, _) => MaterialApp(
           title: 'FraudShield',
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(colorSchemeSeed: const Color(0xFF0B6E4F), useMaterial3: true),
+          theme: buildTheme(Brightness.light), // Aurora Shield design (lib/ui/theme.dart)
+          darkTheme: buildTheme(Brightness.dark),
           // 8.11 English + Hindi; locale null = follow the phone's language
           locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,

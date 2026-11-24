@@ -1961,4 +1961,184 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get safeDrillRisky => 'जोखिम वाला विकल्प';
+
+  @override
+  String get homeProtected => 'आप सुरक्षित हैं';
+
+  @override
+  String homeNeedsAttention(int n) {
+    return '$n सुरक्षा पर ध्यान दें';
+  }
+
+  @override
+  String get homeProtectedDetail =>
+      'सभी सुरक्षा चालू हैं। FraudShield पीछे से नज़र रखता है।';
+
+  @override
+  String get homeAttentionDetail =>
+      'पूरी तरह सुरक्षित रहने के लिए नीचे इन्हें चालू करें।';
+
+  @override
+  String get homeQuick => 'तुरंत करें';
+
+  @override
+  String get homeStatus => 'सुरक्षा की स्थिति';
+
+  @override
+  String get homeStatusSub => 'दोबारा जाँचने या चालू करने के लिए कार्ड दबाएँ';
+
+  @override
+  String get homeTools => 'टूल और मदद';
+
+  @override
+  String get homeAccountSub => 'खाता चोरी और SMS चोरी रोकें';
+
+  @override
+  String get homeScamHelp => 'धोखे में मदद';
+
+  @override
+  String get homeCallGuard => 'कॉल गार्ड';
+
+  @override
+  String get homeCleaner => 'बचा डेटा साफ़ करें';
+
+  @override
+  String get homeScammed => 'मेरे साथ धोखा हुआ';
+
+  @override
+  String get ui2LoginPromise =>
+      'धोखे, नकली साइट और खाता चोरी को आप तक पहुँचने से पहले रोकता है।';
+
+  @override
+  String get ui1VpnOptions => 'निजता और DNS विकल्प';
+
+  @override
+  String get homeGroupPhone => 'आपका फ़ोन और ऐप';
+
+  @override
+  String get homeGroupPhoneSub => 'जोखिम वाले ऐप, क्लोनिंग और बची फ़ाइलें';
+
+  @override
+  String get homeGroupCalls => 'कॉल और संदेश';
+
+  @override
+  String get homeGroupCallsSub => 'धोखे वाली कॉल रोकें, SMS चोरी रोकें';
+
+  @override
+  String get permTitle => 'अनुमतियाँ';
+
+  @override
+  String permSummary(int allowed, int total) {
+    return '$total में से $allowed चालू';
+  }
+
+  @override
+  String permPending(int n) {
+    return '$n पर आपकी मंज़ूरी चाहिए - चालू करने के लिए दबाएँ';
+  }
+
+  @override
+  String get permAllDone => 'FraudShield की ज़रूरी सब अनुमतियाँ चालू हैं';
+
+  @override
+  String get permIntro =>
+      'FraudShield सिर्फ़ वही माँगता है जिसकी सुरक्षा को ज़रूरत है। किसी भी चीज़ को दबाएँ: Android का सही पेज खुलेगा - चालू करें और वापस आएँ।';
+
+  @override
+  String get permNeedsOk => 'आपकी मंज़ूरी चाहिए';
+
+  @override
+  String get permAllowed => 'चालू';
+
+  @override
+  String get permByHand => 'फ़ोन की सेटिंग में जाँचें';
+
+  @override
+  String get permOptional => 'वैकल्पिक';
+
+  @override
+  String get permAllow => 'चालू करें';
+
+  @override
+  String get permOpen => 'खोलें';
+
+  @override
+  String get permOn => 'चालू';
+
+  @override
+  String get permNameNotifications => 'सूचनाएँ';
+
+  @override
+  String get permWhyNotifications => 'ताकि धोखे की चेतावनी आप तक पहुँचे।';
+
+  @override
+  String get permNameFullScreen => 'पूरी स्क्रीन वाली चेतावनी';
+
+  @override
+  String get permWhyFullScreen => 'ज़रूरी चेतावनी लॉक स्क्रीन पर भी दिखे।';
+
+  @override
+  String get permNameNotifAccess => 'सूचना पढ़ने की अनुमति';
+
+  @override
+  String get permWhyNotifAccess =>
+      'संदेशों और सूचनाओं के लिंक जाँचता है। संदेश का टेक्स्ट कभी अपलोड नहीं होता।';
+
+  @override
+  String get permNameFiles => 'सभी फ़ाइलों की अनुमति';
+
+  @override
+  String get permWhyFiles =>
+      'डाउनलोड हुई APK और PDF फ़ाइलों में खतरा जाँचता है।';
+
+  @override
+  String get permNamePhone => 'फ़ोन';
+
+  @override
+  String get permWhyPhone =>
+      'कॉल फ़ॉरवर्डिंग जाँचता है और धोखा अलार्म चलाता है।';
+
+  @override
+  String get permNameVpn => 'नकली वेबसाइट सुरक्षा (VPN)';
+
+  @override
+  String get permWhyVpn => 'हर ऐप में नकली और खतरनाक साइट रोकता है।';
+
+  @override
+  String get permNameCallScreening => 'कॉलर ID और स्पैम';
+
+  @override
+  String get permWhyCallScreening =>
+      'कॉल गार्ड को धोखे वाली कॉल रोकने देता है।';
+
+  @override
+  String get permNameContacts => 'संपर्क';
+
+  @override
+  String get permWhyContacts => 'आपके सेव किए संपर्क कभी नहीं रोके जाते।';
+
+  @override
+  String get permNameCallLog => 'कॉल इतिहास';
+
+  @override
+  String get permWhyCallLog => 'जिन्हें आपने कॉल किया वे कभी नहीं रोके जाते।';
+
+  @override
+  String get permNameUsage => 'उपयोग की जानकारी';
+
+  @override
+  String get permWhyUsage => 'अपने आप खुलने वाले ऐप पकड़ता है।';
+
+  @override
+  String get permNameBattery => 'बैटरी: कोई रोक नहीं';
+
+  @override
+  String get permWhyBattery => 'सुरक्षा को पीछे से चालू रखता है।';
+
+  @override
+  String get permNameAutostart => 'ऑटोस्टार्ट (फ़ोन कंपनी की सेटिंग)';
+
+  @override
+  String get permWhyAutostart =>
+      'रीस्टार्ट के बाद सुरक्षा फिर चालू हो। Android यह हमें नहीं दिखाता - कृपया खुद जाँचें।';
 }

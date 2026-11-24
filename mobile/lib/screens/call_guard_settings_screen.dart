@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../ui/components.dart';
+import '../ui/screen_kit.dart';
+import '../ui/theme.dart';
+
 import '../core/api_client.dart';
 import '../core/call_guard.dart';
 import '../core/native_bridge.dart';
@@ -49,18 +53,17 @@ class _CallGuardTileState extends State<CallGuardTile> {
         : !s.supported
             ? l.callTileUnsupported
             : on ? l.callTileOn(s.count('REJECT') + s.count('SILENCE')) : l.callTileOff;
-    return Card(
-      child: ListTile(
-        key: const Key('call-guard-tile'),
-        leading: Icon(on ? Icons.phone_locked : Icons.phone_locked_outlined, color: on ? Colors.green : Colors.red),
-        title: Text(l.callTile),
-        subtitle: Text(sub),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () async {
+    return FeatureTile(
+      tileKey: const Key('call-guard-tile'),
+      icon: on ? Icons.phone_locked_rounded : Icons.phone_locked_outlined, feature: Feature.call,
+      title: l.callTile,
+      status: sub,
+      tone: on ? Tone.safe : Tone.danger,
+      trailingIcon: Icons.chevron_right_rounded,
+      onTap: () async {
           await Navigator.push(context, MaterialPageRoute(builder: (_) => CallGuardSettingsScreen(api: widget.api)));
           _load();
-        },
-      ),
+      },
     );
   }
 }
@@ -110,14 +113,15 @@ class _CallGuardSettingsScreenState extends State<CallGuardSettingsScreen> with 
       final ok = await showDialog<bool>(
         context: context,
         builder: (c) => AlertDialog(
-          icon: Icon(Icons.warning_amber_rounded, color: Colors.orange.shade800, size: 36),
+          icon: Icon(Icons.warning_amber_rounded, color: Tone.warn.fg(context), size: 36),
           title: Text(l.callMode4WarnTitle),
           content: SingleChildScrollView(child: Text(l.callMode4WarnBody, key: const Key('call-mode4-warning'))),
           actions: [
             TextButton(key: const Key('call-mode4-cancel'), onPressed: () => Navigator.pop(c, false), child: Text(l.callCancel)),
             FilledButton(
               key: const Key('call-mode4-confirm'),
-              style: FilledButton.styleFrom(backgroundColor: Colors.red.shade800),
+              style: FilledButton.styleFrom(backgroundColor: Tone.danger.fg(context),
+                  foregroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.ink : Colors.white),
               onPressed: () => Navigator.pop(c, true),
               child: Text(l.callMode4Confirm),
             ),
@@ -158,25 +162,29 @@ class _CallGuardSettingsScreenState extends State<CallGuardSettingsScreen> with 
       appBar: AppBar(title: Text(l.callTitle)),
       body: s == null
           ? const Center(child: CircularProgressIndicator())
-          : ListView(padding: const EdgeInsets.all(16), children: [
-              Text(l.callIntro),
-              const SizedBox(height: 12),
+          : ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+              IntroBanner(icon: Icons.phone_locked_rounded, feature: Feature.call, text: l.callIntro),
               if (!s.supported)
                 Card(
                   key: const Key('call-unsupported'),
-                  color: Colors.orange.shade50,
-                  child: ListTile(leading: const Icon(Icons.info_outline), title: Text(l.callUnsupported)),
+                  color: Tone.warn.bg(context),
+                  child: ListTile(leading: Icon(Icons.info_outline_rounded, color: Tone.warn.fg(context)), title: Text(l.callUnsupported)),
                 )
               else if (!s.roleHeld)
                 Card(
                   key: const Key('call-role-card'),
-                  color: Colors.orange.shade50,
+                  color: Tone.warn.bg(context),
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(l.callRoleTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
+                      Row(children: [
+                        Icon(Icons.phone_disabled_rounded, color: Tone.warn.fg(context)),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(l.callRoleTitle, style: const TextStyle(fontWeight: FontWeight.w700))),
+                      ]),
+                      const SizedBox(height: 6),
                       Text(l.callRoleBody),
+                      const SizedBox(height: 10),
                       Align(
                         alignment: Alignment.centerRight,
                         child: FilledButton(
@@ -189,110 +197,116 @@ class _CallGuardSettingsScreenState extends State<CallGuardSettingsScreen> with 
                   ),
                 )
               else
-                ListTile(
-                  key: const Key('call-role-on'),
-                  leading: const Icon(Icons.verified_user, color: Colors.green),
-                  title: Text(l.callRoleOn),
-                  subtitle: Text(l.callListInfo(s.scamListSize)),
-                  trailing: TextButton(onPressed: _sync, child: Text(l.callSync)),
+                Card(
+                  color: Tone.safe.bg(context),
+                  child: ListTile(
+                    key: const Key('call-role-on'),
+                    leading: Icon(Icons.verified_user_rounded, color: Tone.safe.fg(context), size: 32),
+                    title: Text(l.callRoleOn),
+                    subtitle: Text(l.callListInfo(s.scamListSize)),
+                    trailing: TextButton(onPressed: _sync, child: Text(l.callSync)),
+                  ),
                 ),
               if (s.supported) ...[
                 if (!_notif)
-                  _permCard(l.callNotifTitle, l.callNotifBody, () async { await NativeBridge.requestNotificationPermission(); await _load(); }),
+                  _permCard(Icons.notifications_active_outlined, l.callNotifTitle, l.callNotifBody,
+                      () async { await NativeBridge.requestNotificationPermission(); await _load(); }),
                 if (!s.contactsPermission)
-                  _permCard(l.callContactsTitle, l.callContactsBody, () async { await CallGuardNative.requestContacts(); }, button: l.callContactsButton),
-                const SizedBox(height: 8),
-                Text(l.callModeTitle, style: Theme.of(context).textTheme.titleMedium),
-                RadioGroup<int>(
-                  groupValue: s.mode,
-                  onChanged: (v) { if (v != null) _setMode(v); },
-                  child: Column(children: [
-                    for (final (m, t, sub) in [
-                      (1, l.callMode1, l.callMode1Sub), (2, l.callMode2, l.callMode2Sub),
-                      (3, l.callMode3, l.callMode3Sub), (4, l.callMode4, l.callMode4Sub),
-                    ])
-                      RadioListTile<int>(key: Key('call-mode-$m'), value: m, title: Text(t), subtitle: Text(sub),
-                          contentPadding: EdgeInsets.zero),
-                  ]),
+                  _permCard(Icons.contacts_rounded, l.callContactsTitle, l.callContactsBody,
+                      () async { await CallGuardNative.requestContacts(); }, button: l.callContactsButton),
+                SectionTitle(l.callModeTitle),
+                Card(
+                  child: RadioGroup<int>(
+                    groupValue: s.mode,
+                    onChanged: (v) { if (v != null) _setMode(v); },
+                    child: Column(children: [
+                      for (final (m, t, sub) in [
+                        (1, l.callMode1, l.callMode1Sub), (2, l.callMode2, l.callMode2Sub),
+                        (3, l.callMode3, l.callMode3Sub), (4, l.callMode4, l.callMode4Sub),
+                      ])
+                        RadioListTile<int>(key: Key('call-mode-$m'), value: m,
+                            title: Text(t, style: TextStyle(fontWeight: FontWeight.w600, color: m == 4 ? Tone.danger.fg(context) : null)),
+                            subtitle: Text(sub)),
+                    ]),
+                  ),
                 ),
-                const Divider(),
-                ListTile(
-                  key: const Key('call-open-log'),
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.history),
-                  title: Text(l.callBlockedTitle),
-                  subtitle: Text(l.callBlockedSub),
-                  trailing: const Icon(Icons.chevron_right),
+                const SizedBox(height: 6),
+                FeatureTile(
+                  tileKey: const Key('call-open-log'),
+                  icon: Icons.history_rounded, feature: Feature.history,
+                  title: l.callBlockedTitle, status: l.callBlockedSub,
+                  trailingIcon: Icons.chevron_right_rounded,
                   onTap: () async {
                     await Navigator.push(context, MaterialPageRoute(builder: (_) => BlockedCallsScreen(api: widget.api)));
                     _load();
                   },
                 ),
-                const Divider(),
-                Text(l.callAllowTitle, style: Theme.of(context).textTheme.titleMedium),
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                      key: const Key('call-allow-input'),
-                      controller: _add,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(hintText: l.callAllowHint, errorText: _addError),
-                      onSubmitted: (_) => _addAllowed(),
-                    ),
+                SectionTitle(l.callAllowTitle),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Expanded(
+                          child: TextField(
+                            key: const Key('call-allow-input'),
+                            controller: _add,
+                            keyboardType: TextInputType.phone,
+                            decoration: InputDecoration(hintText: l.callAllowHint, errorText: _addError,
+                                prefixIcon: const Icon(Icons.person_add_alt_rounded)),
+                            onSubmitted: (_) => _addAllowed(),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        TextButton(key: const Key('call-allow-add'), onPressed: _addAllowed, child: Text(l.callAllowAdd)),
+                      ]),
+                      if (s.allow.isEmpty)
+                        Padding(padding: const EdgeInsets.fromLTRB(4, 10, 4, 6),
+                            child: Text(l.callAllowEmpty, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
+                      for (final n in s.allow)
+                        ListTile(
+                          contentPadding: const EdgeInsets.only(left: 4),
+                          leading: Icon(Icons.check_circle_rounded, color: Tone.safe.fg(context)),
+                          title: Text(n),
+                          trailing: IconButton(
+                            tooltip: l.callRemove,
+                            icon: const Icon(Icons.delete_outline_rounded),
+                            onPressed: () async { await CallGuardNative.allow(n, allow: false); await _load(); },
+                          ),
+                        ),
+                    ]),
                   ),
-                  TextButton(key: const Key('call-allow-add'), onPressed: _addAllowed, child: Text(l.callAllowAdd)),
-                ]),
-                if (s.allow.isEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.callAllowEmpty)),
-                for (final n in s.allow)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.check_circle_outline, color: Colors.green),
-                    title: Text(n),
-                    trailing: IconButton(
-                      tooltip: l.callRemove,
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () async { await CallGuardNative.allow(n, allow: false); await _load(); },
-                    ),
-                  ),
+                ),
                 if (s.block.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(l.callBlockTitle, style: Theme.of(context).textTheme.titleMedium),
-                  for (final n in s.block)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.block, color: Colors.red),
-                      title: Text(n),
-                      trailing: IconButton(
-                        tooltip: l.callRemove,
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () async { await CallGuardNative.block(n, block: false); await _load(); },
-                      ),
-                    ),
+                  SectionTitle(l.callBlockTitle),
+                  Card(
+                    child: Column(children: [
+                      for (final n in s.block)
+                        ListTile(
+                          leading: Icon(Icons.block_rounded, color: Tone.danger.fg(context)),
+                          title: Text(n),
+                          trailing: IconButton(
+                            tooltip: l.callRemove,
+                            icon: const Icon(Icons.delete_outline_rounded),
+                            onPressed: () async { await CallGuardNative.block(n, block: false); await _load(); },
+                          ),
+                        ),
+                    ]),
+                  ),
                 ],
               ],
-              const Divider(),
-              ListTile(
-                key: const Key('call-open-report'),
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.flag_outlined),
-                title: Text(l.callReportTitle),
-                trailing: const Icon(Icons.chevron_right),
+              const SizedBox(height: 6),
+              FeatureTile(
+                tileKey: const Key('call-open-report'),
+                icon: Icons.flag_rounded, feature: Feature.scam,
+                title: l.callReportTitle,
+                trailingIcon: Icons.chevron_right_rounded,
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReportNumberScreen(api: widget.api))),
               ),
             ]),
     );
   }
 
-  Widget _permCard(String title, String body, VoidCallback onTap, {String? button}) => Card(
-        color: Colors.blue.shade50,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(body),
-            Align(alignment: Alignment.centerRight, child: TextButton(onPressed: onTap, child: Text(button ?? context.l10n.allow))),
-          ]),
-        ),
-      );
+  Widget _permCard(IconData icon, String title, String body, VoidCallback onTap, {String? button}) =>
+      NoticeCard(icon: icon, title: title, body: body, action: button ?? context.l10n.allow, onAction: onTap, tone: Tone.info);
 }

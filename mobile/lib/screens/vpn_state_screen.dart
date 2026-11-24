@@ -8,6 +8,8 @@ import '../core/native_bridge.dart';
 import '../l10n/l10n.dart';
 import 'blocking_screen.dart';
 import 'vpn_consent_screen.dart';
+import '../ui/components.dart';
+import '../ui/theme.dart';
 
 /// 12.7 / 12.8 / 12.10: the protection screen - on/off, what is wrong and how to fix it (another VPN, Private DNS,
 /// switched off in settings), counters, recent blocks, privacy options, and the per-app view.
@@ -78,30 +80,44 @@ class _VpnStateScreenState extends State<VpnStateScreen> with WidgetsBindingObse
       _ => (l.vpnStateOff, null, null),
     };
     final good = state == 'ON';
+    final t = Theme.of(context);
+    Widget stat(IconData icon, Feature f, String text) => Card(
+          child: ListTile(leading: FeatureIcon(icon, f, size: 38), title: Text(text, style: t.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600))),
+        );
     return Scaffold(
       appBar: AppBar(title: Text(l.vpnTitle)),
       body: RefreshIndicator(
         onRefresh: _refresh,
-        child: ListView(padding: const EdgeInsets.all(16), children: [
+        child: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 32), children: [
           Card(
             key: Key('vpn-state-$state'),
-            color: good ? Colors.green.shade50 : Colors.orange.shade50,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+            child: Container(
+              decoration: BoxDecoration(gradient: good ? Feature.web.deepGradient : (state == 'OFF' || state == 'NO_CONSENT') ? Feature.history.deepGradient : Feature.apps.deepGradient),
+              padding: const EdgeInsets.all(20),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Icon(good ? Icons.vpn_lock : Icons.warning_amber, color: good ? Colors.green.shade800 : Colors.orange.shade900, size: 32),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge)),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(16)),
+                    child: Icon(good ? Icons.vpn_lock_rounded : Icons.warning_amber_rounded, color: Colors.white, size: 32),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(child: Text(title, style: t.textTheme.titleLarge?.copyWith(color: Colors.white))),
                 ]),
-                if (body != null) ...[const SizedBox(height: 8), Text(body)],
-                const SizedBox(height: 12),
-                Wrap(spacing: 8, runSpacing: 8, children: [
+                if (body != null) ...[const SizedBox(height: 10), Text(body, style: t.textTheme.bodyMedium?.copyWith(color: Colors.white))],
+                const SizedBox(height: 16),
+                Wrap(spacing: 10, runSpacing: 10, children: [
                   if (on)
-                    OutlinedButton(key: const Key('vpn-off'), onPressed: () async { await NativeBridge.vpnStop(); await _refresh(); }, child: Text(l.vpnTurnOff))
+                    OutlinedButton(key: const Key('vpn-off'),
+                        style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white, width: 1.4)),
+                        onPressed: () async { await NativeBridge.vpnStop(); await _refresh(); }, child: Text(l.vpnTurnOff))
                   else
-                    FilledButton(key: const Key('vpn-on'), onPressed: _turnOn, child: Text(l.vpnTurnOn)),
-                  if (fix != null) OutlinedButton(key: const Key('vpn-fix'), onPressed: fix.$2, child: Text(fix.$1)),
+                    FilledButton(key: const Key('vpn-on'),
+                        style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.indigo),
+                        onPressed: _turnOn, child: Text(l.vpnTurnOn)),
+                  if (fix != null) OutlinedButton(key: const Key('vpn-fix'),
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white, width: 1.4)),
+                      onPressed: fix.$2, child: Text(fix.$1)),
                 ]),
               ]),
             ),
@@ -110,14 +126,18 @@ class _VpnStateScreenState extends State<VpnStateScreen> with WidgetsBindingObse
           if (on && _s['autostartMaker'] != null)
             Card(
               key: const Key('vpn-keep-on'),
-              color: Colors.blue.shade50,
+              color: Tone.info.bg(context),
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(l.vpnKeepOnTitle, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
+                  Row(children: [
+                    Icon(Icons.restart_alt_rounded, color: Tone.info.fg(context)),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(l.vpnKeepOnTitle, style: t.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
+                  ]),
+                  const SizedBox(height: 6),
                   Text(l.vpnKeepOnBody),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Wrap(spacing: 8, runSpacing: 8, children: [
                     OutlinedButton(key: const Key('vpn-always-on'), onPressed: NativeBridge.openVpnSettings, child: Text(l.vpnAlwaysOn)),
                     OutlinedButton(key: const Key('vpn-autostart'), onPressed: NativeBridge.openAutostartSettings, child: Text(l.vpnAutostart)),
@@ -125,62 +145,75 @@ class _VpnStateScreenState extends State<VpnStateScreen> with WidgetsBindingObse
                 ]),
               ),
             ),
+          const SizedBox(height: 6),
           if (on) ...[
-            ListTile(leading: const Icon(Icons.travel_explore), title: Text(l.vpnStats((_s['queries'] as num?)?.toInt() ?? 0))),
-            ListTile(leading: Icon(Icons.block, color: Colors.red.shade800), title: Text(l.vpnBlockedCount((_s['blocked'] as num?)?.toInt() ?? 0))),
+            stat(Icons.travel_explore_rounded, Feature.web, l.vpnStats((_s['queries'] as num?)?.toInt() ?? 0)),
+            stat(Icons.block_rounded, Feature.scam, l.vpnBlockedCount((_s['blocked'] as num?)?.toInt() ?? 0)),
           ],
-          ListTile(leading: const Icon(Icons.list_alt), title: Text(l.vpnListSize((_s['blocklistSize'] as num?)?.toInt() ?? 0))),
-          const Divider(),
-          Text(l.vpnRecent, style: Theme.of(context).textTheme.titleMedium),
-          if (recent.isEmpty) Padding(padding: const EdgeInsets.all(8), child: Text(l.vpnNoneBlocked)),
-          for (final b in recent.take(10))
-            ListTile(
-              dense: true,
-              leading: Icon(Icons.gpp_bad, color: Colors.red.shade800),
-              title: Text('${b['domain']}'),
-              subtitle: Text([if ('${b['brand']}'.isNotEmpty) '≠ ${b['brand']}', if ('${b['app']}'.isNotEmpty) '${b['app']}'].join(' · ')),
-            ),
-          const Divider(),
-          SwitchListTile(
-            key: const Key('vpn-local-only'),
-            title: Text(l.vpnLocalOnly), subtitle: Text(l.vpnLocalOnlyBody),
-            value: _s['localOnly'] == true, onChanged: (v) => _set(localOnly: v),
+          stat(Icons.list_alt_rounded, Feature.device, l.vpnListSize((_s['blocklistSize'] as num?)?.toInt() ?? 0)),
+          SectionTitle(l.vpnRecent),
+          Card(
+            child: Column(children: [
+              if (recent.isEmpty)
+                ListTile(leading: Icon(Icons.check_circle_rounded, color: Tone.safe.fg(context)), title: Text(l.vpnNoneBlocked)),
+              for (final b in recent.take(10))
+                ListTile(
+                  dense: true,
+                  leading: Icon(Icons.gpp_bad_rounded, color: Tone.danger.fg(context)),
+                  title: Text('${b['domain']}'),
+                  subtitle: Text([if ('${b['brand']}'.isNotEmpty) '≠ ${b['brand']}', if ('${b['app']}'.isNotEmpty) '${b['app']}'].join(' · ')),
+                ),
+            ]),
           ),
-          SwitchListTile(
-            key: const Key('vpn-block-doh'),
-            title: Text(l.vpnBlockDoh), subtitle: Text(l.vpnBlockDohBody),
-            value: _s['blockDoh'] != false, onChanged: (v) => _set(blockDoh: v),
+          SectionTitle(l.ui1VpnOptions),
+          Card(
+            child: Column(children: [
+              SwitchListTile(
+                key: const Key('vpn-local-only'),
+                secondary: const FeatureIcon(Icons.phonelink_lock_rounded, Feature.device, size: 38),
+                title: Text(l.vpnLocalOnly), subtitle: Text(l.vpnLocalOnlyBody),
+                value: _s['localOnly'] == true, onChanged: (v) => _set(localOnly: v),
+              ),
+              SwitchListTile(
+                key: const Key('vpn-block-doh'),
+                secondary: const FeatureIcon(Icons.dns_rounded, Feature.web, size: 38),
+                title: Text(l.vpnBlockDoh), subtitle: Text(l.vpnBlockDohBody),
+                value: _s['blockDoh'] != false, onChanged: (v) => _set(blockDoh: v),
+              ),
+              ListTile(
+                leading: const FeatureIcon(Icons.router_rounded, Feature.files, size: 38),
+                title: Text(l.vpnUpstream),
+                // below the label, full width: beside it the long Hindi names do not fit
+                subtitle: DropdownButton<String>(
+                  key: const Key('vpn-upstream'),
+                  isExpanded: true,
+                  underline: const SizedBox.shrink(),
+                  value: (_s['upstream'] as String?) ?? 'system',
+                  items: [
+                    DropdownMenuItem(value: 'system', child: Text(l.vpnUpstreamSystem)),
+                    const DropdownMenuItem(value: 'cloudflare', child: Text('Cloudflare 1.1.1.1')),
+                    const DropdownMenuItem(value: 'google', child: Text('Google 8.8.8.8')),
+                    const DropdownMenuItem(value: 'quad9', child: Text('Quad9 9.9.9.9')),
+                  ],
+                  onChanged: (v) => _set(upstream: v),
+                ),
+              ),
+            ]),
           ),
-          ListTile(
-            title: Text(l.vpnUpstream),
-            // below the label, full width: beside it the long Hindi names do not fit
-            subtitle: DropdownButton<String>(
-              key: const Key('vpn-upstream'),
-              isExpanded: true,
-              value: (_s['upstream'] as String?) ?? 'system',
-              items: [
-                DropdownMenuItem(value: 'system', child: Text(l.vpnUpstreamSystem)),
-                const DropdownMenuItem(value: 'cloudflare', child: Text('Cloudflare 1.1.1.1')),
-                const DropdownMenuItem(value: 'google', child: Text('Google 8.8.8.8')),
-                const DropdownMenuItem(value: 'quad9', child: Text('Quad9 9.9.9.9')),
-              ],
-              onChanged: (v) => _set(upstream: v),
-            ),
-          ),
-          const Divider(),
-          ListTile(
-            key: const Key('vpn-top-apps'),
-            leading: const Icon(Icons.apps),
-            title: Text(l.vpnTopApps),
-            trailing: const Icon(Icons.chevron_right),
+          const SizedBox(height: 8),
+          FeatureTile(
+            tileKey: const Key('vpn-top-apps'),
+            icon: Icons.apps_rounded, feature: Feature.apps,
+            title: l.vpnTopApps,
+            trailingIcon: Icons.chevron_right_rounded,
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TopAppsScreen())),
           ),
-          ListTile( // 18.3: phone-wide blocking (Play build: trackers + malware; website build: + ads)
-            key: const Key('vpn-blocking'),
-            leading: const Icon(Icons.shield_outlined),
-            title: Text(kAdBlockingInBuild ? l.blockTitleWeb : l.blockTitlePlay),
-            subtitle: Text(l.blockVpnCount(((_s['adBlocked'] as num?) ?? 0).toInt())),
-            trailing: const Icon(Icons.chevron_right),
+          FeatureTile( // 18.3: phone-wide blocking (Play build: trackers + malware; website build: + ads)
+            tileKey: const Key('vpn-blocking'),
+            icon: Icons.shield_rounded, feature: Feature.scam,
+            title: kAdBlockingInBuild ? l.blockTitleWeb : l.blockTitlePlay,
+            status: l.blockVpnCount(((_s['adBlocked'] as num?) ?? 0).toInt()),
+            trailingIcon: Icons.chevron_right_rounded,
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BlockingScreen())),
           ),
         ]),
@@ -204,26 +237,27 @@ class TopAppsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.vpnTopApps)),
+      appBar: AppBar(), // the banner below carries the title
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: NativeBridge.vpnTopApps(),
         builder: (c, s) {
           if (!s.hasData) return const Center(child: CircularProgressIndicator());
           final apps = s.data!;
-          return ListView(padding: const EdgeInsets.all(8), children: [
-            Padding(padding: const EdgeInsets.all(8), child: Text(l.vpnTopAppsBody)),
-            if (apps.isEmpty) Padding(padding: const EdgeInsets.all(16), child: Text(l.vpnNoTraffic)),
+          return ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+            ScreenBanner(icon: Icons.apps_rounded, feature: Feature.apps, title: l.vpnTopApps, subtitle: l.vpnTopAppsBody),
+            if (apps.isEmpty) Card(child: ListTile(leading: const Icon(Icons.hourglass_empty_rounded), title: Text(l.vpnNoTraffic))),
             for (final a in apps)
-              ExpansionTile(
+              Card(child: ExpansionTile(
                 key: Key('top-app-${a['package'] ?? a['uid']}'),
-                leading: const Icon(Icons.android),
+                shape: const RoundedRectangleBorder(side: BorderSide.none),
+                leading: const FeatureIcon(Icons.android_rounded, Feature.apps, size: 38),
                 title: Text('${a['app']}'),
                 subtitle: Text('${l.vpnSitesCount((a['domains'] as num?)?.toInt() ?? 0)} · ↓ ${_bytes(a['bytesRx'] as num?)} ↑ ${_bytes(a['bytesTx'] as num?)}'),
                 children: [
                   for (final d in ((a['topDomains'] as List?) ?? const []))
-                    ListTile(dense: true, leading: const Icon(Icons.language, size: 18), title: Text('$d')),
+                    ListTile(dense: true, leading: const Icon(Icons.language_rounded, size: 18), title: Text('$d')),
                 ],
-              ),
+              )),
           ]);
         },
       ),

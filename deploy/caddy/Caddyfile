@@ -1,0 +1,7 @@
+# Production: automatic HTTPS (Let's Encrypt / ZeroSSL) for $DOMAIN. The DNS A/AAAA record must point at this
+# server and ports 80 + 443 must be open before the first start. Certificates are kept in the caddy_data volume.
+# Optional: add a global block `{ email you@example.com }` at the top for certificate-expiry mails.
+
+{$DOMAIN} {
+	import /etc/caddy/common.caddy
+}

@@ -6,6 +6,8 @@ import '../core/message_check.dart';
 import '../core/message_rules.dart';
 import '../l10n/l10n.dart';
 import 'why_panel.dart';
+import '../ui/components.dart';
+import '../ui/theme.dart';
 
 /// 14.4 / 14.7 / 14.8: "Check this message". Paste (or share) a message; the phone judges it on its own
 /// (text stays on the phone). "Check with cloud AI" is a separate, opt-in step with a clear consent.
@@ -53,18 +55,22 @@ class _CheckMessageScreenState extends State<CheckMessageScreen> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.msgTitle)),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text(l.msgIntro),
-        const SizedBox(height: 12),
+      appBar: AppBar(), // the banner below carries the title
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 32), children: [
+        ScreenBanner(icon: Icons.mark_chat_read_rounded, feature: Feature.message, title: l.msgTitle, subtitle: l.msgIntro),
+        const SizedBox(height: 4),
         TextField(
           key: const Key('msg-input'),
           controller: _text,
           minLines: 4, maxLines: 10, maxLength: 2000,
-          decoration: InputDecoration(border: const OutlineInputBorder(), hintText: l.msgHint),
+          decoration: InputDecoration(
+            hintText: l.msgHint,
+            prefixIcon: const Padding(padding: EdgeInsets.only(bottom: 64), child: Icon(Icons.sms_outlined)),
+          ),
         ),
-        FilledButton.icon(key: const Key('msg-check'), onPressed: _busy ? null : _run, icon: const Icon(Icons.search), label: Text(l.msgCheck)),
-        if (_busy) const Padding(padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator()),
+        const SizedBox(height: 4),
+        FilledButton.icon(key: const Key('msg-check'), onPressed: _busy ? null : _run, icon: const Icon(Icons.search_rounded), label: Text(l.msgCheck)),
+        if (_busy) const Padding(padding: EdgeInsets.only(top: 16), child: LinearProgressIndicator(minHeight: 6, borderRadius: BorderRadius.all(Radius.circular(6)))),
         if (_v != null) MessageVerdictView(verdict: _v!, onCloud: _v!.cloud ? null : _cloud),
       ]),
     );
@@ -90,51 +96,85 @@ class MessageVerdictView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final t = Theme.of(context);
     final hi = Localizations.localeOf(context).languageCode == 'hi';
     final v = verdict;
     final safe = v.verdict == 'SAFE';
     final bad = v.verdict == 'MALICIOUS';
-    final color = safe ? Colors.green.shade800 : bad ? Colors.red.shade800 : Colors.orange.shade900;
+    final tone = safe ? Tone.safe : bad ? Tone.danger : Tone.warn;
+    final gradient = safe ? Feature.account.deepGradient : bad ? AppColors.dangerGradient : Feature.apps.deepGradient;
     return Card(
       key: Key('msg-verdict-${v.verdict}'),
-      margin: const EdgeInsets.only(top: 16),
-      color: safe ? Colors.green.shade50 : bad ? Colors.red.shade50 : Colors.orange.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(safe ? Icons.verified_user : Icons.gpp_bad, color: color, size: 32),
-            const SizedBox(width: 10),
+      margin: const EdgeInsets.only(top: 20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        // gradient verdict header
+        Container(
+          padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
+          decoration: BoxDecoration(gradient: gradient),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(16)),
+              child: Icon(safe ? Icons.verified_user_rounded : Icons.gpp_bad_rounded, color: Colors.white, size: 34),
+            ),
+            const SizedBox(width: 14),
             Expanded(child: Text(
               safe ? l.msgSafe : (bad ? l.msgScam(categoryName(context, v.category)) : l.msgSuspicious(categoryName(context, v.category))),
               key: const Key('msg-headline'),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color, fontWeight: FontWeight.bold))),
+              style: t.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700, height: 1.3))),
           ]),
-          for (final RuleHit h in v.hits.take(5))
-            Padding(padding: const EdgeInsets.only(top: 6), child: Text('• ${hi ? h.hi : h.en}')),
-          for (final link in v.links)
-            ListTile(
-              dense: true, contentPadding: EdgeInsets.zero,
-              leading: Icon(link.verdict == 'MALICIOUS' ? Icons.link_off : Icons.link,
-                  color: link.verdict == 'MALICIOUS' ? Colors.red.shade800 : Colors.grey.shade700),
-              title: Text(link.url, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text(link.verdict == 'MALICIOUS'
-                  ? (link.brand != null ? l.msgLinkFake(link.brand!) : l.msgLinkBad)
-                  : link.verdict == 'SAFE' ? l.msgLinkOk : l.msgLinkUnknown),
-            ),
-          if (WhyPanel.from(v.cloudExplanation) case final why?) why,
-          if (!safe) ...[
-            const SizedBox(height: 8),
-            Text(l.msgAdvice, style: const TextStyle(fontWeight: FontWeight.w600)),
-          ],
-          if (v.cloud) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.msgCloudDone, style: Theme.of(context).textTheme.bodySmall)),
-          if (onCloud != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: OutlinedButton.icon(key: const Key('msg-cloud'), onPressed: onCloud, icon: const Icon(Icons.cloud_upload_outlined), label: Text(l.msgCloudButton)),
-            ),
-        ]),
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            for (final RuleHit h in v.hits.take(5))
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Icons.error_outline_rounded, size: 20, color: tone.fg(context))),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(hi ? h.hi : h.en, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurface))),
+                ]),
+              ),
+            for (final link in v.links)
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(
+                  color: (link.verdict == 'MALICIOUS' ? Tone.danger : link.verdict == 'SAFE' ? Tone.safe : Tone.neutral).bg(context),
+                  borderRadius: BorderRadius.circular(16)),
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(link.verdict == 'MALICIOUS' ? Icons.link_off_rounded : Icons.link_rounded,
+                      color: (link.verdict == 'MALICIOUS' ? Tone.danger : link.verdict == 'SAFE' ? Tone.safe : Tone.neutral).fg(context)),
+                  title: Text(link.url, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(link.verdict == 'MALICIOUS'
+                      ? (link.brand != null ? l.msgLinkFake(link.brand!) : l.msgLinkBad)
+                      : link.verdict == 'SAFE' ? l.msgLinkOk : l.msgLinkUnknown),
+                ),
+              ),
+            if (WhyPanel.from(v.cloudExplanation) case final why?) why,
+            if (!safe)
+              Container(
+                margin: const EdgeInsets.only(top: 14),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: Tone.warn.bg(context), borderRadius: BorderRadius.circular(16)),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.tips_and_updates_rounded, color: Tone.warn.fg(context)),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(l.msgAdvice, style: t.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: t.colorScheme.onSurface))),
+                ]),
+              ),
+            if (v.cloud)
+              Padding(padding: const EdgeInsets.only(top: 12),
+                  child: Pill(l.msgCloudDone, tone: Tone.info, icon: Icons.cloud_done_rounded)),
+            if (onCloud != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: OutlinedButton.icon(key: const Key('msg-cloud'), onPressed: onCloud, icon: const Icon(Icons.cloud_upload_outlined), label: Text(l.msgCloudButton)),
+              ),
+          ]),
+        ),
+      ]),
     );
   }
 }

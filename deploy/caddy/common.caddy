@@ -1,0 +1,27 @@
+# Shared site settings (imported by Caddyfile and Caddyfile.staging)
+encode gzip
+
+header {
+	Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	X-Content-Type-Options "nosniff"
+	X-Frame-Options "DENY"
+	Referrer-Policy "no-referrer"
+	Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	-Server
+}
+
+# Public: the API and the health check. Everything else (other actuator endpoints, docs) is not served.
+handle /api/* {
+	reverse_proxy api:8080
+}
+handle /actuator/health {
+	reverse_proxy api:8080
+}
+handle {
+	respond "Not found" 404
+}
+
+log {
+	output stdout
+	format json
+}

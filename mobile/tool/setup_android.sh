@@ -120,3 +120,8 @@ PY
 
 flutter pub get
 echo "Android setup complete."
+
+# UI: Aurora Shield app icon (adaptive, vector) + splash, and the proper app name in the launcher
+cp -r android-native/res/. android/app/src/main/res/
+rm -f android/app/src/main/res/mipmap-*/ic_launcher.png.unused 2>/dev/null
+sed -i 's/android:label="fraudshield"/android:label="FraudShield"/' android/app/src/main/AndroidManifest.xml
